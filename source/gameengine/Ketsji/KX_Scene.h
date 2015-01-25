@@ -87,6 +87,7 @@ class btCollisionShape;
 class KX_BlenderSceneConverter;
 struct KX_ClientObjectInfo;
 class KX_ObstacleSimulation;
+class KX_Terrain;
 
 #ifdef WITH_CXX_GUARDEDALLOC
 #include "MEM_guardedalloc.h"
@@ -301,6 +302,8 @@ protected:
 	 */
 	bool m_isActivedHysteresis;
 	int m_lodHysteresisValue;
+
+	KX_Terrain* m_terrain;
 
 public:
 	KX_Scene(class SCA_IInputDevice* keyboarddevice,
@@ -604,6 +607,8 @@ public:
 	void Render2DFilters(RAS_ICanvas* canvas);
 
 	KX_ObstacleSimulation* GetObstacleSimulation() { return m_obstacleSimulation; }
+
+	void UpdateTerrain();
 
 #ifdef WITH_PYTHON
 	/* --------------------------------------------------------------------- */

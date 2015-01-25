@@ -691,6 +691,8 @@ bool KX_KetsjiEngine::NextFrame()
 				// update levels of detail
 				scene->UpdateObjectLods();
 
+				scene->UpdateTerrain();
+
 				m_logger->StartLog(tc_physics, m_kxsystem->GetTimeInSeconds(), true);
 				SG_SetActiveStage(SG_STAGE_PHYSICS2);
 				scene->GetPhysicsEnvironment()->BeginFrame();
