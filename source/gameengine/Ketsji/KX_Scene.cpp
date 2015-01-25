@@ -104,6 +104,9 @@
 #endif
 
 #include "KX_Light.h"
+#include "KX_Terrain.h"
+
+#include <stdio.h>
 
 #include "BLI_task.h"
 
@@ -236,6 +239,8 @@ KX_Scene::KX_Scene(class SCA_IInputDevice* keyboarddevice,
 	default:
 		m_obstacleSimulation = NULL;
 	}
+
+	m_terrain = new KX_Terrain(5, 16, 100., 10., 2.);
 	
 #ifdef WITH_PYTHON
 	m_attr_dict = NULL;
@@ -297,6 +302,9 @@ KX_Scene::~KX_Scene()
 	{
 		delete m_bucketmanager;
 	}
+
+	if (m_terrain)
+		delete m_terrain;
 
 #ifdef WITH_PYTHON
 	if (m_attr_dict) {
@@ -1832,6 +1840,11 @@ void KX_Scene::UpdateObjectActivity(void)
 			}
 		}
 	}
+}
+
+void KX_Scene::UpdateTerrain()
+{
+	m_terrain->Update(m_active_camera);
 }
 
 void KX_Scene::SetActivityCullingRadius(float f)
