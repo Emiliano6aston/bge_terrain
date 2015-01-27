@@ -240,7 +240,7 @@ KX_Scene::KX_Scene(class SCA_IInputDevice* keyboarddevice,
 		m_obstacleSimulation = NULL;
 	}
 
-	m_terrain = new KX_Terrain(5, 16, 100., 10., 2.);
+	m_terrain = new KX_Terrain(5, 16, 100., 20., 10.);
 	
 #ifdef WITH_PYTHON
 	m_attr_dict = NULL;
@@ -1849,9 +1849,9 @@ void KX_Scene::UpdateObjectActivity(void)
 	}
 }
 
-void KX_Scene::UpdateTerrain()
+void KX_Scene::UpdateTerrain(const MT_Transform& cameratrans, RAS_IRasterizer* rasty)
 {
-	m_terrain->Update(m_active_camera);
+	m_terrain->Update(m_active_camera, cameratrans, rasty);
 }
 
 void KX_Scene::SetActivityCullingRadius(float f)

@@ -1244,6 +1244,8 @@ void KX_KetsjiEngine::RenderFrame(KX_Scene* scene, KX_Camera* cam)
 
 	//render all the font objects for this scene
 	scene->RenderFonts();
+
+	scene->UpdateTerrain(camtrans, m_rasterizer);
 	
 	if (scene->GetPhysicsEnvironment())
 		scene->GetPhysicsEnvironment()->DebugDrawWorld();
