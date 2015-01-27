@@ -22,11 +22,50 @@
 #define __KX_TERRAIN_H__
 
 #include <map>
+#include "MT_Transform.h"
 
 class KX_Chunk;
 class KX_Camera;
 
-typedef std::pair<int, int> vector2DInt;
+class RAS_IRasterizer;
+
+class vector2DInt
+{
+public:
+	int m_x;
+	int m_y;
+	vector2DInt(const int& x, const int& y)
+	{
+		m_x = x;
+		m_y = y;
+	}
+};
+
+inline MT_OStream& operator<<(MT_OStream& os, const vector2DInt& v1)
+{
+	return os << "(x : " << v1.m_x << ", y : " << v1.m_y << ")";
+}
+
+inline bool operator==(const vector2DInt& v1, const vector2DInt& v2)
+{
+	return v1.m_x == v2.m_x && v1.m_y == v2.m_y;
+}
+
+inline bool operator!=(const vector2DInt& v1, const vector2DInt& v2)
+{
+	return v1.m_x != v2.m_x || v1.m_y != v2.m_y;
+}
+
+inline bool operator<(const vector2DInt& v1, const vector2DInt& v2)
+{
+	return v1.m_x < v2.m_x || (!(v2.m_x < v1.m_x) && v1.m_y < v2.m_y);
+}
+
+inline bool operator>(const vector2DInt& v1, const vector2DInt& v2)
+{
+	return v2 < v1;
+}
+
 typedef std::map<vector2DInt, KX_Chunk*>::iterator chunkMapIt;
 
 class KX_Terrain
@@ -46,7 +85,7 @@ public:
 	void Construct();
 	void Destruct();
 
-	void Update(KX_Camera* cam);
+	void Update(KX_Camera* cam, const MT_Transform& cameratrans, RAS_IRasterizer* rasty);
 
 	// le niveau de subdivision maximal
 	inline unsigned short GetMaxSubDivision() { return m_maxSubDivision; };
@@ -56,7 +95,7 @@ public:
 	inline float GetMaxHeight() { return m_maxHeight; };
 	// le nombre de subdivision par rapport à une distance
 	unsigned short GetSubdivision(float distance);
-	inline KX_Chunk* GetChunk(vector2DInt position) { return m_positionToChunk[position]; };
+	KX_Chunk* GetChunk(int x, int y);
 };
 
 #endif //__KX_TERRAIN_H__
