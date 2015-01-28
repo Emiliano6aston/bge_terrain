@@ -28,6 +28,7 @@ class KX_Chunk;
 class KX_Camera;
 
 class RAS_IRasterizer;
+class RAS_MaterialBucket;
 
 class vector2DInt
 {
@@ -77,6 +78,8 @@ private:
 	float m_maxDistance;
 	float m_chunkSize;
 	float m_maxHeight;
+
+	RAS_MaterialBucket* m_bucket;
 
 public:
 	KX_Terrain(unsigned short maxSubDivisions, unsigned short size, float maxDistance, float chunkSize, float maxheight);

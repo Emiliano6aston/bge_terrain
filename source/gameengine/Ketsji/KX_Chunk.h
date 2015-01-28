@@ -24,7 +24,6 @@ private:
 	KX_Terrain* m_terrain;
 
 	RAS_MeshSlot *m_meshSlot;//Plein de zolis utilitaires pour créer un mesh, ouiiii
-	RAS_MaterialBucket* m_material;//Le matériau du chunk, qu'on pourra envoyer à initde meshSlot
 
 	/// Subdivision level
 	ushort m_subDivisions;
@@ -36,12 +35,12 @@ private:
 	bool IsCulled(KX_Camera* cam) const;
 
 public:
-	KX_Chunk(vector2DInt pos, KX_Terrain* terrain, RAS_MaterialBucket* bucket, int id);
+	KX_Chunk(vector2DInt pos, KX_Terrain* terrain);
 	~KX_Chunk();
 	/// calcule par rapport à la distance utilisateur le nombre de subdivisions
 	void Update(KX_Camera *cam);
 	/// Joint les vertices du chunk avec ceux d'à cotés + rendu
-	void UpdateDisplayArrayDraw(const MT_Transform& cameratrans, RAS_IRasterizer* rasty);
+	void UpdateDisplayArrayDraw(RAS_IRasterizer* rasty);
 	/// Initialization du l'ancien niveau de subdivision au nouveau niveau de subdivision
 	void EndUpdate();
 	
