@@ -33,9 +33,10 @@
 KX_Terrain::KX_Terrain(unsigned short maxSubDivisions, unsigned short size, float maxDistance, float chunkSize, float maxheight)
 	:m_maxSubDivision(maxSubDivisions),
 	m_size(size),
-	m_maxDistance(maxDistance),
+	m_maxDistance(maxDistance*maxDistance),
 	m_chunkSize(chunkSize),
-	m_maxHeight(maxheight)
+	m_maxHeight(maxheight),
+	m_bucket(NULL)
 {
 	DEBUG("Create terrain");
 }
@@ -54,16 +55,14 @@ void KX_Terrain::Construct()
 		DEBUG("no obj");
 		return;
 	}
-	RAS_MaterialBucket* bucket = obj->GetMesh(0)->GetMeshMaterial((unsigned int)0)->m_bucket;
+	m_bucket = obj->GetMesh(0)->GetMeshMaterial((unsigned int)0)->m_bucket;
 
-	int i = 0;
 	for (int x = -(m_size / 2); x < m_size / 2; ++x)
 	{
 		for (int y = -(m_size / 2); y < m_size / 2; ++y)
 		{
 			vector2DInt pos(x, y);
-			KX_Chunk* chunk = new KX_Chunk(pos, this, bucket, i++);
-			m_positionToChunk[pos] = chunk;
+			m_positionToChunk[pos] = new KX_Chunk(pos, this);
 		}
 	}
 	DEBUG("Create " << m_positionToChunk.size() << " chunks");
@@ -84,8 +83,10 @@ void KX_Terrain::Update(KX_Camera* cam, const MT_Transform& cameratrans, RAS_IRa
 	for (chunkMapIt it = m_positionToChunk.begin(); it != m_positionToChunk.end(); ++it)
 		it->second->Update(cam);
 
+	while (m_bucket->ActivateMaterial(cameratrans, rasty)) {}
+
 	for (chunkMapIt it = m_positionToChunk.begin(); it != m_positionToChunk.end(); ++it)
-		it->second->UpdateDisplayArrayDraw(cameratrans, rasty);
+		it->second->UpdateDisplayArrayDraw(rasty);
 
 	for (chunkMapIt it = m_positionToChunk.begin(); it != m_positionToChunk.end(); ++it)
 		it->second->EndUpdate();
@@ -93,10 +94,14 @@ void KX_Terrain::Update(KX_Camera* cam, const MT_Transform& cameratrans, RAS_IRa
 
 unsigned short KX_Terrain::GetSubdivision(float distance)
 {
-	/*if (!distance)
-		return m_maxSubDivision;*/
-
-	return 2; //(unsigned short)(distance / m_maxDistance) * m_maxSubDivision;
+	unsigned int ret = 1;
+	for (float i = m_maxSubDivision; i > 0.; --i)
+	{
+		if (distance > (i / m_maxSubDivision * m_maxDistance))
+			break;
+		ret += ret;
+	}
+	return ret;
 }
 
 KX_Chunk* KX_Terrain::GetChunk(int x, int y)
