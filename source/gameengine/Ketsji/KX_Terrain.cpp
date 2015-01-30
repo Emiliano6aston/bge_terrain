@@ -94,7 +94,7 @@ void KX_Terrain::Update(KX_Camera* cam, const MT_Transform& cameratrans, RAS_IRa
 
 unsigned short KX_Terrain::GetSubdivision(float distance)
 {
-	unsigned int ret = 1;
+	unsigned int ret = 2;
 	for (float i = m_maxSubDivision; i > 0.; --i)
 	{
 		if (distance > (i / m_maxSubDivision * m_maxDistance))
