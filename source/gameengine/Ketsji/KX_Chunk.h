@@ -28,6 +28,7 @@ private:
 	/// Subdivision level
 	ushort m_subDivisions;
 	ushort m_lastSubDivision;
+	bool m_jointChunk[4];
 
 	MT_Point3 m_box[8];
 
@@ -37,6 +38,8 @@ private:
 public:
 	KX_Chunk(vector2DInt pos, KX_Terrain* terrain);
 	~KX_Chunk();
+	/// construction du mesh
+	void ConstructMesh(const bool jointLeft, const bool jointRight, const bool jointFront, const bool jointBack);
 	/// calcule par rapport à la distance utilisateur le nombre de subdivisions
 	void Update(KX_Camera *cam);
 	/// Joint les vertices du chunk avec ceux d'à cotés + rendu
