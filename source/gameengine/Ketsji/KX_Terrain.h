@@ -72,7 +72,8 @@ typedef std::map<vector2DInt, KX_Chunk*>::iterator chunkMapIt;
 class KX_Terrain
 {
 private:
-	std::map<vector2DInt, KX_Chunk*> m_positionToChunk;
+	bool m_construct;
+	KX_Chunk* m_chunks[4];
 	unsigned short m_maxSubDivision;
 	unsigned short m_size;
 	float m_maxDistance;
@@ -98,7 +99,7 @@ public:
 	inline float GetMaxHeight() { return m_maxHeight; };
 	// le nombre de subdivision par rapport à une distance
 	unsigned short GetSubdivision(float distance);
-	KX_Chunk* GetChunk(int x, int y);
+	KX_Chunk* GetChunkRelativePosition(int x, int y);
 };
 
 #endif //__KX_TERRAIN_H__
