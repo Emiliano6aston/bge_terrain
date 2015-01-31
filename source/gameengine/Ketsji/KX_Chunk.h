@@ -4,7 +4,8 @@
 #include <BLI_noise.h>
 #include "RAS_MaterialBucket.h"
 #include "MT_Transform.h"
-#include "KX_Terrain.h"
+
+class KX_Terrain;
 
 class KX_Camera;
 
@@ -18,8 +19,10 @@ typedef unsigned short ushort;
 class KX_Chunk
 {
 private:
-	int m_id;
-	vector2DInt m_position;
+	int m_relativePosX;
+	int m_relativePosY;
+	MT_Point2 m_realPos;
+	unsigned short m_relativeSize;
 
 	KX_Terrain* m_terrain;
 
@@ -28,26 +31,36 @@ private:
 	/// Subdivision level
 	ushort m_subDivisions;
 	ushort m_lastSubDivision;
-	bool m_jointChunk[4];
+	// plus ce nombre est grand plus ce chunk est loin dans le QuadTree
+	unsigned short m_level;
+	// les derniere jointures
+	bool m_lastJointChunk[4];
 
 	MT_Point3 m_box[8];
 
+	float m_radius;
 	bool m_culled;
 	bool IsCulled(KX_Camera* cam) const;
 
+	bool m_hasSubChunks;
+	KX_Chunk* m_subChunks[4];
+
 public:
-	KX_Chunk(vector2DInt pos, KX_Terrain* terrain);
+	KX_Chunk(int x, int y, unsigned int relativesize, unsigned short level, KX_Terrain* terrain);
 	~KX_Chunk();
 	/// construction du mesh
 	void ConstructMesh(const bool jointLeft, const bool jointRight, const bool jointFront, const bool jointBack);
 	/// calcule par rapport à la distance utilisateur le nombre de subdivisions
 	void Update(KX_Camera *cam);
-	/// Joint les vertices du chunk avec ceux d'à cotés + rendu
-	void UpdateDisplayArrayDraw(RAS_IRasterizer* rasty);
+	/// creation du mesh avec joint des vertices du chunk avec ceux d'à cotés si neccesaire
+	void UpdateMesh();
+	void RenderMesh(RAS_IRasterizer* rasty);
 	/// Initialization du l'ancien niveau de subdivision au nouveau niveau de subdivision
 	void EndUpdate();
 	
 	inline ushort GetSubDivision() const { return m_subDivisions; };
+
+	KX_Chunk* GetChunkRelativePosition(int x, int y);
 };
 
 #endif
