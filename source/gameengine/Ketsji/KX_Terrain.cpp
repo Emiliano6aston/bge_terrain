@@ -31,7 +31,8 @@
 #define DEBUG(msg) std::cout << msg << std::endl
 
 KX_Terrain::KX_Terrain(unsigned short maxSubDivisions, unsigned short size, float maxDistance, float chunkSize, float maxheight)
-	:m_maxSubDivision(maxSubDivisions),
+	:m_construct(false),
+	m_maxSubDivision(maxSubDivisions),
 	m_size(size),
 	m_maxDistance(maxDistance*maxDistance),
 	m_chunkSize(chunkSize),
@@ -55,41 +56,58 @@ void KX_Terrain::Construct()
 		DEBUG("no obj");
 		return;
 	}
+	// le materiau uilisé pour le rendu
 	m_bucket = obj->GetMesh(0)->GetMeshMaterial((unsigned int)0)->m_bucket;
 
-	for (int x = -(m_size / 2); x < m_size / 2; ++x)
-	{
-		for (int y = -(m_size / 2); y < m_size / 2; ++y)
-		{
-			vector2DInt pos(x, y);
-			m_positionToChunk[pos] = new KX_Chunk(pos, this);
-		}
-	}
-	DEBUG("Create " << m_positionToChunk.size() << " chunks");
+	// construction des 4 chunks principaux
+	m_chunks[0] = new KX_Chunk(-8, -8, 8, 1, this);
+	m_chunks[1] = new KX_Chunk(0, -8, 8, 1, this);
+	m_chunks[2] = new KX_Chunk(-8, 0, 8, 1, this);
+	m_chunks[3] = new KX_Chunk(0, 0, 8, 1, this);
+	m_construct = true;
 }
 
 void KX_Terrain::Destruct()
 {
 	DEBUG("Destruct terrain");
-	for (chunkMapIt it = m_positionToChunk.begin(); it != m_positionToChunk.end(); ++it)
-		delete it->second;
+	// destruction des chunks
+	delete m_chunks[0];
+	delete m_chunks[1];
+	delete m_chunks[2];
+	delete m_chunks[3];
 }
 
 void KX_Terrain::Update(KX_Camera* cam, const MT_Transform& cameratrans, RAS_IRasterizer* rasty)
 {
-	if (m_positionToChunk.empty())
+	if (!m_construct)
 		Construct();
 
-	for (chunkMapIt it = m_positionToChunk.begin(); it != m_positionToChunk.end(); ++it)
-		it->second->Update(cam);
+	// mise à jour du niveau de subdivision
+	m_chunks[0]->Update(cam);
+	m_chunks[1]->Update(cam);
+	m_chunks[2]->Update(cam);
+	m_chunks[3]->Update(cam);
 
+	// activation du materiau
 	while (m_bucket->ActivateMaterial(cameratrans, rasty)) {}
 
-	for (chunkMapIt it = m_positionToChunk.begin(); it != m_positionToChunk.end(); ++it)
-		it->second->UpdateDisplayArrayDraw(rasty);
+	// construction du mesh et rendu
+	m_chunks[0]->UpdateMesh();
+	m_chunks[1]->UpdateMesh();
+	m_chunks[2]->UpdateMesh();
+	m_chunks[3]->UpdateMesh();
 
-	for (chunkMapIt it = m_positionToChunk.begin(); it != m_positionToChunk.end(); ++it)
-		it->second->EndUpdate();
+	// rendu
+	m_chunks[0]->RenderMesh(rasty);
+	m_chunks[1]->RenderMesh(rasty);
+	m_chunks[2]->RenderMesh(rasty);
+	m_chunks[3]->RenderMesh(rasty);
+
+	// finalisation de la mise à jour
+	m_chunks[0]->EndUpdate();
+	m_chunks[1]->EndUpdate();
+	m_chunks[2]->EndUpdate();
+	m_chunks[3]->EndUpdate();
 }
 
 unsigned short KX_Terrain::GetSubdivision(float distance)
@@ -97,18 +115,22 @@ unsigned short KX_Terrain::GetSubdivision(float distance)
 	unsigned int ret = 2;
 	for (float i = m_maxSubDivision; i > 0.; --i)
 	{
-		if (distance > (i / m_maxSubDivision * m_maxDistance))
+		if (distance > (i / m_maxSubDivision * m_maxDistance) || ret == 8)
 			break;
-		ret += ret;
+		ret *= 2;
 	}
 	return ret;
 }
 
-KX_Chunk* KX_Terrain::GetChunk(int x, int y)
+// renvoie le chunk correspondant à cette position, on doit le faire de maniere recursive car on utilise un QuadTree
+KX_Chunk* KX_Terrain::GetChunkRelativePosition(int x, int y)
 {
-	const vector2DInt pos(x, y);
-	if (m_positionToChunk.count(pos))
-		return m_positionToChunk[pos];
+	for (unsigned int i = 0; i < 4; ++i)
+	{
+		KX_Chunk* ret = m_chunks[i]->GetChunkRelativePosition(x, y);
+		if (ret)
+			return ret;
+	}
 	return NULL;
 };
 
