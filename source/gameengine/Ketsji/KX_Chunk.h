@@ -19,8 +19,8 @@ typedef unsigned short ushort;
 class KX_Chunk
 {
 private:
-	int m_relativePosX;
-	int m_relativePosY;
+	short m_relativePosX;
+	short m_relativePosY;
 	MT_Point2 m_realPos;
 	unsigned short m_relativeSize;
 
@@ -31,25 +31,37 @@ private:
 	/// Subdivision level
 	ushort m_subDivisions;
 	ushort m_lastSubDivision;
+
 	// plus ce nombre est grand plus ce chunk est loin dans le QuadTree
 	unsigned short m_level;
-	// les derniere jointures
-	bool m_lastJointChunk[4];
+
+	// les dernières jointures
+	bool m_lastHasJointLeft;
+	bool m_lastHasJointRight;
+	bool m_lastHasJointFront;
+	bool m_lastHasJointBack;
+
+	struct JointColumn;
+	RAS_MeshSlot* m_jointSlot;
 
 	MT_Point3 m_box[8];
 
 	float m_radius;
 	bool m_culled;
-	bool IsCulled(KX_Camera* cam) const;
 
 	bool m_hasSubChunks;
 	KX_Chunk* m_subChunks[4];
 
-public:
-	KX_Chunk(int x, int y, unsigned int relativesize, unsigned short level, KX_Terrain* terrain);
-	~KX_Chunk();
+	bool IsCulled(KX_Camera* cam) const;
 	/// construction du mesh
-	void ConstructMesh(const bool jointLeft, const bool jointRight, const bool jointFront, const bool jointBack);
+	void ConstructMesh();
+	void ConstructJoint();
+	void ConstructJointColumnPoly(const JointColumn& column, unsigned short polyCount);
+
+public:
+	KX_Chunk(short x, short y, unsigned short relativesize, unsigned short level, KX_Terrain* terrain);
+	~KX_Chunk();
+
 	/// calcule par rapport à la distance utilisateur le nombre de subdivisions
 	void Update(KX_Camera *cam);
 	/// creation du mesh avec joint des vertices du chunk avec ceux d'à cotés si neccesaire
