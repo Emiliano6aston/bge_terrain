@@ -30,11 +30,11 @@
 
 #define DEBUG(msg) std::cout << msg << std::endl
 
-KX_Terrain::KX_Terrain(unsigned short maxSubDivisions, unsigned short size, float maxDistance, float chunkSize, float maxheight)
+KX_Terrain::KX_Terrain(unsigned short maxSubDivisions, unsigned short width, float maxDistance, float chunkSize, float maxheight)
 	:m_construct(false),
 	m_maxSubDivision(maxSubDivisions),
-	m_size(size),
-	m_maxDistance(maxDistance*maxDistance),
+	m_width(width),
+	m_maxDistance(maxDistance * maxDistance),
 	m_chunkSize(chunkSize),
 	m_maxHeight(maxheight),
 	m_bucket(NULL)
@@ -60,10 +60,10 @@ void KX_Terrain::Construct()
 	m_bucket = obj->GetMesh(0)->GetMeshMaterial((unsigned int)0)->m_bucket;
 
 	// construction des 4 chunks principaux
-	m_chunks[0] = new KX_Chunk(-8, -8, 8, 1, this);
-	m_chunks[1] = new KX_Chunk(0, -8, 8, 1, this);
-	m_chunks[2] = new KX_Chunk(-8, 0, 8, 1, this);
-	m_chunks[3] = new KX_Chunk(0, 0, 8, 1, this);
+	m_chunks[0] = new KX_Chunk(-m_width / 2, -m_width / 2, m_width, 1, this);
+	m_chunks[1] = new KX_Chunk(m_width / 2, -m_width / 2, m_width, 1, this);
+	m_chunks[2] = new KX_Chunk(-m_width / 2, m_width / 2, m_width, 1, this);
+	m_chunks[3] = new KX_Chunk(m_width / 2, m_width / 2, m_width, 1, this);
 	m_construct = true;
 }
 
@@ -115,7 +115,7 @@ unsigned short KX_Terrain::GetSubdivision(float distance)
 	unsigned int ret = 2;
 	for (float i = m_maxSubDivision; i > 0.; --i)
 	{
-		if (distance > (i / m_maxSubDivision * m_maxDistance) || ret == 8)
+		if (distance > (i / m_maxSubDivision * m_maxDistance) || ret == m_width)
 			break;
 		ret *= 2;
 	}
