@@ -75,7 +75,7 @@ private:
 	bool m_construct;
 	KX_Chunk* m_chunks[4];
 	unsigned short m_maxSubDivision;
-	unsigned short m_size;
+	unsigned short m_width;
 	float m_maxDistance;
 	float m_chunkSize;
 	float m_maxHeight;
@@ -83,7 +83,7 @@ private:
 	RAS_MaterialBucket* m_bucket;
 
 public:
-	KX_Terrain(unsigned short maxSubDivisions, unsigned short size, float maxDistance, float chunkSize, float maxheight);
+	KX_Terrain(unsigned short maxSubDivisions, unsigned short width, float maxDistance, float chunkSize, float maxheight);
 	~KX_Terrain();
 
 	void Construct();
