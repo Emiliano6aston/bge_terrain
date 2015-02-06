@@ -137,6 +137,7 @@ set(SRC
 	KX_WorldInfo.cpp
 	KX_WorldIpoController.cpp
 	KX_Chunk.cpp
+	KX_ChunkNode.cpp
 	KX_Terrain.cpp
 
 	BL_Action.h
@@ -219,6 +220,7 @@ set(SRC
 	KX_WorldInfo.h
 	KX_WorldIpoController.h
 	KX_Chunk.h
+	KX_ChunkNode.h
 	KX_Terrain.h
 
 	# orphan headers (not apart of a library)

@@ -608,7 +608,9 @@ public:
 
 	KX_ObstacleSimulation* GetObstacleSimulation() { return m_obstacleSimulation; }
 
-	void UpdateTerrain(const MT_Transform& cameratrans, RAS_IRasterizer* rasty);
+	void CalculateVisibleTerrainChunks();
+	void UpdateTerrainChunksMeshes();
+	void RenderTerrainChunksMeshes(const MT_Transform& cameratrans, RAS_IRasterizer* rasty);
 
 #ifdef WITH_PYTHON
 	/* --------------------------------------------------------------------- */
