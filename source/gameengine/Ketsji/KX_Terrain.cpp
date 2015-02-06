@@ -28,13 +28,13 @@
 #include "RAS_MeshObject.h"
 #include "RAS_MaterialBucket.h"
 
-#define DEBUG(msg) std::cout << msg << std::endl
+#define DEBUG(msg) std::cout << "Debug : " << msg << std::endl
 
 KX_Terrain::KX_Terrain(unsigned short maxSubDivisions, unsigned short width, float maxDistance, float chunkSize, float maxheight)
 	:m_construct(false),
 	m_maxSubDivision(maxSubDivisions),
 	m_width(width),
-	m_maxDistance(maxDistance * maxDistance),
+	m_maxDistance2(maxDistance * maxDistance),
 	m_chunkSize(chunkSize),
 	m_maxHeight(maxheight),
 	m_bucket(NULL)
@@ -77,45 +77,54 @@ void KX_Terrain::Destruct()
 	delete m_chunks[3];
 }
 
-void KX_Terrain::Update(KX_Camera* cam, const MT_Transform& cameratrans, RAS_IRasterizer* rasty)
+void KX_Terrain::CalculateVisibleChunks(KX_Camera* cam)
 {
 	if (!m_construct)
 		Construct();
+	double starttime = KX_GetActiveEngine()->GetRealTime();
+	m_chunks[0]->CalculateVisible(cam);
+	m_chunks[1]->CalculateVisible(cam);
+	m_chunks[2]->CalculateVisible(cam);
+	m_chunks[3]->CalculateVisible(cam);
+	double endtime = KX_GetActiveEngine()->GetRealTime();
+	DEBUG(__func__ << " spend " << endtime - starttime << " time");
+	DEBUG(KX_Chunk::m_chunkActive << " active chunk");
+	DEBUG(KX_ChunkNode::m_finalNode << " final chunk");
+}
+void KX_Terrain::UpdateChunksMeshes()
+{
+	double starttime = KX_GetActiveEngine()->GetRealTime();
+	for (unsigned short i = 0; i < 4; ++i)
+	{
+		if (!m_chunks[i]->IsCulled())
+			m_chunks[i]->UpdateMesh();
+	}
+	double endtime = KX_GetActiveEngine()->GetRealTime();
+	DEBUG(__func__ << " spend " << endtime - starttime << " time");
+}
 
-	// mise à jour du niveau de subdivision
-	m_chunks[0]->Update(cam);
-	m_chunks[1]->Update(cam);
-	m_chunks[2]->Update(cam);
-	m_chunks[3]->Update(cam);
-
+void KX_Terrain::RenderChunksMeshes(const MT_Transform& cameratrans, RAS_IRasterizer* rasty)
+{
 	// activation du materiau
 	while (m_bucket->ActivateMaterial(cameratrans, rasty)) {}
 
-	// construction du mesh et rendu
-	m_chunks[0]->UpdateMesh();
-	m_chunks[1]->UpdateMesh();
-	m_chunks[2]->UpdateMesh();
-	m_chunks[3]->UpdateMesh();
-
-	// rendu
-	m_chunks[0]->RenderMesh(rasty);
-	m_chunks[1]->RenderMesh(rasty);
-	m_chunks[2]->RenderMesh(rasty);
-	m_chunks[3]->RenderMesh(rasty);
-
-	// finalisation de la mise à jour
-	m_chunks[0]->EndUpdate();
-	m_chunks[1]->EndUpdate();
-	m_chunks[2]->EndUpdate();
-	m_chunks[3]->EndUpdate();
+	double starttime = KX_GetActiveEngine()->GetRealTime();
+	// rendu du mesh
+	for (unsigned short i = 0; i < 4; ++i)
+	{
+		if (!m_chunks[i]->IsCulled())
+			m_chunks[i]->RenderMesh(rasty);
+	}
+	double endtime = KX_GetActiveEngine()->GetRealTime();
+	DEBUG(__func__ << " spend " << endtime - starttime << " time");
 }
 
-unsigned short KX_Terrain::GetSubdivision(float distance)
+unsigned short KX_Terrain::GetSubdivision(float distance) const
 {
 	unsigned int ret = 2;
 	for (float i = m_maxSubDivision; i > 0.; --i)
 	{
-		if (distance > (i / m_maxSubDivision * m_maxDistance) || ret == m_width)
+		if (distance > (i / m_maxSubDivision * m_maxDistance2) || ret == m_width)
 			break;
 		ret *= 2;
 	}
@@ -123,15 +132,30 @@ unsigned short KX_Terrain::GetSubdivision(float distance)
 }
 
 // renvoie le chunk correspondant à cette position, on doit le faire de maniere recursive car on utilise un QuadTree
-KX_Chunk* KX_Terrain::GetChunkRelativePosition(int x, int y)
+KX_ChunkNode* KX_Terrain::GetChunkRelativePosition(short x, short y)
 {
-	for (unsigned int i = 0; i < 4; ++i)
+	for (unsigned short i = 0; i < 4; ++i)
 	{
-		KX_Chunk* ret = m_chunks[i]->GetChunkRelativePosition(x, y);
+		KX_ChunkNode* ret = m_chunks[i]->GetChunkRelativePosition(x, y);
 		if (ret)
 			return ret;
 	}
 	return NULL;
 };
 
+KX_ChunkNode** KX_Terrain::NewChunkNodeList(short x, short y, unsigned short level)
+{
+	KX_ChunkNode **nodeList = (KX_ChunkNode**)malloc(4 * sizeof(KX_ChunkNode*));
+
+	// la taille relative d'un chunk, = 2 si le noeud et final
+	unsigned short relativesize = m_width / level;
+	// la largeur du chunk 
+	unsigned short width = relativesize / 2;
+
+	nodeList[0] = new KX_Chunk(x - width, y - width, relativesize, level * 2, this);
+	nodeList[1] = new KX_Chunk(x + width, y - width, relativesize, level * 2, this);
+	nodeList[2] = new KX_Chunk(x - width, y + width, relativesize, level * 2, this);
+	nodeList[3] = new KX_Chunk(x + width, y + width, relativesize, level * 2, this);
+	return nodeList;
+}
 

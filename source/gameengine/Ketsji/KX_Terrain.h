@@ -25,49 +25,11 @@
 #include "MT_Transform.h"
 
 class KX_Chunk;
+class KX_ChunkNode;
 class KX_Camera;
 
 class RAS_IRasterizer;
 class RAS_MaterialBucket;
-
-class vector2DInt
-{
-public:
-	int m_x;
-	int m_y;
-	vector2DInt(const int& x, const int& y)
-	{
-		m_x = x;
-		m_y = y;
-	}
-};
-
-inline MT_OStream& operator<<(MT_OStream& os, const vector2DInt& v1)
-{
-	return os << "(x : " << v1.m_x << ", y : " << v1.m_y << ")";
-}
-
-inline bool operator==(const vector2DInt& v1, const vector2DInt& v2)
-{
-	return v1.m_x == v2.m_x && v1.m_y == v2.m_y;
-}
-
-inline bool operator!=(const vector2DInt& v1, const vector2DInt& v2)
-{
-	return v1.m_x != v2.m_x || v1.m_y != v2.m_y;
-}
-
-inline bool operator<(const vector2DInt& v1, const vector2DInt& v2)
-{
-	return v1.m_x < v2.m_x || (!(v2.m_x < v1.m_x) && v1.m_y < v2.m_y);
-}
-
-inline bool operator>(const vector2DInt& v1, const vector2DInt& v2)
-{
-	return v2 < v1;
-}
-
-typedef std::map<vector2DInt, KX_Chunk*>::iterator chunkMapIt;
 
 class KX_Terrain
 {
@@ -76,7 +38,7 @@ private:
 	KX_Chunk* m_chunks[4];
 	unsigned short m_maxSubDivision;
 	unsigned short m_width;
-	float m_maxDistance;
+	float m_maxDistance2;
 	float m_chunkSize;
 	float m_maxHeight;
 
@@ -89,17 +51,22 @@ public:
 	void Construct();
 	void Destruct();
 
-	void Update(KX_Camera* cam, const MT_Transform& cameratrans, RAS_IRasterizer* rasty);
+	void CalculateVisibleChunks(KX_Camera* cam);
+	void UpdateChunksMeshes();
+	void RenderChunksMeshes(const MT_Transform& cameratrans, RAS_IRasterizer* rasty);
 
 	// le niveau de subdivision maximal
-	inline unsigned short GetMaxSubDivision() { return m_maxSubDivision; };
+	inline unsigned short GetMaxSubDivision() const { return m_maxSubDivision; };
 	// la distance maximal
-	inline float GetMaxDistance() { return m_maxDistance; };
-	inline float GetChunkSize() { return m_chunkSize; };
-	inline float GetMaxHeight() { return m_maxHeight; };
+	inline float GetMaxDistance2() const { return m_maxDistance2; };
+	inline float GetChunkSize() const { return m_chunkSize; };
+	inline float GetMaxHeight() const { return m_maxHeight; };
 	// le nombre de subdivision par rapport à une distance
-	unsigned short GetSubdivision(float distance);
-	KX_Chunk* GetChunkRelativePosition(int x, int y);
+	unsigned short GetSubdivision(float distance) const;
+
+	KX_ChunkNode* GetChunkRelativePosition(short x, short y);
+
+	KX_ChunkNode** NewChunkNodeList(short x, short y, unsigned short level);
 };
 
 #endif //__KX_TERRAIN_H__
