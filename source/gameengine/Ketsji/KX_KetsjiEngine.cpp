@@ -685,7 +685,10 @@ bool KX_KetsjiEngine::NextFrame()
 				// update levels of detail
 				scene->UpdateObjectLods();
 
-				scene->UpdateTerrain();
+				// calculate visible terrain chunk
+				scene->CalculateVisibleTerrainChunks();
+				// update and create terrain chunk
+				scene->UpdateTerrainChunksMeshes();
 
 				m_logger->StartLog(tc_physics, m_kxsystem->GetTimeInSeconds(), true);
 				SG_SetActiveStage(SG_STAGE_PHYSICS2);
@@ -1232,11 +1235,11 @@ void KX_KetsjiEngine::RenderFrame(KX_Scene* scene, KX_Camera* cam)
 
 	scene->RenderBuckets(camtrans, m_rasterizer);
 
+	scene->RenderTerrainChunksMeshes(camtrans, m_rasterizer);
+
 	//render all the font objects for this scene
 	scene->RenderFonts();
 
-	scene->UpdateTerrain(camtrans, m_rasterizer);
-	
 	if (scene->GetPhysicsEnvironment())
 		scene->GetPhysicsEnvironment()->DebugDrawWorld();
 }

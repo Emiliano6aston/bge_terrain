@@ -240,7 +240,7 @@ KX_Scene::KX_Scene(class SCA_IInputDevice* keyboarddevice,
 		m_obstacleSimulation = NULL;
 	}
 
-	m_terrain = new KX_Terrain(1, 128, 50. * 128, 50., 10.);
+	m_terrain = new KX_Terrain(8, 256, 500., 50., 30.);
 #ifdef WITH_PYTHON
 	m_attr_dict = NULL;
 	m_draw_call_pre = NULL;
@@ -1841,9 +1841,20 @@ void KX_Scene::UpdateObjectActivity(void)
 	}
 }
 
-void KX_Scene::UpdateTerrain(const MT_Transform& cameratrans, RAS_IRasterizer* rasty)
+void KX_Scene::CalculateVisibleTerrainChunks()
 {
-	m_terrain->Update(m_active_camera, cameratrans, rasty);
+	m_terrain->CalculateVisibleChunks(m_active_camera);
+}
+
+void KX_Scene::UpdateTerrainChunksMeshes()
+{
+	m_terrain->UpdateChunksMeshes();
+}
+
+void KX_Scene::RenderTerrainChunksMeshes(const MT_Transform& cameratrans, RAS_IRasterizer* rasty)
+{
+	m_terrain->RenderChunksMeshes(cameratrans, rasty);
+	KX_BlenderMaterial::EndFrame();
 }
 
 void KX_Scene::SetActivityCullingRadius(float f)
