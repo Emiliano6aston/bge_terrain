@@ -21,7 +21,7 @@
 #ifndef __KX_TERRAIN_H__
 #define __KX_TERRAIN_H__
 
-#include <map>
+#include <list>
 #include "MT_Transform.h"
 
 class KX_Chunk;
@@ -35,7 +35,8 @@ class KX_Terrain
 {
 private:
 	bool m_construct;
-	KX_Chunk* m_chunks[4];
+	KX_ChunkNode* m_nodeTree[4];
+	std::list<KX_Chunk*> m_chunkList;
 	unsigned short m_maxSubDivision;
 	unsigned short m_width;
 	float m_maxDistance2;
@@ -64,9 +65,11 @@ public:
 	// le nombre de subdivision par rapport à une distance
 	unsigned short GetSubdivision(float distance) const;
 
-	KX_ChunkNode* GetChunkRelativePosition(short x, short y);
+	KX_ChunkNode* GetNodeRelativePosition(short x, short y);
 
-	KX_ChunkNode** NewChunkNodeList(short x, short y, unsigned short level);
+	KX_ChunkNode** NewNodeList(short x, short y, unsigned short level);
+	KX_Chunk* AddChunk(KX_ChunkNode* node);
+	void RemoveChunk(KX_Chunk* chunk);
 };
 
 #endif //__KX_TERRAIN_H__
