@@ -25,6 +25,8 @@
 
 remove_extra_strict_flags()
 
+set(CMAKE_CXX_FLAGS "-g")
+
 # there are too many inter-includes so best define here
 if(WITH_PYTHON)
 	blender_include_dirs_sys("${PYTHON_INCLUDE_DIRS}")

@@ -1,4 +1,5 @@
 #include "KX_ChunkNode.h"
+#include "KX_Chunk.h"
 #include "KX_Terrain.h"
 
 #include "KX_Camera.h"
@@ -31,37 +32,93 @@ KX_ChunkNode::KX_ChunkNode(short x, short y, unsigned short relativesize, unsign
 	:m_relativePosX(x),
 	m_relativePosY(y),
 	m_relativeSize(relativesize),
-	m_level(level),
-	m_terrain(terrain),
 	m_culled(false),
-	m_subChunks(NULL)
+	m_level(level),
+	m_nodeList(NULL),
+	m_chunk(NULL),
+	m_terrain(terrain)
 {
+	// la taille et sa moitié du chunk
+	const float size = m_terrain->GetChunkSize();
+	const float width = size / 2 * relativesize;
+
+	// la hauteur maximal du chunk
+	const float maxheight = m_terrain->GetMaxHeight();
+
+	// le rayon du chunk
+	m_radius2 = (width * width) * 2;
+
+	// la coordonnée reel du chunk
+	const float realX = x * size;
+	const float realY = y * size;
+	m_realPos = MT_Point2(realX, realY);
+
+	// creation de la boite utilisé pour le frustum culling
+	m_box[0] = MT_Point3(realX - width, realY - width, 0.);
+	m_box[1] = MT_Point3(realX + width, realY - width, 0.);
+	m_box[2] = MT_Point3(realX + width, realY + width, 0.);
+	m_box[3] = MT_Point3(realX - width, realY + width, 0.);
+	m_box[4] = MT_Point3(realX - width, realY - width, maxheight);
+	m_box[5] = MT_Point3(realX + width, realY - width, maxheight);
+	m_box[6] = MT_Point3(realX + width, realY + width, maxheight);
+	m_box[7] = MT_Point3(realX - width, realY + width, maxheight);
 }
 
 KX_ChunkNode::~KX_ChunkNode()
 {
-	if (m_subChunks)
-		DestructSubChunks();
+	DestructAllNodes();
+	DestructChunk();
 }
 
-void KX_ChunkNode::ConstructSubChunks()
+void KX_ChunkNode::ConstructAllNodes()
 {
-	m_finalNode--;
-	m_finalNode += 4;
-	m_subChunks = m_terrain->NewChunkNodeList(m_relativePosX, m_relativePosY, m_level);
+	if (!m_nodeList)
+		m_nodeList = m_terrain->NewNodeList(m_relativePosX, m_relativePosY, m_level);
 }
 
-void KX_ChunkNode::DestructSubChunks()
+void KX_ChunkNode::DestructAllNodes()
 {
-	m_finalNode -= 4;
-	m_finalNode++;
-	delete m_subChunks[0];
-	delete m_subChunks[1];
-	delete m_subChunks[2];
-	delete m_subChunks[3];
+	if (m_nodeList)
+	{
+		delete m_nodeList[0];
+		delete m_nodeList[1];
+		delete m_nodeList[2];
+		delete m_nodeList[3];
 
-	delete m_subChunks;
-	m_subChunks = NULL;
+		delete m_nodeList;
+		m_nodeList = NULL;
+	}
+}
+
+void KX_ChunkNode::ConstructChunk()
+{
+	if (!m_chunk)
+	{
+		m_chunk = m_terrain->AddChunk(this);
+		m_chunk->AddRef();
+	}
+}
+
+void KX_ChunkNode::DestructChunk()
+{
+	if (m_chunk)
+	{
+		m_terrain->RemoveChunk(m_chunk);
+		m_chunk->Release();
+		m_chunk = NULL;
+	}
+}
+
+bool KX_ChunkNode::NeedCreateSubChunks(KX_Camera* cam) const
+{
+	const float distance2 = MT_Point3(m_realPos.x(), m_realPos.y(), 0.).distance2(cam->NodeGetWorldPosition()) - m_radius2;
+	const unsigned short subdivision = m_terrain->GetSubdivision(distance2);
+	return subdivision >= (m_level*2);
+}
+
+void KX_ChunkNode::MarkCulled(KX_Camera* cam)
+{
+	m_culled = cam->BoxInsideFrustum(m_box) == KX_Camera::OUTSIDE;
 }
 
 void KX_ChunkNode::CalculateVisible(KX_Camera* cam)
@@ -69,51 +126,40 @@ void KX_ChunkNode::CalculateVisible(KX_Camera* cam)
 	MarkCulled(cam); // on test si le chunk est visible
 	if (!m_culled) // si oui on essai de créer des chunks et des les mettres à jour
 	{
-		if (NeedCreateSubChunks(cam)) // si on a besoin des sous chunks et qu'ils n'existent pas déjà
+		if (NeedCreateSubChunks(cam))
 		{
-			if (!m_subChunks)
-				ConstructSubChunks();
+			// si on a besoin des sous chunks et qu'ils n'existent pas déjà
+			ConstructAllNodes();
+			DestructChunk();
 
-			m_subChunks[0]->CalculateVisible(cam);
-			m_subChunks[1]->CalculateVisible(cam);
-			m_subChunks[2]->CalculateVisible(cam);
-			m_subChunks[3]->CalculateVisible(cam);
+			m_nodeList[0]->CalculateVisible(cam);
+			m_nodeList[1]->CalculateVisible(cam);
+			m_nodeList[2]->CalculateVisible(cam);
+			m_nodeList[3]->CalculateVisible(cam);
 		}
-		else if (m_subChunks) // si on en a pas besoin et qu'ils existent
-			DestructSubChunks();
+		else // si on en a pas besoin et qu'ils existent
+		{
+			DestructAllNodes();
+			ConstructChunk();
+		}
 	}
-	else if (m_subChunks) // si le chunk est invisible
-		DestructSubChunks();
-}
-
-void KX_ChunkNode::UpdateMesh()
-{
-	for (unsigned short i = 0; i < 4; ++i)
+	else // si le chunk est invisible
 	{
-		if (!m_subChunks[i]->IsCulled())
-			m_subChunks[i]->UpdateMesh();
+		DestructAllNodes();
+		DestructChunk();
 	}
 }
 
-void KX_ChunkNode::RenderMesh(RAS_IRasterizer* rasty)
-{
-	for (unsigned short i = 0; i < 4; ++i)
-	{
-		if (!m_subChunks[i]->IsCulled())
-			m_subChunks[i]->RenderMesh(rasty);
-	}
-}
-
-KX_ChunkNode* KX_ChunkNode::GetChunkRelativePosition(short x, short y)
+KX_ChunkNode* KX_ChunkNode::GetNodeRelativePosition(short x, short y)
 {
 	if((m_relativePosX - m_relativeSize) <= x && x <= (m_relativePosX + m_relativeSize) &&
 		(m_relativePosY - m_relativeSize) <= y && y <= (m_relativePosY + m_relativeSize))
 	{
-		if (m_subChunks)
+		if (m_nodeList)
 		{
 			for (unsigned short i = 0; i < 4; ++i)
 			{
-				KX_ChunkNode* ret = m_subChunks[i]->GetChunkRelativePosition(x, y);
+				KX_ChunkNode* ret = m_nodeList[i]->GetNodeRelativePosition(x, y);
 				if (ret)
 					return ret;
 			}
