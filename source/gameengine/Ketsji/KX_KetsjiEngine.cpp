@@ -685,8 +685,6 @@ bool KX_KetsjiEngine::NextFrame()
 				// update levels of detail
 				scene->UpdateObjectLods();
 
-				// calculate visible terrain chunk
-				scene->CalculateVisibleTerrainChunks();
 				// update and create terrain chunk
 				scene->UpdateTerrainChunksMeshes();
 
@@ -1219,6 +1217,8 @@ void KX_KetsjiEngine::RenderFrame(KX_Scene* scene, KX_Camera* cam)
 	SG_SetActiveStage(SG_STAGE_CULLING);
 
 	scene->CalculateVisibleMeshes(m_rasterizer,cam);
+	// calculate visible terrain chunk
+	scene->CalculateVisibleTerrainChunks();
 
 	m_logger->StartLog(tc_animations, m_kxsystem->GetTimeInSeconds(), true);
 	SG_SetActiveStage(SG_STAGE_ANIMATION_UPDATE);
