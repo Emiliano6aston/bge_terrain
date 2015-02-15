@@ -1,26 +1,24 @@
 #ifndef __KX_CHUNK_H__
 #define __KX_CHUNK_H__
 
-#include "KX_ChunkNode.h"
+#include "KX_GameObject.h"
 #include <BLI_noise.h>
-#include "MT_Point2.h"
-#include "MT_Point3.h"
 
-class RAS_MeshSlot;
+class KX_ChunkNode;
+class RAS_MeshObject;
+class RAS_MaterialBucket;
 class RAS_IRasterizer;
 
-class KX_Chunk : public KX_ChunkNode
+class KX_Chunk : public KX_GameObject
 {
-protected:
-	virtual bool NeedCreateSubChunks(KX_Camera* cam) const;
-	virtual void ConstructSubChunks();
-	virtual void MarkCulled(KX_Camera* cam);
+public:
+	struct Vertex;
+	struct JointColumn;
 
 private:
-	MT_Point2 m_realPos;
+	KX_ChunkNode* m_node;
 
-	RAS_MeshSlot* m_meshSlot;
-	RAS_MeshSlot* m_jointSlot;
+	RAS_MaterialBucket* m_bucket;
 
 	// les dernières jointures
 	bool m_lastHasJointLeft;
@@ -28,24 +26,23 @@ private:
 	bool m_lastHasJointFront;
 	bool m_lastHasJointBack;
 
-	struct JointColumn;
-
-	MT_Point3 m_box[8];
-
-	float m_radius2;
+	unsigned int m_originVertexIndex;
 
 	/// construction du mesh
-	void ConstructMesh();
-	void ConstructJoint();
-	void ConstructJointColumnPoly(const JointColumn& column, unsigned short polyCount);
+	void ConstructCenterMesh();
+	void ConstructJointMesh();
+	void ConstructJointMeshColumnPoly(const JointColumn& column, unsigned short polyCount);
+	void AddMeshPolygonVertexes(Vertex v1, Vertex v2, Vertex v3);
+	float GetZVertex(float vertx, float verty) const;
 
 public:
-	KX_Chunk(short x, short y, unsigned short relativesize, unsigned short level, KX_Terrain* terrain);
+	KX_Chunk(void* sgReplicationInfo, SG_Callbacks callbacks, KX_ChunkNode* node, RAS_MaterialBucket* m_bucket);
 	virtual ~KX_Chunk();
 
 	/// creation du mesh avec joint des vertices du chunk avec ceux d'à cotés si neccesaire
-	virtual void UpdateMesh();
-	virtual void RenderMesh(RAS_IRasterizer* rasty);
+	void UpdateMesh();
+	void ReconstructMesh();
+	void RenderMesh(RAS_IRasterizer* rasty);
 
 	static unsigned int m_chunkActive;
 };

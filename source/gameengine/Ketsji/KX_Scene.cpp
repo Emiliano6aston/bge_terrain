@@ -240,7 +240,7 @@ KX_Scene::KX_Scene(class SCA_IInputDevice* keyboarddevice,
 		m_obstacleSimulation = NULL;
 	}
 
-	m_terrain = new KX_Terrain(8, 256, 500., 50., 30.);
+	m_terrain = new KX_Terrain(8, 16, 16., 10., 30.);
 #ifdef WITH_PYTHON
 	m_attr_dict = NULL;
 	m_draw_call_pre = NULL;
@@ -257,6 +257,9 @@ KX_Scene::~KX_Scene()
 	// It's still there but we remove all properties here otherwise some
 	// reference might be hanging and causing late release of objects
 	RemoveAllDebugProperties();
+
+	if (m_terrain)
+		delete m_terrain;
 
 	while (GetRootParentList()->GetCount() > 0) 
 	{
@@ -301,9 +304,6 @@ KX_Scene::~KX_Scene()
 	{
 		delete m_bucketmanager;
 	}
-
-	if (m_terrain)
-		delete m_terrain;
 
 #ifdef WITH_PYTHON
 	if (m_attr_dict) {
