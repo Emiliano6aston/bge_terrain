@@ -26,6 +26,7 @@
 #include "KX_PythonInit.h"
 #include "KX_Scene.h"
 #include "KX_SG_NodeRelationships.h"
+#include "SG_Controller.h"
 #include "KX_GameObject.h"
 #include "RAS_MeshObject.h"
 #include "RAS_MaterialBucket.h"
@@ -57,7 +58,7 @@ KX_Terrain::~KX_Terrain()
 void KX_Terrain::Construct()
 {
 	DEBUG("Construct terrain");
-	KX_GameObject* obj = (KX_GameObject*)KX_GetActiveScene()->GetObjectList()->FindValue("Cube");
+	KX_GameObject* obj = (KX_GameObject*)KX_GetActiveScene()->GetInactiveList()->FindValue("Cube");
 	if (!obj)
 	{
 		DEBUG("no obj");
@@ -68,10 +69,7 @@ void KX_Terrain::Construct()
 	m_bucket = obj->GetMesh(0)->GetMeshMaterial((unsigned int)0)->m_bucket;
 
 	// construction des 4 chunks principaux TODO unifier avec NewNodeList
-	m_nodeTree[0] = new KX_ChunkNode(-m_width / 2, -m_width / 2, m_width, 1, this);
-	m_nodeTree[1] = new KX_ChunkNode(m_width / 2, -m_width / 2, m_width, 1, this);
-	m_nodeTree[2] = new KX_ChunkNode(-m_width / 2, m_width / 2, m_width, 1, this);
-	m_nodeTree[3] = new KX_ChunkNode(m_width / 2, m_width / 2, m_width, 1, this);
+	m_nodeTree = NewNodeList(0, 0, 1);
 	m_construct = true;
 }
 
@@ -166,29 +164,35 @@ KX_ChunkNode* KX_Terrain::GetNodeRelativePosition(short x, short y)
 
 KX_ChunkNode** KX_Terrain::NewNodeList(short x, short y, unsigned short level)
 {
-	KX_ChunkNode **nodeList = (KX_ChunkNode**)malloc(4 * sizeof(KX_ChunkNode*));
+	KX_ChunkNode** nodeList = (KX_ChunkNode**)malloc(4 * sizeof(KX_ChunkNode*));
 
 	// la taille relative d'un chunk, = 2 si le noeud et final
 	unsigned short relativesize = m_width / level;
 	// la largeur du chunk 
 	unsigned short width = relativesize / 2;
 
-	nodeList[0] = new KX_ChunkNode(x - width, y - width, relativesize, level * 2, this);
-	nodeList[1] = new KX_ChunkNode(x + width, y - width, relativesize, level * 2, this);
-	nodeList[2] = new KX_ChunkNode(x - width, y + width, relativesize, level * 2, this);
-	nodeList[3] = new KX_ChunkNode(x + width, y + width, relativesize, level * 2, this);
+	nodeList[0] = new KX_ChunkNode(x - width / 2, y - width / 2, width, level * 2, this);
+	nodeList[1] = new KX_ChunkNode(x + width / 2, y - width / 2, width, level * 2, this);
+	nodeList[2] = new KX_ChunkNode(x - width / 2, y + width / 2, width, level * 2, this);
+	nodeList[3] = new KX_ChunkNode(x + width / 2, y + width / 2, width, level * 2, this);
 	return nodeList;
 }
 
 KX_Chunk* KX_Terrain::AddChunk(KX_ChunkNode* node)
 {
 	KX_Scene* scene = KX_GetActiveScene();
-	KX_GameObject* orgobj = (KX_GameObject*)KX_GetActiveScene()->GetObjectList()->FindValue("Cube");
-// 	DEBUG("org obj : " << orgobj);
+	KX_GameObject* orgobj = (KX_GameObject*)KX_GetActiveScene()->GetInactiveList()->FindValue("Cube");
+	SG_Node* orgnode = orgobj->GetSGNode();
 	KX_Chunk* chunk = new KX_Chunk(scene, KX_Scene::m_callbacks, node, m_bucket);
-// 	DEBUG("chunk : " << chunk);
 	SG_Node* rootnode = new SG_Node(chunk, scene, KX_Scene::m_callbacks);
-// 	DEBUG("node : " << rootnode);
+
+	rootnode->SetLocalScale(MT_Vector3(1., 1., 1.));
+	rootnode->SetLocalPosition(MT_Point3(node->GetRealPos().x(), node->GetRealPos().y(), 0.));
+	rootnode->SetLocalOrientation(MT_Matrix3x3(1., 0., 0.,
+											   0., 1., 0.,
+											   0., 0., 1.));
+	rootnode->SetBBox(orgnode->BBox());
+	rootnode->SetRadius(orgnode->Radius());
 
 	// define the relationship between this node and it's parent.
 	KX_NormalParentRelation * parent_relation = 
@@ -198,7 +202,24 @@ KX_Chunk* KX_Terrain::AddChunk(KX_ChunkNode* node)
 	// set node
 	chunk->SetSGNode(rootnode);
 	MT_Point2 pos2d = node->GetRealPos();
-	chunk->NodeSetLocalPosition(MT_Point3(pos2d.x(), pos2d.y(), 0.));
+	chunk->NodeSetLocalPosition(MT_Point3(pos2d.x() * 1.2, pos2d.y() * 1.2, 0.));
+
+	SGControllerList scenegraphcontrollers = orgnode->GetSGControllerList();
+	rootnode->RemoveAllControllers();
+	SGControllerList::iterator cit;
+	
+	for (cit = scenegraphcontrollers.begin();!(cit==scenegraphcontrollers.end());++cit)
+	{
+		// controller replication is quite complicated
+		// only replicate ipo controller for now
+
+		SG_Controller* replicacontroller = (*cit)->GetReplica((SG_Node*)rootnode);
+		if (replicacontroller)
+		{
+			replicacontroller->SetObject(rootnode);
+			rootnode->AddSGController(replicacontroller);
+		}
+	}
 
 	// replicate graphic controller
 	if (orgobj->GetGraphicController())
@@ -221,16 +242,20 @@ KX_Chunk* KX_Terrain::AddChunk(KX_ChunkNode* node)
 		newctrl->SetNewClientInfo(chunk->getClientInfo());
 		chunk->SetPhysicsController(newctrl, chunk->IsDynamic());
 		newctrl->PostProcessReplica(motionstate, parentctrl);
+		DEBUG("dynamic ctrl : " << newctrl->IsDynamic());
 	}
 
-	rootnode->UpdateWorldData(0);
 	chunk->ActivateGraphicController(true);
+
+	rootnode->UpdateWorldData(0);
+	chunk->NodeUpdateGS(0);
 
 	chunk->ReconstructMesh();
 
 	////////////////////////// AJOUT DANS LA LISTE ///////////////////////////
 	m_chunkList.push_back((KX_Chunk*)chunk);
 	scene->GetRootParentList()->Add(chunk->AddRef());
+	scene->GetObjectList()->Add(chunk->AddRef());
 	return chunk;
 }
 
