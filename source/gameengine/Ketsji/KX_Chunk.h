@@ -31,8 +31,8 @@ private:
 	/// construction du mesh
 	void ConstructCenterMesh();
 	void ConstructJointMesh();
-	void ConstructJointMeshColumnPoly(const JointColumn& column, unsigned short polyCount);
-	void AddMeshPolygonVertexes(Vertex v1, Vertex v2, Vertex v3);
+	void ConstructJointMeshColumnPoly(const JointColumn& column, unsigned short polyCount, bool reverse);
+	void AddMeshPolygonVertexes(const Vertex& v1, const Vertex& v2, const Vertex& v3, bool reverse);
 	float GetZVertex(float vertx, float verty) const;
 
 public:

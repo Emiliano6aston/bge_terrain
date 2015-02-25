@@ -35,7 +35,7 @@ class KX_Terrain
 {
 private:
 	bool m_construct;
-	KX_ChunkNode* m_nodeTree[4];
+	KX_ChunkNode** m_nodeTree;
 	std::list<KX_Chunk*> m_chunkList;
 	unsigned short m_maxSubDivision;
 	unsigned short m_width;
