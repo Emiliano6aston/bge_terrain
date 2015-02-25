@@ -10,6 +10,8 @@
 #include "RAS_MeshObject.h"
 #include "RAS_Polygon.h"
 
+#include "BLI_math.h"
+
 #include "PHY_IPhysicsController.h"
 #include "CcdPhysicsController.h"
 
@@ -33,6 +35,7 @@
 												true, 0) \
 
 #define INDEX_JOINT -1
+#define STATS
 
 unsigned int KX_Chunk::m_chunkActive = 0;
 static const unsigned short polyCount = 4;
@@ -109,19 +112,18 @@ void KX_Chunk::ReconstructMesh()
 
 	RAS_MeshObject* meshObject = new RAS_MeshObject(NULL);
 	m_meshes.push_back(meshObject);
+	m_originVertexIndex = 0;
 
 	ConstructCenterMesh();
 	ConstructJointMesh();
+
+	RAS_DisplayArray* array = meshObject->GetMeshMaterial((unsigned int)0)->m_baseslot->CurrentDisplayArray();
 
 	AddMeshUser();
 
 	meshObject->SchedulePolygons(0);
 
-	m_pPhysicsController->ReinstancePhysicsShape(NULL, meshObject);
-// 	DEBUG("set physics mesh : controller : " << m_pPhysicsController << ", mesh : " << meshObject);
-// 	const float* firstvertex = meshObject->GetVertexLocation(0);
-// 	DEBUG("first vertex position : x = " << firstvertex[0] << ", y = " << firstvertex[1] << ", z = " << firstvertex[2]);
-// 	DEBUG(m_pPhysicsController);
+// 	m_pPhysicsController->ReinstancePhysicsShape(NULL, meshObject);
 }
 
 // Alexis, tu mettra ta fonction magique ici.
@@ -135,11 +137,11 @@ float KX_Chunk::GetZVertex(float vertx, float verty) const
 	const float x = vertx + realPos.x();
 	const float y = verty + realPos.y();
 
-	const float z = x * .5 + y * .5 + BLI_hnoise(10., x, y, 0.) * 50;
+	const float z = BLI_hnoise(10., x, y, 0.) * maxheight;
 	return z;
 }
 
-void KX_Chunk::AddMeshPolygonVertexes(Vertex v1, Vertex v2, Vertex v3)
+void KX_Chunk::AddMeshPolygonVertexes(const Vertex& v1, const Vertex& v2, const Vertex& v3, bool reverse)
 {
 	RAS_MeshObject* meshObj = m_meshes[0];
 	RAS_Polygon* poly = meshObj->AddPolygon(m_bucket, 3);
@@ -148,21 +150,44 @@ void KX_Chunk::AddMeshPolygonVertexes(Vertex v1, Vertex v2, Vertex v3)
 	poly->SetCollider(true);
 	poly->SetTwoside(true);
 
-	MT_Point2 uvs_1[8] = {MT_Point2(v1.xyz[0], v1.xyz[1])};
-	MT_Point2 uvs_2[8] = {MT_Point2(v2.xyz[0], v2.xyz[1])};
-	MT_Point2 uvs_3[8] = {MT_Point2(v3.xyz[0], v3.xyz[1])};
+	MT_Point2 uvs_1[8];
+	MT_Point2 uvs_2[8];
+	MT_Point2 uvs_3[8];
 
-	MT_Vector4 tangent(1., 1., 1., 1.);
-	MT_Vector3 normal(0., 0., 1.);
+	for (unsigned short i = 0; i < 8; ++i)
+	{
+		uvs_1[i] = MT_Point2(v1.xyz);
+		uvs_2[i] = MT_Point2(v2.xyz);
+		uvs_3[i] = MT_Point2(v3.xyz);
+	}
 
-	meshObj->AddVertex(poly, 0, MT_Point3(v1.xyz), uvs_1, tangent, 0, normal, true, v1.origIndex);
-	meshObj->AddVertex(poly, 1, MT_Point3(v2.xyz), uvs_2, tangent, 0, normal, true, v2.origIndex);
-	meshObj->AddVertex(poly, 2, MT_Point3(v3.xyz), uvs_3, tangent, 0, normal, true, v3.origIndex);
+	MT_Vector4 tangent(0., 0., 0., 0.);
+
+	if (reverse)
+	{
+		float fnormal[3];
+		normal_tri_v3(fnormal, v3.xyz, v2.xyz, v1.xyz);
+		MT_Vector3 normal(fnormal);
+		meshObj->AddVertex(poly, 0, MT_Point3(v3.xyz), uvs_3, tangent, 255, normal, false, v3.origIndex);
+		meshObj->AddVertex(poly, 1, MT_Point3(v2.xyz), uvs_2, tangent, 255, normal, false, v2.origIndex);
+		meshObj->AddVertex(poly, 2, MT_Point3(v1.xyz), uvs_1, tangent, 255, normal, false, v1.origIndex);
+	}
+	else
+	{
+		float fnormal[3];
+		normal_tri_v3(fnormal, v1.xyz, v2.xyz, v3.xyz);
+		MT_Vector3 normal(fnormal);
+		meshObj->AddVertex(poly, 0, MT_Point3(v1.xyz), uvs_1, tangent, 255, normal, false, v1.origIndex);
+		meshObj->AddVertex(poly, 1, MT_Point3(v2.xyz), uvs_2, tangent, 255, normal, false, v2.origIndex);
+		meshObj->AddVertex(poly, 2, MT_Point3(v3.xyz), uvs_3, tangent, 255, normal, false, v3.origIndex);
+	}
 }
 
 void KX_Chunk::ConstructCenterMesh()
 {
-// 	double starttime = KX_GetActiveEngine()->GetRealTime();
+#ifdef STATS
+	double starttime = KX_GetActiveEngine()->GetRealTime();
+#endif
 
 	KX_Terrain* terrain = m_node->GetTerrain();
 	//La taille "réelle" du chunk
@@ -181,9 +206,10 @@ void KX_Chunk::ConstructCenterMesh()
 	// la motie de la largeur du chunk - interval car on ne fait pas les bords
 	const float width = size / 2 * relativesize - interval;
 
-// 	double starttimevertex = KX_GetActiveEngine()->GetRealTime();
+#ifdef STATS
+	double starttimevertex = KX_GetActiveEngine()->GetRealTime();
+#endif
 
-	m_originVertexIndex = 0;
 	// on construit tous les vertices et on stocke leur numero dans des colonnes
 	for(unsigned short columnIndex = 0; columnIndex < vertexCountInterne; ++columnIndex)
 	{
@@ -196,9 +222,11 @@ void KX_Chunk::ConstructCenterMesh()
 		}
 	}
 
-// 	double endtimevertex = KX_GetActiveEngine()->GetRealTime();
-// 	DEBUG("adding vertex spend " << endtimevertex - starttimevertex << " time");
-// 	double starttimeindex = KX_GetActiveEngine()->GetRealTime();
+#ifdef STATS
+	double endtimevertex = KX_GetActiveEngine()->GetRealTime();
+	DEBUG("adding vertex spend " << endtimevertex - starttimevertex << " time");
+	double starttimeindex = KX_GetActiveEngine()->GetRealTime();
+#endif
 
 	RAS_MeshObject* meshObj = m_meshes[0];
 	// on reserve les vertices pour optimizer le temps
@@ -209,26 +237,30 @@ void KX_Chunk::ConstructCenterMesh()
 	{
 		for (unsigned int vertexIndex = 0; vertexIndex < polyCount-2; ++vertexIndex)
 		{
-			const Vertex firstVertex = columnList[columnIndex][vertexIndex];
-			const Vertex secondVertex = columnList[columnIndex+1][vertexIndex];
-			const Vertex thirdVertex = columnList[columnIndex+1][vertexIndex+1];
-			const Vertex fourthVertex = columnList[columnIndex][vertexIndex+1];
+			const Vertex& firstVertex = columnList[columnIndex][vertexIndex];
+			const Vertex& secondVertex = columnList[columnIndex+1][vertexIndex];
+			const Vertex& thirdVertex = columnList[columnIndex+1][vertexIndex+1];
+			const Vertex& fourthVertex = columnList[columnIndex][vertexIndex+1];
 
 			// création du premier triangle
-			AddMeshPolygonVertexes(firstVertex, secondVertex, thirdVertex);
+			AddMeshPolygonVertexes(firstVertex, secondVertex, thirdVertex, false);
 			// création du deuxieme triangle
-			AddMeshPolygonVertexes(firstVertex, thirdVertex, fourthVertex);
+			AddMeshPolygonVertexes(firstVertex, thirdVertex, fourthVertex, false);
 		}
 	}
-// 	double endtime = KX_GetActiveEngine()->GetRealTime();
-// 	DEBUG("adding index spend " << endtime - starttimeindex << " time");
-// 	DEBUG("add " << m_meshSlot->CurrentDisplayArray()->m_vertex.size() << " vertex and " << m_meshSlot->CurrentDisplayArray()->m_index.size() << " index");
-// 	DEBUG(__func__ << " spend " << endtime - starttime << " time");
+
+#ifdef STATS
+	double endtime = KX_GetActiveEngine()->GetRealTime();
+	DEBUG("adding index spend " << endtime - starttimeindex << " time");
+	DEBUG(__func__ << " spend " << endtime - starttime << " time");
+#endif
 }
 
 void KX_Chunk::ConstructJointMesh()
 {
-// 	double starttime = KX_GetActiveEngine()->GetRealTime();
+#ifdef STATS
+	double starttime = KX_GetActiveEngine()->GetRealTime();
+#endif
 
 	KX_Terrain* terrain = m_node->GetTerrain();
 	//La taille "réelle" du chunk
@@ -287,30 +319,25 @@ void KX_Chunk::ConstructJointMesh()
 		const float y = starty + interval * (1 + vertexIndex);
 		{ // colonne de gauche interne
 			const float x = startx + interval;
-			Vertex vertex = Vertex(x, y, GetZVertex(x, y), m_originVertexIndex++);
 
+			const Vertex& vertex = Vertex(x, y, GetZVertex(x, y), m_originVertexIndex++);
 			jointColumnLeft.columnInterne[vertexIndex] = vertex;
+
 			if (vertexIndex == 0)
-			{
 				jointColumnFront.columnInterne[0] = vertex;
-			}
 			else if (vertexIndex == (vertexCountInterne-1))
-			{
 				jointColumnBack.columnInterne[0] = vertex;
-			}
 		}
 		{ // colonne de droite interne
 			const float x = endx - interval;
-			Vertex vertex = Vertex(x, y, GetZVertex(x, y), m_originVertexIndex++);
+
+			const Vertex& vertex = Vertex(x, y, GetZVertex(x, y), m_originVertexIndex++);
 			jointColumnRight.columnInterne[vertexIndex] = vertex;
+
 			if (vertexIndex == 0)
-			{
 				jointColumnFront.columnInterne[vertexCountInterne-1] = vertex;
-			}
 			else if (vertexIndex == (vertexCountInterne-1))
-			{
 				jointColumnBack.columnInterne[vertexCountInterne-1] = vertex;
-			}
 		}
 	}
 	// construction des vertices externes de gauche et de droite
@@ -319,29 +346,25 @@ void KX_Chunk::ConstructJointMesh()
 		const float y = starty + interval * vertexIndex;
 		{ // colonne de gauche extern
 			const float x = startx;
-			Vertex vertex = (vertexIndex % 2 && m_lastHasJointLeft) ? Vertex() : Vertex(x, y, GetZVertex(x, y), m_originVertexIndex++);
+
+			const Vertex& vertex = (vertexIndex % 2 && m_lastHasJointLeft) ? Vertex() : Vertex(x, y, GetZVertex(x, y), m_originVertexIndex++);
 			jointColumnLeft.columnExterne[vertexIndex] = vertex;
+
 			if (vertexIndex == 0)
-			{
 				jointColumnFront.columnExterne[0] = vertex;
-			}
 			else if (vertexIndex == (vertexCountExterne-1))
-			{
 				jointColumnBack.columnExterne[0] = vertex;
-			}
 		}
 		{ // colonne de droite extern
 			const float x = endx;
-			Vertex vertex = (vertexIndex % 2 && m_lastHasJointRight) ? Vertex() : Vertex(x, y, GetZVertex(x, y), m_originVertexIndex++);
+
+			const Vertex& vertex = (vertexIndex % 2 && m_lastHasJointRight) ? Vertex() : Vertex(x, y, GetZVertex(x, y), m_originVertexIndex++);
 			jointColumnRight.columnExterne[vertexIndex] = vertex;
+
 			if (vertexIndex == 0)
-			{
 				jointColumnFront.columnExterne[vertexCountExterne-1] = vertex;
-			}
 			else if (vertexIndex == (vertexCountExterne-1))
-			{
 				jointColumnBack.columnExterne[vertexCountExterne-1] = vertex;
-			}
 		}
 	}
 
@@ -353,13 +376,15 @@ void KX_Chunk::ConstructJointMesh()
 		const float x = startx + interval * (1 + vertexIndex);
 		{ // colonne de haut interne
 			const float y = starty + interval;
-			Vertex vertex = Vertex(x, y, GetZVertex(x, y), m_originVertexIndex++);
+
+			const Vertex& vertex = Vertex(x, y, GetZVertex(x, y), m_originVertexIndex++);
 			// le premier vertice de la colonne est déjà partagé donc on remplie ceux après
 			jointColumnFront.columnInterne[vertexIndex] = vertex;
 		}
 		{ // colonne de bas interne
 			const float y = endy - interval;
-			Vertex vertex = Vertex(x, y, GetZVertex(x, y), m_originVertexIndex++);
+
+			const Vertex& vertex = Vertex(x, y, GetZVertex(x, y), m_originVertexIndex++);
 			// le premier vertice de la colonne est déjà partagé donc on remplie ceux après
 			jointColumnBack.columnInterne[vertexIndex] = vertex;
 		}
@@ -370,13 +395,15 @@ void KX_Chunk::ConstructJointMesh()
 		const float x = startx + interval * vertexIndex;
 		{ // colonne de haut extern
 			const float y = starty;
-			Vertex vertex = (vertexIndex % 2 && m_lastHasJointFront) ? Vertex() : Vertex(x, y, GetZVertex(x, y), m_originVertexIndex++);
+
+			const Vertex& vertex = (vertexIndex % 2 && m_lastHasJointFront) ? Vertex() : Vertex(x, y, GetZVertex(x, y), m_originVertexIndex++);
 			// le premier vertice de la colonne est déjà partagé donc on remplie ceux après
 			jointColumnFront.columnExterne[vertexIndex] = vertex;
 		}
 		{ // colonne de bas extern
 			const float y = endy;
-			Vertex vertex = (vertexIndex % 2 && m_lastHasJointBack) ? Vertex() : Vertex(x, y, GetZVertex(x, y), m_originVertexIndex++);
+
+			const Vertex& vertex = (vertexIndex % 2 && m_lastHasJointBack) ? Vertex() : Vertex(x, y, GetZVertex(x, y), m_originVertexIndex++);
 			// le premier vertice de la colonne est déjà partagé donc on remplie ceux après
 			jointColumnBack.columnExterne[vertexIndex] = vertex;
 		}
@@ -386,15 +413,18 @@ void KX_Chunk::ConstructJointMesh()
 	// on reserve les vertices pour optimizer le temps
 	meshObj->m_sharedvertex_map.resize(m_originVertexIndex);
 
-	ConstructJointMeshColumnPoly(jointColumnLeft, polyCount);
-	ConstructJointMeshColumnPoly(jointColumnRight, polyCount);
-	ConstructJointMeshColumnPoly(jointColumnFront, polyCount);
-	ConstructJointMeshColumnPoly(jointColumnBack, polyCount);
-// 	double endtime = KX_GetActiveEngine()->GetRealTime();
-// 	DEBUG(__func__ << " spend " << endtime - starttime << " time");
+	ConstructJointMeshColumnPoly(jointColumnLeft, polyCount, false);
+	ConstructJointMeshColumnPoly(jointColumnRight, polyCount, true);
+	ConstructJointMeshColumnPoly(jointColumnFront, polyCount, true);
+	ConstructJointMeshColumnPoly(jointColumnBack, polyCount, false);
+
+#ifdef STATS
+	double endtime = KX_GetActiveEngine()->GetRealTime();
+	DEBUG(__func__ << " spend " << endtime - starttime << " time");
+#endif
 }
 
-void KX_Chunk::ConstructJointMeshColumnPoly(const JointColumn& column, unsigned short polyCount)
+void KX_Chunk::ConstructJointMeshColumnPoly(const JointColumn& column, unsigned short polyCount, bool reverse)
 {
 	for (unsigned short vertexIndex = 0; vertexIndex < polyCount; ++vertexIndex)
 	{
@@ -460,12 +490,12 @@ void KX_Chunk::ConstructJointMeshColumnPoly(const JointColumn& column, unsigned 
 		if (firstTriangle)
 		{
 			// création du premier triangle
-			AddMeshPolygonVertexes(firstVertex, secondVertex, thirdVertex);
+			AddMeshPolygonVertexes(firstVertex, secondVertex, thirdVertex, reverse);
 		}
 		if (secondTriangle)
 		{
 			// création du deuxieme triangle
-			AddMeshPolygonVertexes(firstVertex, thirdVertex, fourthVertex);
+			AddMeshPolygonVertexes(firstVertex, thirdVertex, fourthVertex, reverse);
 		}
 	}
 }
