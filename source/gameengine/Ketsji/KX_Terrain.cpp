@@ -35,6 +35,7 @@
 #include "PHY_IGraphicController.h"
 #include "PHY_IPhysicsController.h"
 #include "KX_MotionState.h"
+#include "BKE_object.h"
 
 #define DEBUG(msg) std::cout << "Debug : " << msg << std::endl
 
@@ -186,14 +187,6 @@ KX_Chunk* KX_Terrain::AddChunk(KX_ChunkNode* node)
 	KX_Chunk* chunk = new KX_Chunk(scene, KX_Scene::m_callbacks, node, m_bucket);
 	SG_Node* rootnode = new SG_Node(chunk, scene, KX_Scene::m_callbacks);
 
-	rootnode->SetLocalScale(MT_Vector3(1., 1., 1.));
-	rootnode->SetLocalPosition(MT_Point3(node->GetRealPos().x(), node->GetRealPos().y(), 0.));
-	rootnode->SetLocalOrientation(MT_Matrix3x3(1., 0., 0.,
-											   0., 1., 0.,
-											   0., 0., 1.));
-	rootnode->SetBBox(orgnode->BBox());
-	rootnode->SetRadius(orgnode->Radius());
-
 	// define the relationship between this node and it's parent.
 	KX_NormalParentRelation * parent_relation = 
 		KX_NormalParentRelation::New();
@@ -201,8 +194,6 @@ KX_Chunk* KX_Terrain::AddChunk(KX_ChunkNode* node)
 
 	// set node
 	chunk->SetSGNode(rootnode);
-	MT_Point2 pos2d = node->GetRealPos();
-	chunk->NodeSetLocalPosition(MT_Point3(pos2d.x() * 1.2, pos2d.y() * 1.2, 0.));
 
 	SGControllerList scenegraphcontrollers = orgnode->GetSGControllerList();
 	rootnode->RemoveAllControllers();
@@ -242,20 +233,30 @@ KX_Chunk* KX_Terrain::AddChunk(KX_ChunkNode* node)
 		newctrl->SetNewClientInfo(chunk->getClientInfo());
 		chunk->SetPhysicsController(newctrl, chunk->IsDynamic());
 		newctrl->PostProcessReplica(motionstate, parentctrl);
-		DEBUG("dynamic ctrl : " << newctrl->IsDynamic());
 	}
 
-	chunk->ActivateGraphicController(true);
+	Object* blenderobject = orgobj->GetBlenderObject();
+	chunk->SetUserCollisionGroup(blenderobject->col_group);
+	chunk->SetUserCollisionMask(blenderobject->col_mask);
+
+	rootnode->SetLocalScale(MT_Vector3(1., 1., 1.));
+	MT_Point2 pos2d = node->GetRealPos();
+	rootnode->SetLocalPosition(MT_Point3(pos2d.x(), pos2d.y(), 0.));
+	rootnode->SetLocalOrientation(MT_Matrix3x3(1., 0., 0.,
+											   0., 1., 0.,
+											   0., 0., 1.));
 
 	rootnode->UpdateWorldData(0);
-	chunk->NodeUpdateGS(0);
+	rootnode->SetBBox(orgnode->BBox());
+	rootnode->SetRadius(orgnode->Radius());
+
+	chunk->ActivateGraphicController(true);
 
 	chunk->ReconstructMesh();
 
 	////////////////////////// AJOUT DANS LA LISTE ///////////////////////////
 	m_chunkList.push_back((KX_Chunk*)chunk);
 	scene->GetRootParentList()->Add(chunk->AddRef());
-	scene->GetObjectList()->Add(chunk->AddRef());
 	return chunk;
 }
 
