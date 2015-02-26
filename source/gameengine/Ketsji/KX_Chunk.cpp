@@ -95,6 +95,7 @@ KX_Chunk::KX_Chunk(void* sgReplicationInfo, SG_Callbacks callbacks, KX_ChunkNode
 	m_lastHasJointFront(false),
 	m_lastHasJointBack(false)
 {
+	SetName("KX_Chunk");
 }
 
 KX_Chunk::~KX_Chunk()
@@ -123,7 +124,7 @@ void KX_Chunk::ReconstructMesh()
 
 	meshObject->SchedulePolygons(0);
 
-// 	m_pPhysicsController->ReinstancePhysicsShape(NULL, meshObject);
+	m_pPhysicsController->ReinstancePhysicsShape(NULL, meshObject);
 }
 
 // Alexis, tu mettra ta fonction magique ici.
@@ -558,6 +559,5 @@ void KX_Chunk::RenderMesh(RAS_IRasterizer* rasty)
 	KX_RasterizerDrawDebugLine(MT_Point3(realPos.x(), realPos.y(), 0.),
 							MT_Point3(realPos.x(), realPos.y(), 10.),
 							MT_Vector3(1., 0., 0.));
-// 	DEBUG("physic mesh : " << m_pPhysicsController->GetMesh() << ", physic controller : " << m_pPhysicsController);
-
+// 	DEBUG("physic controller wants sleep : " << m_pPhysicsController->WantsSleeping());
 }
