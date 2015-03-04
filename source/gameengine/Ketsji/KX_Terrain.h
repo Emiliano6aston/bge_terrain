@@ -21,22 +21,22 @@
 #ifndef __KX_TERRAIN_H__
 #define __KX_TERRAIN_H__
 
-#include <list>
+#include <map>
+#include <vector>
 #include "MT_Transform.h"
-
-class KX_Chunk;
-class KX_ChunkNode;
-class KX_Camera;
+#include "KX_ChunkNode.h" // for Point2D
 
 class RAS_IRasterizer;
 class RAS_MaterialBucket;
+class CListValue;
 
 class KX_Terrain
 {
 private:
 	bool m_construct;
 	KX_ChunkNode** m_nodeTree;
-	std::list<KX_Chunk*> m_chunkList;
+	std::vector<KX_Chunk*> m_posToChunk;
+	std::vector<KX_Chunk*> m_euthanasyChunkList;
 	unsigned short m_maxSubDivision;
 	unsigned short m_width;
 	float m_maxDistance2;
@@ -52,12 +52,12 @@ public:
 	void Construct();
 	void Destruct();
 
-	void CalculateVisibleChunks(KX_Camera* cam);
+	void CalculateVisibleChunks(KX_Camera* culledcam);
 	void UpdateChunksMeshes();
 	void RenderChunksMeshes(const MT_Transform& cameratrans, RAS_IRasterizer* rasty);
 
 	// le niveau de subdivision maximal
-	inline unsigned short GetMaxSubDivision() const { return m_maxSubDivision; };
+	inline unsigned short GetMaxLevel() const { return m_maxSubDivision * m_maxSubDivision * 2; };
 	// la distance maximal
 	inline float GetMaxDistance2() const { return m_maxDistance2; };
 	inline float GetChunkSize() const { return m_chunkSize; };
@@ -65,11 +65,12 @@ public:
 	// le nombre de subdivision par rapport à une distance
 	unsigned short GetSubdivision(float distance) const;
 
-	KX_ChunkNode* GetNodeRelativePosition(short x, short y);
+	KX_ChunkNode* GetNodeRelativePosition(int x, int y);
 
-	KX_ChunkNode** NewNodeList(short x, short y, unsigned short level);
+	KX_ChunkNode** NewNodeList(int x, int y, unsigned short level);
 	KX_Chunk* AddChunk(KX_ChunkNode* node);
-	void RemoveChunk(KX_Chunk* chunk);
+	void RemoveChunk(KX_ChunkNode::Point2D pos);
+	void ScheduleEuthanasyChunks();
 };
 
 #endif //__KX_TERRAIN_H__
