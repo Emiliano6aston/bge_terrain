@@ -42,7 +42,9 @@ public:
 	/// creation du mesh avec joint des vertices du chunk avec ceux d'à cotés si neccesaire
 	void UpdateMesh();
 	void ReconstructMesh();
-	void RenderMesh(RAS_IRasterizer* rasty);
+	void RenderMesh(RAS_IRasterizer* rasty, KX_Camera* cam);
+
+	inline KX_ChunkNode* GetNode() const { return m_node; }
 
 	static unsigned int m_chunkActive;
 };
