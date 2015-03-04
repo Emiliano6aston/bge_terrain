@@ -1,6 +1,5 @@
-#include "KX_Chunk.h"
-#include "KX_ChunkNode.h"
 #include "KX_Terrain.h"
+#include "KX_Chunk.h"
 
 #include "KX_Camera.h"
 #include "KX_PythonInit.h"
@@ -13,7 +12,6 @@
 #include "BLI_math.h"
 
 #include "PHY_IPhysicsController.h"
-#include "CcdPhysicsController.h"
 
 #include <stdio.h>
 
@@ -35,10 +33,10 @@
 												true, 0) \
 
 #define INDEX_JOINT -1
-#define STATS
+//#define STATS
 
 unsigned int KX_Chunk::m_chunkActive = 0;
-static const unsigned short polyCount = 4;
+static const unsigned short polyCount = 8;
 
 struct KX_Chunk::Vertex // vertex temporaire
 {
@@ -107,9 +105,8 @@ void KX_Chunk::ReconstructMesh()
 	if (m_meshes.size() > 0)
 	{
 		delete m_meshes[0];
-		m_meshes.clear();
-		
 	}
+	RemoveMeshes();
 
 	RAS_MeshObject* meshObject = new RAS_MeshObject(NULL);
 	m_meshes.push_back(meshObject);
@@ -124,7 +121,7 @@ void KX_Chunk::ReconstructMesh()
 
 	meshObject->SchedulePolygons(0);
 
-	m_pPhysicsController->ReinstancePhysicsShape(NULL, meshObject);
+// 	m_pPhysicsController->ReinstancePhysicsShape(NULL, meshObject);
 }
 
 // Alexis, tu mettra ta fonction magique ici.
@@ -138,7 +135,7 @@ float KX_Chunk::GetZVertex(float vertx, float verty) const
 	const float x = vertx + realPos.x();
 	const float y = verty + realPos.y();
 
-	const float z = BLI_hnoise(10., x, y, 0.) * maxheight;
+	const float z = BLI_hnoise(50., x, y, 0.) * maxheight;
 	return z;
 }
 
@@ -503,15 +500,14 @@ void KX_Chunk::ConstructJointMeshColumnPoly(const JointColumn& column, unsigned 
 
 void KX_Chunk::UpdateMesh()
 {
-	/*KX_Terrain* terrain = m_node->GetTerrain();
+	KX_Terrain* terrain = m_node->GetTerrain();
 
-	int relativePosX = m_node->GetRelativePosX();
-	int relativePosY = m_node->GetRelativePosY();
+	const KX_ChunkNode::Point2D& pos = m_node->GetRelativePos();
 
-	KX_ChunkNode* nodeLeft = terrain->GetNodeRelativePosition(relativePosX - 1, relativePosY);
-	KX_ChunkNode* nodeRight = terrain->GetNodeRelativePosition(relativePosX + 1, relativePosY);
-	KX_ChunkNode* nodeFront = terrain->GetNodeRelativePosition(relativePosX, relativePosY - 1);
-	KX_ChunkNode* nodeBack = terrain->GetNodeRelativePosition(relativePosX, relativePosY + 1);
+	KX_ChunkNode* nodeLeft = terrain->GetNodeRelativePosition(pos.x - 1, pos.y);
+	KX_ChunkNode* nodeRight = terrain->GetNodeRelativePosition(pos.x + 1, pos.y);
+	KX_ChunkNode* nodeFront = terrain->GetNodeRelativePosition(pos.x, pos.y - 1);
+	KX_ChunkNode* nodeBack = terrain->GetNodeRelativePosition(pos.x, pos.y + 1);
 
 	// ensemble de 4 variables verifiant si il y aura besoin d'une jointure
 	const bool hasJointLeft = nodeLeft ? nodeLeft->GetLevel() < m_node->GetLevel() : false;
@@ -528,24 +524,16 @@ void KX_Chunk::UpdateMesh()
 		m_lastHasJointRight = hasJointRight;
 		m_lastHasJointFront = hasJointFront;
 		m_lastHasJointBack = hasJointBack;
-
-		RAS_MeshObject* meshToDelete = m_meshes[0];
-		RemoveMeshes();
-		delete meshToDelete;
-
-		RAS_MeshObject* meshObj = new RAS_MeshObject(NULL);
-		AddMesh(meshObj);
-
-		ConstructMesh();
-		ConstructJoint();
-
-		AddMeshUser();
-	}*/
+		DEBUG("rebuild mesh for joints");
+		ReconstructMesh();
+	}
 }
 
-void KX_Chunk::RenderMesh(RAS_IRasterizer* rasty)
+void KX_Chunk::RenderMesh(RAS_IRasterizer* rasty, KX_Camera* cam)
 {
-	const MT_Point2 realPos = m_node->GetRealPos();
+	const MT_Point3 realPos = MT_Point3(m_node->GetRealPos().x(), m_node->GetRealPos().y(), 0.);
+	const MT_Point3 camPos = cam->NodeGetWorldPosition();
+	const MT_Vector3 norm = (camPos - realPos).normalized() * sqrt(m_node->GetRadius2());
 
 	/*MT_Point3* box = m_node->GetBox();
 
@@ -556,8 +544,5 @@ void KX_Chunk::RenderMesh(RAS_IRasterizer* rasty)
 		KX_RasterizerDrawDebugLine(box[i], box[(i < 3) ? i + 1 : 0], color);
 		KX_RasterizerDrawDebugLine(box[i + 4], box[(i < 3) ? i + 5 : 4], color);
 	}*/
-	KX_RasterizerDrawDebugLine(MT_Point3(realPos.x(), realPos.y(), 0.),
-							MT_Point3(realPos.x(), realPos.y(), 10.),
-							MT_Vector3(1., 0., 0.));
-// 	DEBUG("physic controller wants sleep : " << m_pPhysicsController->WantsSleeping());
+// 	KX_RasterizerDrawDebugLine(realPos, realPos + norm, MT_Vector3(1., 0., 0.));
 }

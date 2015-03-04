@@ -1,6 +1,5 @@
-#include "KX_ChunkNode.h"
-#include "KX_Chunk.h"
 #include "KX_Terrain.h"
+#include "KX_Chunk.h"
 
 #include "KX_Camera.h"
 #include "KX_PythonInit.h"
@@ -16,21 +15,14 @@
 #define INFO(msg) COLORED_PRINT("Info : " << msg, 37);
 #define ERROR(msg) COLORED_PRINT("Error : " << msg, 31);
 #define SUCCES(msg) COLORED_PRINT("Succes : " << msg, 32);
+#define DEBUG_VAR(var) std::cout << #var << " : " << var << std::endl;
 
 #define DEBUGNOENDL(msg) std::cout << msg;
 
-#define NEWVERT RAS_TexVert(MT_Point3(x, y, BLI_hnoise(60., x, y, 0.) * maxheight), \
-												uvs_buffer, \
-												MT_Vector4(1., 1., 1., 1.), \
-												0, \
-												MT_Vector3(0, 0, 1.), \
-												true, 0) \
-
 unsigned int KX_ChunkNode::m_finalNode = 0;
 
-KX_ChunkNode::KX_ChunkNode(short x, short y, unsigned short relativesize, unsigned short level, KX_Terrain *terrain)
-	:m_relativePosX(x),
-	m_relativePosY(y),
+KX_ChunkNode::KX_ChunkNode(int x, int y, unsigned short relativesize, unsigned short level, KX_Terrain *terrain)
+	:m_relativePos(Point2D(x, y)),
 	m_relativeSize(relativesize),
 	m_culled(false),
 	m_level(level),
@@ -46,9 +38,12 @@ KX_ChunkNode::KX_ChunkNode(short x, short y, unsigned short relativesize, unsign
 	const float maxheight = m_terrain->GetMaxHeight();
 
 	// le rayon du chunk
-	m_radius2 = (width * width) * 2;
+	short maxlevel = m_terrain->GetMaxLevel();
+	float gap = (maxlevel - m_level) * 50.;
+	m_radius2 = (width * width * 2) + (gap * gap);
 
-	DEBUG("create new chunk node, pos : " << x << " " << y << ", level : " << level << ", size : " << relativesize);
+	/*DEBUG("create new chunk node, pos : " << x << " " << y << ", level : " << level << ", size : " << relativesize 
+	<< ", radius2 : " << m_radius2 << ", gap : " << gap << ", max level : " << maxlevel);*/
 
 	// la coordonnée reel du chunk
 	const float realX = x * size;
@@ -75,7 +70,7 @@ KX_ChunkNode::~KX_ChunkNode()
 void KX_ChunkNode::ConstructAllNodes()
 {
 	if (!m_nodeList)
-		m_nodeList = m_terrain->NewNodeList(m_relativePosX, m_relativePosY, m_level);
+		m_nodeList = m_terrain->NewNodeList(m_relativePos.x, m_relativePos.y, m_level);
 }
 
 void KX_ChunkNode::DestructAllNodes()
@@ -105,39 +100,39 @@ void KX_ChunkNode::DestructChunk()
 {
 	if (m_chunk)
 	{
-		m_terrain->RemoveChunk(m_chunk);
+		m_terrain->RemoveChunk(m_relativePos);
 		m_chunk->Release();
 		m_chunk = NULL;
 	}
 }
 
-bool KX_ChunkNode::NeedCreateSubChunks(KX_Camera* cam) const
+bool KX_ChunkNode::NeedCreateSubChunks(KX_Camera* campos) const
 {
-	const float distance2 = MT_Point3(m_realPos.x(), m_realPos.y(), 0.).distance2(cam->NodeGetWorldPosition()) - m_radius2;
+	const float distance2 = MT_Point3(m_realPos.x(), m_realPos.y(), 0.).distance2(campos->NodeGetWorldPosition()) - m_radius2;
 	const unsigned short subdivision = m_terrain->GetSubdivision(distance2);
 	return subdivision >= (m_level*2);
 }
 
-void KX_ChunkNode::MarkCulled(KX_Camera* cam)
+void KX_ChunkNode::MarkCulled(KX_Camera* culledcam)
 {
-	m_culled = cam->BoxInsideFrustum(m_box) == KX_Camera::OUTSIDE;
+	m_culled = culledcam->BoxInsideFrustum(m_box) == KX_Camera::OUTSIDE;
 }
 
-void KX_ChunkNode::CalculateVisible(KX_Camera* cam)
+void KX_ChunkNode::CalculateVisible(KX_Camera *culledcam, KX_Camera* campos)
 {
-	MarkCulled(cam); // on test si le chunk est visible
+	MarkCulled(culledcam); // on test si le chunk est visible
 	if (!m_culled) // si oui on essai de créer des chunks et des les mettres à jour
 	{
-		if (NeedCreateSubChunks(cam))
+		if (NeedCreateSubChunks(campos))
 		{
 			// si on a besoin des sous chunks et qu'ils n'existent pas déjà
 			ConstructAllNodes();
 			DestructChunk();
 
-			m_nodeList[0]->CalculateVisible(cam);
-			m_nodeList[1]->CalculateVisible(cam);
-			m_nodeList[2]->CalculateVisible(cam);
-			m_nodeList[3]->CalculateVisible(cam);
+			m_nodeList[0]->CalculateVisible(culledcam, campos);
+			m_nodeList[1]->CalculateVisible(culledcam, campos);
+			m_nodeList[2]->CalculateVisible(culledcam, campos);
+			m_nodeList[3]->CalculateVisible(culledcam, campos);
 		}
 		else // si on en a pas besoin et qu'ils existent
 		{
@@ -152,16 +147,16 @@ void KX_ChunkNode::CalculateVisible(KX_Camera* cam)
 	}
 }
 
-KX_ChunkNode* KX_ChunkNode::GetNodeRelativePosition(short x, short y)
+KX_ChunkNode* KX_ChunkNode::GetNodeRelativePosition(const Point2D& pos)
 {
-	if((m_relativePosX - m_relativeSize) <= x && x <= (m_relativePosX + m_relativeSize) &&
-		(m_relativePosY - m_relativeSize) <= y && y <= (m_relativePosY + m_relativeSize))
+	if((m_relativePos.x - m_relativeSize) <= pos.x && pos.x <= (m_relativePos.x + m_relativeSize) &&
+		(m_relativePos.y - m_relativeSize) <= pos.y && pos.y <= (m_relativePos.y + m_relativeSize))
 	{
 		if (m_nodeList)
 		{
 			for (unsigned short i = 0; i < 4; ++i)
 			{
-				KX_ChunkNode* ret = m_nodeList[i]->GetNodeRelativePosition(x, y);
+				KX_ChunkNode* ret = m_nodeList[i]->GetNodeRelativePosition(pos);
 				if (ret)
 					return ret;
 			}
@@ -170,4 +165,9 @@ KX_ChunkNode* KX_ChunkNode::GetNodeRelativePosition(short x, short y)
 			return this;
 	}
 	return NULL;
+}
+
+bool operator<(const KX_ChunkNode::Point2D& pos1, const KX_ChunkNode::Point2D& pos2)
+{
+	return pos1.x < pos2.x || (!(pos2.x < pos1.x) && pos1.y < pos2.y);
 }
