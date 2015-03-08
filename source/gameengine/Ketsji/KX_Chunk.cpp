@@ -503,11 +503,19 @@ void KX_Chunk::UpdateMesh()
 	KX_Terrain* terrain = m_node->GetTerrain();
 
 	const KX_ChunkNode::Point2D& pos = m_node->GetRelativePos();
-
-	KX_ChunkNode* nodeLeft = terrain->GetNodeRelativePosition(pos.x - 1, pos.y);
-	KX_ChunkNode* nodeRight = terrain->GetNodeRelativePosition(pos.x + 1, pos.y);
-	KX_ChunkNode* nodeFront = terrain->GetNodeRelativePosition(pos.x, pos.y - 1);
-	KX_ChunkNode* nodeBack = terrain->GetNodeRelativePosition(pos.x, pos.y + 1);
+// 	DEBUG("chunk pos : x=" << pos.x << ", y=" << pos.y);
+	if (!m_node) {
+		ERROR("no node parent");
+		return;
+	}
+	if (!terrain) {
+		ERROR("no terrain segfault !, node : " << m_node);
+		return;
+	}
+	KX_ChunkNode* nodeLeft = terrain->GetNodeRelativePosition(KX_ChunkNode::Point2D(pos.x - 1, pos.y));
+	KX_ChunkNode* nodeRight = terrain->GetNodeRelativePosition(KX_ChunkNode::Point2D(pos.x + 1, pos.y));
+	KX_ChunkNode* nodeFront = terrain->GetNodeRelativePosition(KX_ChunkNode::Point2D(pos.x, pos.y - 1));
+	KX_ChunkNode* nodeBack = terrain->GetNodeRelativePosition(KX_ChunkNode::Point2D(pos.x, pos.y + 1));
 
 	// ensemble de 4 variables verifiant si il y aura besoin d'une jointure
 	const bool hasJointLeft = nodeLeft ? nodeLeft->GetLevel() < m_node->GetLevel() : false;
@@ -524,8 +532,8 @@ void KX_Chunk::UpdateMesh()
 		m_lastHasJointRight = hasJointRight;
 		m_lastHasJointFront = hasJointFront;
 		m_lastHasJointBack = hasJointBack;
-		DEBUG("rebuild mesh for joints");
-		ReconstructMesh();
+// 		DEBUG("rebuild mesh for joints");
+// 		ReconstructMesh();
 	}
 }
 

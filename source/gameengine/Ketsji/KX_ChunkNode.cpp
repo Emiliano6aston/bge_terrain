@@ -43,7 +43,7 @@ KX_ChunkNode::KX_ChunkNode(int x, int y, unsigned short relativesize, unsigned s
 	m_radius2 = (width * width * 2) + (gap * gap);
 
 	/*DEBUG("create new chunk node, pos : " << x << " " << y << ", level : " << level << ", size : " << relativesize 
-	<< ", radius2 : " << m_radius2 << ", gap : " << gap << ", max level : " << maxlevel);*/
+	<< ", radius2 : " << m_radius2 << ", gap : " << gap << ", max level : " << maxlevel << ", terrain : " << terrain);*/
 
 	// la coordonnée reel du chunk
 	const float realX = x * size;
@@ -69,8 +69,12 @@ KX_ChunkNode::~KX_ChunkNode()
 
 void KX_ChunkNode::ConstructAllNodes()
 {
-	if (!m_nodeList)
-		m_nodeList = m_terrain->NewNodeList(m_relativePos.x, m_relativePos.y, m_level);
+	if (!m_nodeList) {
+		if (m_terrain)
+			m_nodeList = m_terrain->NewNodeList(m_relativePos.x, m_relativePos.y, m_level);
+		else
+			ERROR("try create sub node but no terrain");
+	}
 }
 
 void KX_ChunkNode::DestructAllNodes()
@@ -100,7 +104,7 @@ void KX_ChunkNode::DestructChunk()
 {
 	if (m_chunk)
 	{
-		m_terrain->RemoveChunk(m_relativePos);
+		m_terrain->RemoveChunk(m_chunk);
 		m_chunk->Release();
 		m_chunk = NULL;
 	}
@@ -147,16 +151,19 @@ void KX_ChunkNode::CalculateVisible(KX_Camera *culledcam, KX_Camera* campos)
 	}
 }
 
-KX_ChunkNode* KX_ChunkNode::GetNodeRelativePosition(const Point2D& pos)
+KX_ChunkNode *KX_ChunkNode::GetNodeRelativePosition(const Point2D& pos)
 {
+	if (!m_terrain) {
+		ERROR("node without terrain");
+		return NULL;
+	}
+
 	if((m_relativePos.x - m_relativeSize) <= pos.x && pos.x <= (m_relativePos.x + m_relativeSize) &&
 		(m_relativePos.y - m_relativeSize) <= pos.y && pos.y <= (m_relativePos.y + m_relativeSize))
 	{
-		if (m_nodeList)
-		{
-			for (unsigned short i = 0; i < 4; ++i)
-			{
-				KX_ChunkNode* ret = m_nodeList[i]->GetNodeRelativePosition(pos);
+		if (m_nodeList) {
+			for (unsigned short i = 0; i < 4; ++i) {
+				KX_ChunkNode *ret = m_nodeList[i]->GetNodeRelativePosition(pos);
 				if (ret)
 					return ret;
 			}
