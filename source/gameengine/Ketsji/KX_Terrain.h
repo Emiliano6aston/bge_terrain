@@ -35,7 +35,7 @@ class KX_Terrain
 private:
 	bool m_construct;
 	KX_ChunkNode** m_nodeTree;
-	std::vector<KX_Chunk*> m_posToChunk;
+	std::vector<KX_Chunk*> m_chunkList;
 	std::vector<KX_Chunk*> m_euthanasyChunkList;
 	unsigned short m_maxSubDivision;
 	unsigned short m_width;
@@ -65,11 +65,11 @@ public:
 	// le nombre de subdivision par rapport à une distance
 	unsigned short GetSubdivision(float distance) const;
 
-	KX_ChunkNode* GetNodeRelativePosition(int x, int y);
+	KX_ChunkNode* GetNodeRelativePosition(const KX_ChunkNode::Point2D& pos);
 
 	KX_ChunkNode** NewNodeList(int x, int y, unsigned short level);
 	KX_Chunk* AddChunk(KX_ChunkNode* node);
-	void RemoveChunk(KX_ChunkNode::Point2D pos);
+	void RemoveChunk(KX_Chunk *chunk);
 	void ScheduleEuthanasyChunks();
 };
 

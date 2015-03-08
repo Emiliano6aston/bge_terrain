@@ -36,7 +36,17 @@
 #include "BKE_object.h"
 #include "ListValue.h"
 
-#define DEBUG(msg) std::cout << "Debug : " << msg << std::endl
+#define COLORED_PRINT(msg, color) std::cout << /*"\033[" << color << "m" <<*/ msg << /*"\033[30m" <<*/ std::endl;
+
+#define DEBUG(msg) COLORED_PRINT("Debug : " << msg, 30);
+#define WARNING(msg) COLORED_PRINT("Warning : " << msg, 33);
+#define INFO(msg) COLORED_PRINT("Info : " << msg, 37);
+#define ERROR(msg) COLORED_PRINT("Error : " << msg, 31);
+#define SUCCES(msg) COLORED_PRINT("Succes : " << msg, 32);
+#define DEBUG_VAR(var) std::cout << #var << " : " << var << std::endl;
+
+#define DEBUGNOENDL(msg) std::cout << msg;
+
 #define DEBUG_VAR(var) std::cout << #var << " : " << var << std::endl;
 
 typedef std::map<KX_ChunkNode::Point2D, KX_Chunk*>::iterator chunkit;
@@ -53,7 +63,6 @@ KX_Terrain::KX_Terrain(unsigned short maxSubDivisions, unsigned short width, flo
 	m_bucket(NULL)
 {
 	DEBUG("Create terrain");
-	m_chunkList = 
 }
 
 KX_Terrain::~KX_Terrain()
@@ -87,10 +96,8 @@ void KX_Terrain::Destruct()
 	delete m_nodeTree[2];
 	delete m_nodeTree[3];
 
-	for (chunkit it = m_chunkList.begin(); it != m_chunkList.end(); ++it)
-	{
-		if (it->second->Release() > 0)
-		{
+	for (unsigned int i = 0; i < m_chunkList.size(); ++i) {
+		if (m_chunkList[i]->Release() > 0) {
 			DEBUG("Error : chunk ref count on free greater than 0");
 		}
 	}
@@ -119,9 +126,8 @@ void KX_Terrain::UpdateChunksMeshes()
 {
 // 	double starttime = KX_GetActiveEngine()->GetRealTime();
 
-	for (chunkit it = m_chunkList.begin(); it != m_chunkList.end(); ++it)
-	{
-		it->second->UpdateMesh();
+	for (unsigned int i = 0; i < m_chunkList.size(); ++i) {
+		m_chunkList[i]->UpdateMesh();
 	}
 
 // 	double endtime = KX_GetActiveEngine()->GetRealTime();
@@ -134,9 +140,8 @@ void KX_Terrain::RenderChunksMeshes(const MT_Transform& cameratrans, RAS_IRaster
 
 	KX_Camera* cam = KX_GetActiveScene()->FindCamera(camname);
 	// rendu du mesh
-	for (chunkit it = m_chunkList.begin(); it != m_chunkList.end(); ++it)
-	{
-		KX_Chunk* chunk = it->second;
+	for (unsigned int i = 0; i < m_chunkList.size(); ++i) {
+		KX_Chunk* chunk = m_chunkList[i];
 		chunk->RenderMesh(rasty, cam);
 		chunk->SetCulled(false); // toujours faux
 		chunk->UpdateBuckets(false);
@@ -159,12 +164,16 @@ unsigned short KX_Terrain::GetSubdivision(float distance) const
 	return ret;
 }
 
-// renvoie le chunk correspondant à cette position, on doit le faire de maniere recursive car on utilise un QuadTree
-KX_ChunkNode* KX_Terrain::GetNodeRelativePosition(int x, int y)
+KX_ChunkNode *KX_Terrain::GetNodeRelativePosition(const KX_ChunkNode::Point2D& pos)
 {
-
+// 	DEBUG("test chunk node position : x=" << pos.x << ", y=" << pos.y);
+	for (unsigned int i = 0; i < 4; ++i) {
+		KX_ChunkNode *node = m_nodeTree[i]->GetNodeRelativePosition(pos);
+		if (node)
+			return node;
+	}
 	return NULL;
-};
+}
 
 KX_ChunkNode** KX_Terrain::NewNodeList(int x, int y, unsigned short level)
 {
@@ -179,6 +188,8 @@ KX_ChunkNode** KX_Terrain::NewNodeList(int x, int y, unsigned short level)
 	nodeList[1] = new KX_ChunkNode(x + width, y - width, relativesize, level * 2, this);
 	nodeList[2] = new KX_ChunkNode(x - width, y + width, relativesize, level * 2, this);
 	nodeList[3] = new KX_ChunkNode(x + width, y + width, relativesize, level * 2, this);
+	for (int i = 0; i < 4; ++i)
+		DEBUG("create new node : " << nodeList[i] << "terrain : " << nodeList[i]->GetTerrain());
 	return nodeList;
 }
 
@@ -244,6 +255,7 @@ KX_Chunk* KX_Terrain::AddChunk(KX_ChunkNode* node)
 
 	rootnode->SetLocalScale(MT_Vector3(1., 1., 1.));
 	MT_Point2 pos2d = node->GetRealPos();
+	DEBUG("create new chunk pos : x=" << node->GetRelativePos().x << ", y=" << node->GetRelativePos().y);
 	rootnode->SetLocalPosition(MT_Point3(pos2d.x(), pos2d.y(), 0.));
 	rootnode->SetLocalOrientation(MT_Matrix3x3(1., 0., 0.,
 											   0., 1., 0.,
@@ -258,25 +270,30 @@ KX_Chunk* KX_Terrain::AddChunk(KX_ChunkNode* node)
 	chunk->ReconstructMesh();
 
 	////////////////////////// AJOUT DANS LA LISTE ///////////////////////////
-	m_posToChunk[node->GetRelativePos()] = chunk;
+	m_chunkList.push_back((KX_Chunk *)chunk->AddRef());
 
 	scene->GetRootParentList()->Add(chunk->AddRef());
+	chunk->Release();
 	return chunk;
 }
 
-void KX_Terrain::RemoveChunk(KX_ChunkNode::Point2D pos)
+void KX_Terrain::RemoveChunk(KX_Chunk *chunk)
 {
-	KX_Chunk* chunk = m_posToChunk[pos];
-	m_posToChunk.erase(pos);
-	chunk->Release();
+	for (unsigned int i = 0; i < m_euthanasyChunkList.size(); ++i) {
+		if (m_chunkList[i] == chunk) {
+			m_chunkList.erase(m_chunkList.begin() + i);
+			m_chunkList[i]->Release();
+			break;
+		}
+	}
+
 	m_euthanasyChunkList.push_back(chunk);
 }
 
 void KX_Terrain::ScheduleEuthanasyChunks()
 {
-	for (unsigned int i = 0; i < m_euthanasyChunkList.size(); ++i)
-	{
-		KX_Chunk* chunk = m_euthanasyChunkList[i];
+	for (unsigned int i = 0; i < m_euthanasyChunkList.size(); ++i) {
+		KX_Chunk *chunk = m_euthanasyChunkList[i];
 		if(KX_GetActiveScene()->GetRootParentList()->RemoveValue(chunk))
 			chunk->Release();
 	}
