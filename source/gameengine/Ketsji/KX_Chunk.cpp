@@ -17,7 +17,7 @@
 
 #define COLORED_PRINT(msg, color) std::cout << /*"\033[" << color << "m" <<*/ msg << /*"\033[30m" <<*/ std::endl;
 
-#define DEBUG(msg) COLORED_PRINT("Debug : " << msg, 30);
+#define DEBUG(msg) COLORED_PRINT("Debug (" << this << ") : " << msg, 30);
 #define WARNING(msg) COLORED_PRINT("Warning : " << msg, 33);
 #define INFO(msg) COLORED_PRINT("Info : " << msg, 37);
 #define ERROR(msg) COLORED_PRINT("Error : " << msg, 31);
@@ -36,7 +36,7 @@
 //#define STATS
 
 unsigned int KX_Chunk::m_chunkActive = 0;
-static const unsigned short polyCount = 8;
+static const unsigned short polyCount = 4;
 
 struct KX_Chunk::Vertex // vertex temporaire
 {
@@ -104,9 +104,10 @@ void KX_Chunk::ReconstructMesh()
 {
 	if (m_meshes.size() > 0)
 	{
-		delete m_meshes[0];
+// 		RAS_MeshObject *oldmesh = m_meshes[0];
+		RemoveMeshes();
+// 		delete oldmesh;
 	}
-	RemoveMeshes();
 
 	RAS_MeshObject* meshObject = new RAS_MeshObject(NULL);
 	m_meshes.push_back(meshObject);
@@ -503,19 +504,12 @@ void KX_Chunk::UpdateMesh()
 	KX_Terrain* terrain = m_node->GetTerrain();
 
 	const KX_ChunkNode::Point2D& pos = m_node->GetRelativePos();
-// 	DEBUG("chunk pos : x=" << pos.x << ", y=" << pos.y);
-	if (!m_node) {
-		ERROR("no node parent");
-		return;
-	}
-	if (!terrain) {
-		ERROR("no terrain segfault !, node : " << m_node);
-		return;
-	}
-	KX_ChunkNode* nodeLeft = terrain->GetNodeRelativePosition(KX_ChunkNode::Point2D(pos.x - 1, pos.y));
-	KX_ChunkNode* nodeRight = terrain->GetNodeRelativePosition(KX_ChunkNode::Point2D(pos.x + 1, pos.y));
-	KX_ChunkNode* nodeFront = terrain->GetNodeRelativePosition(KX_ChunkNode::Point2D(pos.x, pos.y - 1));
-	KX_ChunkNode* nodeBack = terrain->GetNodeRelativePosition(KX_ChunkNode::Point2D(pos.x, pos.y + 1));
+	unsigned short relativewidth = m_node->GetRelativeSize() / 2 + 1;
+
+	KX_ChunkNode* nodeLeft = terrain->GetNodeRelativePosition(KX_ChunkNode::Point2D(pos.x - relativewidth, pos.y));
+	KX_ChunkNode* nodeRight = terrain->GetNodeRelativePosition(KX_ChunkNode::Point2D(pos.x + relativewidth, pos.y));
+	KX_ChunkNode* nodeFront = terrain->GetNodeRelativePosition(KX_ChunkNode::Point2D(pos.x, pos.y - relativewidth));
+	KX_ChunkNode* nodeBack = terrain->GetNodeRelativePosition(KX_ChunkNode::Point2D(pos.x, pos.y + relativewidth));
 
 	// ensemble de 4 variables verifiant si il y aura besoin d'une jointure
 	const bool hasJointLeft = nodeLeft ? nodeLeft->GetLevel() < m_node->GetLevel() : false;
@@ -526,14 +520,32 @@ void KX_Chunk::UpdateMesh()
 	if (m_lastHasJointLeft != hasJointLeft ||
 		m_lastHasJointRight != hasJointRight ||
 		m_lastHasJointFront != hasJointFront ||
-		m_lastHasJointBack != hasJointBack)
+		m_lastHasJointBack != hasJointBack ||
+		m_meshes.size() == 0)
 	{
 		m_lastHasJointLeft = hasJointLeft;
 		m_lastHasJointRight = hasJointRight;
 		m_lastHasJointFront = hasJointFront;
 		m_lastHasJointBack = hasJointBack;
+		if (m_lastHasJointBack &&
+			m_lastHasJointFront &&
+			m_lastHasJointLeft &&
+			m_lastHasJointRight)
+		{
+			DEBUG("wrong joint result can have all joints");
+		}
+		else {
+			if (m_lastHasJointBack)
+				DEBUG("Joint back");
+			if (m_lastHasJointFront)
+				DEBUG("Joint front");
+			if (m_lastHasJointRight)
+				DEBUG("Joint right");
+			if (m_lastHasJointLeft)
+				DEBUG("Joint left");
+		}
 // 		DEBUG("rebuild mesh for joints");
-// 		ReconstructMesh();
+		ReconstructMesh();
 	}
 }
 
@@ -552,5 +564,5 @@ void KX_Chunk::RenderMesh(RAS_IRasterizer* rasty, KX_Camera* cam)
 		KX_RasterizerDrawDebugLine(box[i], box[(i < 3) ? i + 1 : 0], color);
 		KX_RasterizerDrawDebugLine(box[i + 4], box[(i < 3) ? i + 5 : 4], color);
 	}*/
-// 	KX_RasterizerDrawDebugLine(realPos, realPos + norm, MT_Vector3(1., 0., 0.));
+	KX_RasterizerDrawDebugLine(realPos, realPos + norm, MT_Vector3(1., 0., 0.));
 }
