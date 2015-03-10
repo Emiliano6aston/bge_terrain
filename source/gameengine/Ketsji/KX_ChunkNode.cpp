@@ -10,7 +10,7 @@
 
 #define COLORED_PRINT(msg, color) std::cout << /*"\033[" << color << "m" <<*/ msg << /*"\033[30m" <<*/ std::endl;
 
-#define DEBUG(msg) COLORED_PRINT("Debug : " << msg, 30);
+#define DEBUG(msg) COLORED_PRINT("Debug (" << this << ") : " << msg, 30);
 #define WARNING(msg) COLORED_PRINT("Warning : " << msg, 33);
 #define INFO(msg) COLORED_PRINT("Info : " << msg, 37);
 #define ERROR(msg) COLORED_PRINT("Error : " << msg, 31);
@@ -39,7 +39,7 @@ KX_ChunkNode::KX_ChunkNode(int x, int y, unsigned short relativesize, unsigned s
 
 	// le rayon du chunk
 	short maxlevel = m_terrain->GetMaxLevel();
-	float gap = (maxlevel - m_level) * 50.;
+	float gap = (maxlevel - m_level) * size;
 	m_radius2 = (width * width * 2) + (gap * gap);
 
 	/*DEBUG("create new chunk node, pos : " << x << " " << y << ", level : " << level << ", size : " << relativesize 
@@ -69,12 +69,8 @@ KX_ChunkNode::~KX_ChunkNode()
 
 void KX_ChunkNode::ConstructAllNodes()
 {
-	if (!m_nodeList) {
-		if (m_terrain)
-			m_nodeList = m_terrain->NewNodeList(m_relativePos.x, m_relativePos.y, m_level);
-		else
-			ERROR("try create sub node but no terrain");
-	}
+	if (!m_nodeList)
+		m_nodeList = m_terrain->NewNodeList(m_relativePos.x, m_relativePos.y, m_level);
 }
 
 void KX_ChunkNode::DestructAllNodes()
@@ -153,13 +149,10 @@ void KX_ChunkNode::CalculateVisible(KX_Camera *culledcam, KX_Camera* campos)
 
 KX_ChunkNode *KX_ChunkNode::GetNodeRelativePosition(const Point2D& pos)
 {
-	if (!m_terrain) {
-		ERROR("node without terrain");
-		return NULL;
-	}
+	unsigned short relativewidth = m_relativeSize / 2;
 
-	if((m_relativePos.x - m_relativeSize) <= pos.x && pos.x <= (m_relativePos.x + m_relativeSize) &&
-		(m_relativePos.y - m_relativeSize) <= pos.y && pos.y <= (m_relativePos.y + m_relativeSize))
+	if((m_relativePos.x - relativewidth) < pos.x && pos.x < (m_relativePos.x + relativewidth) &&
+		(m_relativePos.y - relativewidth) < pos.y && pos.y < (m_relativePos.y + relativewidth))
 	{
 		if (m_nodeList) {
 			for (unsigned short i = 0; i < 4; ++i) {
