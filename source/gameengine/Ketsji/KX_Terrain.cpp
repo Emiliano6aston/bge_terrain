@@ -36,9 +36,13 @@
 #include "BKE_object.h"
 #include "ListValue.h"
 
+#ifndef CRITICAL_NODE
+#define CRITICAL_NODE(node) (node->GetRelativePos().x == 1 && node->GetRelativePos().y == -1)
+#endif
+
 #define COLORED_PRINT(msg, color) std::cout << /*"\033[" << color << "m" <<*/ msg << /*"\033[30m" <<*/ std::endl;
 
-#define DEBUG(msg) COLORED_PRINT("Debug : " << msg, 30);
+#define DEBUG(msg) COLORED_PRINT("Debug (" << this << ") : " << msg, 30);
 #define WARNING(msg) COLORED_PRINT("Warning : " << msg, 33);
 #define INFO(msg) COLORED_PRINT("Info : " << msg, 37);
 #define ERROR(msg) COLORED_PRINT("Error : " << msg, 31);
@@ -79,7 +83,6 @@ void KX_Terrain::Construct()
 		DEBUG("no obj");
 		return;
 	}
-	DEBUG("org obj stats, physic controller : " << obj->GetPhysicsController());
 	// le materiau uilisé pour le rendu
 	m_bucket = obj->GetMesh(0)->GetMeshMaterial((unsigned int)0)->m_bucket;
 
@@ -96,11 +99,7 @@ void KX_Terrain::Destruct()
 	delete m_nodeTree[2];
 	delete m_nodeTree[3];
 
-	for (unsigned int i = 0; i < m_chunkList.size(); ++i) {
-		if (m_chunkList[i]->Release() > 0) {
-			DEBUG("Error : chunk ref count on free greater than 0");
-		}
-	}
+	ScheduleEuthanasyChunks();
 }
 
 void KX_Terrain::CalculateVisibleChunks(KX_Camera* culledcam)
@@ -188,8 +187,7 @@ KX_ChunkNode** KX_Terrain::NewNodeList(int x, int y, unsigned short level)
 	nodeList[1] = new KX_ChunkNode(x + width, y - width, relativesize, level * 2, this);
 	nodeList[2] = new KX_ChunkNode(x - width, y + width, relativesize, level * 2, this);
 	nodeList[3] = new KX_ChunkNode(x + width, y + width, relativesize, level * 2, this);
-	for (int i = 0; i < 4; ++i)
-		DEBUG("create new node : " << nodeList[i] << "terrain : " << nodeList[i]->GetTerrain());
+
 	return nodeList;
 }
 
@@ -255,7 +253,7 @@ KX_Chunk* KX_Terrain::AddChunk(KX_ChunkNode* node)
 
 	rootnode->SetLocalScale(MT_Vector3(1., 1., 1.));
 	MT_Point2 pos2d = node->GetRealPos();
-	DEBUG("create new chunk pos : x=" << node->GetRelativePos().x << ", y=" << node->GetRelativePos().y);
+
 	rootnode->SetLocalPosition(MT_Point3(pos2d.x(), pos2d.y(), 0.));
 	rootnode->SetLocalOrientation(MT_Matrix3x3(1., 0., 0.,
 											   0., 1., 0.,
@@ -267,33 +265,33 @@ KX_Chunk* KX_Terrain::AddChunk(KX_ChunkNode* node)
 
 	chunk->ActivateGraphicController(true);
 
-	chunk->ReconstructMesh();
-
 	////////////////////////// AJOUT DANS LA LISTE ///////////////////////////
 	m_chunkList.push_back((KX_Chunk *)chunk->AddRef());
 
 	scene->GetRootParentList()->Add(chunk->AddRef());
 	chunk->Release();
+
 	return chunk;
 }
 
 void KX_Terrain::RemoveChunk(KX_Chunk *chunk)
 {
-	for (unsigned int i = 0; i < m_euthanasyChunkList.size(); ++i) {
+	for (unsigned int i = 0; i < m_chunkList.size(); ++i) {
 		if (m_chunkList[i] == chunk) {
 			m_chunkList.erase(m_chunkList.begin() + i);
-			m_chunkList[i]->Release();
+			chunk->Release();
 			break;
 		}
 	}
 
-	m_euthanasyChunkList.push_back(chunk);
+	m_euthanasyChunkList.push_back((KX_Chunk*)chunk->AddRef());
 }
 
 void KX_Terrain::ScheduleEuthanasyChunks()
 {
 	for (unsigned int i = 0; i < m_euthanasyChunkList.size(); ++i) {
 		KX_Chunk *chunk = m_euthanasyChunkList[i];
+		chunk->Release();
 		if(KX_GetActiveScene()->GetRootParentList()->RemoveValue(chunk))
 			chunk->Release();
 	}
