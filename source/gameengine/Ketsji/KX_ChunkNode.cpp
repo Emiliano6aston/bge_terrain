@@ -10,7 +10,7 @@
 
 #define COLORED_PRINT(msg, color) std::cout << /*"\033[" << color << "m" <<*/ msg << /*"\033[30m" <<*/ std::endl;
 
-#define DEBUG(msg) COLORED_PRINT("Debug (" << this << ") : " << msg, 30);
+#define DEBUG(msg) std::cout << "Debug (" << __func__ << ", " << this << ") : " << msg << std::endl
 #define WARNING(msg) COLORED_PRINT("Warning : " << msg, 33);
 #define INFO(msg) COLORED_PRINT("Info : " << msg, 37);
 #define ERROR(msg) COLORED_PRINT("Error : " << msg, 31);
@@ -39,7 +39,7 @@ KX_ChunkNode::KX_ChunkNode(int x, int y, unsigned short relativesize, unsigned s
 
 	// le rayon du chunk
 	short maxlevel = m_terrain->GetMaxLevel();
-	float gap = (maxlevel - m_level) * size;
+	float gap = size * relativesize * 2;
 	m_radius2 = (width * width * 2) + (gap * gap);
 
 	/*DEBUG("create new chunk node, pos : " << x << " " << y << ", level : " << level << ", size : " << relativesize 
@@ -82,7 +82,7 @@ void KX_ChunkNode::DestructAllNodes()
 		delete m_nodeList[2];
 		delete m_nodeList[3];
 
-		delete m_nodeList;
+		free(m_nodeList);
 		m_nodeList = NULL;
 	}
 }

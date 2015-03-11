@@ -220,7 +220,7 @@ void RAS_MeshSlot::SetDisplayArray(int numverts)
 		darray = *it;
 
 		if (darray->m_type == numverts) {
-			if (darray->m_index.size()+numverts >= RAS_DisplayArray::BUCKET_MAX_INDEX) // Why not use || for index and vertex list ?
+			if (darray->m_index.size()+numverts >= RAS_DisplayArray::BUCKET_MAX_INDEX)
 				darray = NULL;
 			else if (darray->m_vertex.size()+numverts >= RAS_DisplayArray::BUCKET_MAX_VERTEX)
 				darray = NULL;
@@ -241,7 +241,7 @@ void RAS_MeshSlot::SetDisplayArray(int numverts)
 
 		m_displayArrays.push_back(darray);
 
-		if (numverts == 2) // redudant code ?
+		if (numverts == 2)
 			darray->m_type = RAS_DisplayArray::LINE;
 		else if (numverts == 3)
 			darray->m_type = RAS_DisplayArray::TRIANGLE;
@@ -263,7 +263,7 @@ void RAS_MeshSlot::AddPolygon(int numverts)
 
 int RAS_MeshSlot::AddVertex(const RAS_TexVert& tv)
 {
-	RAS_DisplayArray *darray; // useless
+	RAS_DisplayArray *darray;
 	int offset;
 	
 	darray = m_currentArray;
@@ -278,7 +278,7 @@ int RAS_MeshSlot::AddVertex(const RAS_TexVert& tv)
 
 void RAS_MeshSlot::AddPolygonVertex(int offset)
 {
-	RAS_DisplayArray *darray; // useless too
+	RAS_DisplayArray *darray;
 
 	darray = m_currentArray;
 	darray->m_index.push_back(offset);
