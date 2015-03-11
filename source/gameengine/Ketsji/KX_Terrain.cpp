@@ -36,13 +36,9 @@
 #include "BKE_object.h"
 #include "ListValue.h"
 
-#ifndef CRITICAL_NODE
-#define CRITICAL_NODE(node) (node->GetRelativePos().x == 1 && node->GetRelativePos().y == -1)
-#endif
-
 #define COLORED_PRINT(msg, color) std::cout << /*"\033[" << color << "m" <<*/ msg << /*"\033[30m" <<*/ std::endl;
 
-#define DEBUG(msg) COLORED_PRINT("Debug (" << this << ") : " << msg, 30);
+#define DEBUG(msg) std::cout << "\033[34mDebug (" << __func__ << ", " << this << ") : " << msg << std::endl;
 #define WARNING(msg) COLORED_PRINT("Warning : " << msg, 33);
 #define INFO(msg) COLORED_PRINT("Info : " << msg, 37);
 #define ERROR(msg) COLORED_PRINT("Error : " << msg, 31);
@@ -83,6 +79,7 @@ void KX_Terrain::Construct()
 		DEBUG("no obj");
 		return;
 	}
+	DEBUG("origin mesh : " << obj->GetMesh(0));
 	// le materiau uilisé pour le rendu
 	m_bucket = obj->GetMesh(0)->GetMeshMaterial((unsigned int)0)->m_bucket;
 
@@ -145,6 +142,7 @@ void KX_Terrain::RenderChunksMeshes(const MT_Transform& cameratrans, RAS_IRaster
 		chunk->SetCulled(false); // toujours faux
 		chunk->UpdateBuckets(false);
 	}
+
 	ScheduleEuthanasyChunks();
 
 // 	double endtime = KX_GetActiveEngine()->GetRealTime();
@@ -264,12 +262,13 @@ KX_Chunk* KX_Terrain::AddChunk(KX_ChunkNode* node)
 	rootnode->SetRadius(orgnode->Radius());
 
 	chunk->ActivateGraphicController(true);
-
 	////////////////////////// AJOUT DANS LA LISTE ///////////////////////////
 	m_chunkList.push_back((KX_Chunk *)chunk->AddRef());
 
 	scene->GetRootParentList()->Add(chunk->AddRef());
 	chunk->Release();
+
+	chunk->RemoveMeshes();
 
 	return chunk;
 }

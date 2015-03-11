@@ -19,18 +19,18 @@ private:
 	KX_ChunkNode* m_node;
 
 	RAS_MaterialBucket* m_bucket;
+	RAS_MeshObject* m_meshObj;
 
 	// les dernières jointures
 	bool m_lastHasJointLeft;
 	bool m_lastHasJointRight;
 	bool m_lastHasJointFront;
 	bool m_lastHasJointBack;
-
+	bool m_createdMesh;
 	unsigned int m_originVertexIndex;
 
 	/// construction du mesh
-	void ConstructCenterMesh();
-	void ConstructJointMesh();
+	void ConstructMesh();
 	void ConstructJointMeshColumnPoly(const JointColumn& column, unsigned short polyCount, bool reverse);
 	void AddMeshPolygonVertexes(const Vertex& v1, const Vertex& v2, const Vertex& v3, bool reverse);
 	float GetZVertex(float vertx, float verty) const;
