@@ -38,7 +38,6 @@ KX_ChunkNode::KX_ChunkNode(int x, int y, unsigned short relativesize, unsigned s
 	const float maxheight = m_terrain->GetMaxHeight();
 
 	// le rayon du chunk
-	short maxlevel = m_terrain->GetMaxLevel();
 	float gap = size * relativesize * 2;
 	m_radius2 = (width * width * 2) + (gap * gap);
 
@@ -151,8 +150,9 @@ KX_ChunkNode *KX_ChunkNode::GetNodeRelativePosition(const Point2D& pos)
 {
 	unsigned short relativewidth = m_relativeSize / 2;
 
-	if((m_relativePos.x - relativewidth) < pos.x && pos.x < (m_relativePos.x + relativewidth) &&
-		(m_relativePos.y - relativewidth) < pos.y && pos.y < (m_relativePos.y + relativewidth))
+	if(!m_culled &&
+	   (m_relativePos.x - relativewidth) < pos.x && pos.x < (m_relativePos.x + relativewidth) &&
+	   (m_relativePos.y - relativewidth) < pos.y && pos.y < (m_relativePos.y + relativewidth))
 	{
 		if (m_nodeList) {
 			for (unsigned short i = 0; i < 4; ++i) {
