@@ -25,7 +25,7 @@
 
 remove_extra_strict_flags()
 
-set(CMAKE_CXX_FLAGS "-g -O0")
+set(CMAKE_BUILD_TYPE Debug)
 
 # there are too many inter-includes so best define here
 if(WITH_PYTHON)
