@@ -38,7 +38,7 @@
 
 #define COLORED_PRINT(msg, color) std::cout << /*"\033[" << color << "m" <<*/ msg << /*"\033[30m" <<*/ std::endl;
 
-#define DEBUG(msg) std::cout << "\033[34mDebug (" << __func__ << ", " << this << ") : " << msg << std::endl;
+#define DEBUG(msg) std::cout << "Debug (" << __func__ << ", " << this << ") : " << msg << std::endl;
 #define WARNING(msg) COLORED_PRINT("Warning : " << msg, 33);
 #define INFO(msg) COLORED_PRINT("Info : " << msg, 37);
 #define ERROR(msg) COLORED_PRINT("Error : " << msg, 31);
@@ -79,7 +79,6 @@ void KX_Terrain::Construct()
 		DEBUG("no obj");
 		return;
 	}
-	DEBUG("origin mesh : " << obj->GetMesh(0));
 	// le materiau uilisé pour le rendu
 	m_bucket = obj->GetMesh(0)->GetMeshMaterial((unsigned int)0)->m_bucket;
 
@@ -106,33 +105,36 @@ void KX_Terrain::CalculateVisibleChunks(KX_Camera* culledcam)
 	if (!m_construct)
 		Construct();
 
-// 	double starttime = KX_GetActiveEngine()->GetRealTime();
+	double starttime = KX_GetActiveEngine()->GetRealTime();
 
 	m_nodeTree[0]->CalculateVisible(culledcam, campos);
 	m_nodeTree[1]->CalculateVisible(culledcam, campos);
 	m_nodeTree[2]->CalculateVisible(culledcam, campos);
 	m_nodeTree[3]->CalculateVisible(culledcam, campos);
 
-// 	double endtime = KX_GetActiveEngine()->GetRealTime();
-// 	DEBUG(__func__ << " spend " << endtime - starttime << " time");
+	double endtime = KX_GetActiveEngine()->GetRealTime();
+	DEBUG(__func__ << " spend " << endtime - starttime << " time");
 // 	DEBUG(KX_Chunk::m_chunkActive << " active chunk");
 // 	DEBUG(m_chunkList.size() << " chunk");
 }
 void KX_Terrain::UpdateChunksMeshes()
 {
-// 	double starttime = KX_GetActiveEngine()->GetRealTime();
+	double starttime = KX_GetActiveEngine()->GetRealTime();
 
 	for (unsigned int i = 0; i < m_chunkList.size(); ++i) {
 		m_chunkList[i]->UpdateMesh();
 	}
 
-// 	double endtime = KX_GetActiveEngine()->GetRealTime();
-// 	DEBUG(__func__ << " spend " << endtime - starttime << " time");
+	for (unsigned int i = 0; i < m_chunkList.size(); ++i) {
+		m_chunkList[i]->EndUpdateMesh();
+	}
+	double endtime = KX_GetActiveEngine()->GetRealTime();
+	DEBUG(__func__ << " spend " << endtime - starttime << " time");
 }
 
 void KX_Terrain::RenderChunksMeshes(const MT_Transform& cameratrans, RAS_IRasterizer* rasty)
 {
-// 	double starttime = KX_GetActiveEngine()->GetRealTime();
+	double starttime = KX_GetActiveEngine()->GetRealTime();
 
 	KX_Camera* cam = KX_GetActiveScene()->FindCamera(camname);
 	// rendu du mesh
@@ -145,8 +147,8 @@ void KX_Terrain::RenderChunksMeshes(const MT_Transform& cameratrans, RAS_IRaster
 
 	ScheduleEuthanasyChunks();
 
-// 	double endtime = KX_GetActiveEngine()->GetRealTime();
-// 	DEBUG(__func__ << " spend " << endtime - starttime << " time");
+	double endtime = KX_GetActiveEngine()->GetRealTime();
+	DEBUG(__func__ << " spend " << endtime - starttime << " time");
 }
 
 unsigned short KX_Terrain::GetSubdivision(float distance) const
@@ -163,7 +165,6 @@ unsigned short KX_Terrain::GetSubdivision(float distance) const
 
 KX_ChunkNode *KX_Terrain::GetNodeRelativePosition(const KX_ChunkNode::Point2D& pos)
 {
-// 	DEBUG("test chunk node position : x=" << pos.x << ", y=" << pos.y);
 	for (unsigned int i = 0; i < 4; ++i) {
 		KX_ChunkNode *node = m_nodeTree[i]->GetNodeRelativePosition(pos);
 		if (node)

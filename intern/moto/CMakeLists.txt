@@ -38,6 +38,7 @@ set(SRC
 	intern/MT_Matrix4x4.cpp
 	intern/MT_Plane3.cpp
 	intern/MT_Point3.cpp
+	intern/MT_Point2.cpp
 	intern/MT_Quaternion.cpp
 	intern/MT_Transform.cpp
 	intern/MT_Vector2.cpp
