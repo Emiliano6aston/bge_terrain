@@ -85,6 +85,7 @@ public:
 
 	/// Utilisé pour savoir si un noeud est visible
 	inline bool IsCulled() const { return m_culled; }
+	inline KX_Chunk* GetChunk() const { return m_chunk; }
 
 	/// Utilisé lors des tests jointures
 	inline unsigned short GetLevel() const { return m_level; }
