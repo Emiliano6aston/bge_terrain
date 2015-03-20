@@ -113,7 +113,8 @@ endif()
 		ge_blen_routines
 		bf_editor_datafiles
 		ge_converter 
-		ge_logic_ketsji 
+		ge_logic_ketsji
+		ge_logic_terrain
 		ge_phys_bullet 
 		ge_phys_dummy
 		ge_logic 
