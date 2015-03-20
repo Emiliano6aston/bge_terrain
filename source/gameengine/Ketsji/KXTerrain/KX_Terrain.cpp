@@ -28,17 +28,15 @@
 #include "SG_Controller.h"
 #include "RAS_MeshObject.h"
 #include "RAS_MaterialBucket.h"
-#include "BL_BlenderDataConversion.h"
 #include "PHY_IPhysicsEnvironment.h"
 #include "PHY_IGraphicController.h"
 #include "PHY_IPhysicsController.h"
 #include "KX_MotionState.h"
-#include "BKE_object.h"
 #include "ListValue.h"
 
 #define COLORED_PRINT(msg, color) std::cout << /*"\033[" << color << "m" <<*/ msg << /*"\033[30m" <<*/ std::endl;
 
-#define DEBUG(msg) std::cout << "Debug (" << __func__ << ", " << this << ") : " << msg << std::endl;
+#define DEBUG(msg) // std::cout << "Debug (" << __func__ << ", " << this << ") : " << msg << std::endl;
 #define WARNING(msg) COLORED_PRINT("Warning : " << msg, 33);
 #define INFO(msg) COLORED_PRINT("Info : " << msg, 37);
 #define ERROR(msg) COLORED_PRINT("Error : " << msg, 31);
@@ -112,6 +110,8 @@ void KX_Terrain::CalculateVisibleChunks(KX_Camera* culledcam)
 	m_nodeTree[2]->CalculateVisible(culledcam, campos);
 	m_nodeTree[3]->CalculateVisible(culledcam, campos);
 
+	ScheduleEuthanasyChunks();
+
 	double endtime = KX_GetActiveEngine()->GetRealTime();
 	DEBUG(__func__ << " spend " << endtime - starttime << " time");
 // 	DEBUG(KX_Chunk::m_chunkActive << " active chunk");
@@ -144,8 +144,6 @@ void KX_Terrain::RenderChunksMeshes(const MT_Transform& cameratrans, RAS_IRaster
 		chunk->SetCulled(false); // toujours faux
 		chunk->UpdateBuckets(false);
 	}
-
-	ScheduleEuthanasyChunks();
 
 	double endtime = KX_GetActiveEngine()->GetRealTime();
 	DEBUG(__func__ << " spend " << endtime - starttime << " time");
@@ -270,6 +268,9 @@ KX_Chunk* KX_Terrain::AddChunk(KX_ChunkNode* node)
 	chunk->Release();
 
 	chunk->RemoveMeshes();
+
+	chunk->SetCulled(false); // toujours faux
+	chunk->UpdateBuckets(false);
 
 	return chunk;
 }

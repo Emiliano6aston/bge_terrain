@@ -240,7 +240,7 @@ KX_Scene::KX_Scene(class SCA_IInputDevice* keyboarddevice,
 		m_obstacleSimulation = NULL;
 	}
 
-	m_terrain = new KX_Terrain(10, 1024, 80., 10., 30.);
+	m_terrain = new KX_Terrain(16, 8192, 80., 10., 30.);
 #ifdef WITH_PYTHON
 	m_attr_dict = NULL;
 	m_draw_call_pre = NULL;
