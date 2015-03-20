@@ -1217,8 +1217,11 @@ void KX_KetsjiEngine::RenderFrame(KX_Scene* scene, KX_Camera* cam)
 	SG_SetActiveStage(SG_STAGE_CULLING);
 
 	scene->CalculateVisibleMeshes(m_rasterizer,cam);
+
 	// calculate visible terrain chunk
 	scene->CalculateVisibleTerrainChunks();
+	// update and create terrain chunk
+	scene->UpdateTerrainChunksMeshes();
 
 	m_logger->StartLog(tc_animations, m_kxsystem->GetTimeInSeconds(), true);
 	SG_SetActiveStage(SG_STAGE_ANIMATION_UPDATE);
@@ -1226,6 +1229,8 @@ void KX_KetsjiEngine::RenderFrame(KX_Scene* scene, KX_Camera* cam)
 
 	m_logger->StartLog(tc_rasterizer, m_kxsystem->GetTimeInSeconds(), true);
 	SG_SetActiveStage(SG_STAGE_RENDER);
+	// render debug info for terrain and update visible flags
+	scene->RenderTerrainChunksMeshes(camtrans, m_rasterizer);
 
 #ifdef WITH_PYTHON
 	PHY_SetActiveEnvironment(scene->GetPhysicsEnvironment());
@@ -1234,8 +1239,6 @@ void KX_KetsjiEngine::RenderFrame(KX_Scene* scene, KX_Camera* cam)
 #endif
 
 	scene->RenderBuckets(camtrans, m_rasterizer);
-
-	scene->RenderTerrainChunksMeshes(camtrans, m_rasterizer);
 
 	//render all the font objects for this scene
 	scene->RenderFonts();
