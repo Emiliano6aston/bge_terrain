@@ -576,6 +576,7 @@ function(SETUP_BLENDER_SORTED_LIBS)
 		extern_lzma
 		extern_colamd
 		ge_logic_ketsji
+		ge_logic_terrain
 		extern_recastnavigation
 		ge_logic
 		ge_rasterizer

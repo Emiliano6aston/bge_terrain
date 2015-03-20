@@ -1,8 +1,11 @@
 #ifndef __KX_CHUNK_H__
 #define __KX_CHUNK_H__
 
-#define POLY_COUNT 4
+#define VERTEX_COUNT 5
+#define VERTEX_COUNT_INTERN (VERTEX_COUNT - 2)
 
+#define POLY_COUNT (VERTEX_COUNT - 1)
+#define POLY_COUNT_INTERN (VERTEX_COUNT_INTERN - 1)
 
 #include "KX_GameObject.h"
 #include <BLI_noise.h>
@@ -36,9 +39,8 @@ private:
 	 * aux vertices pour les chunks autour
 	 */
 	JointColumn *m_columns[4];
-	Vertex *m_center[POLY_COUNT - 1][POLY_COUNT - 1];
+	Vertex *m_center[VERTEX_COUNT_INTERN][VERTEX_COUNT_INTERN];
 	bool m_hasVertexes;
-	bool m_needNormalCompute;
 
 	// les dernières jointures
 	bool m_lastHasJoint[4];
@@ -55,7 +57,10 @@ private:
 	void DestructMesh();
 
 	void ConstructVertexes();
-	float GetZVertex(float vertx, float verty) const;
+	const float GetZVertexPosition(float vertx, float verty) const;
+	const MT_Point3 GetNewVertexPosition(short relx, short rely) const;
+	Vertex *NewVertex(short relx, short rely);
+	Vertex *GetVertex(short x, short y) const;
 
 	void InvalidateJointVertexes();
 
@@ -64,8 +69,7 @@ private:
 	void ConstructJointColumnPolygones(JointColumn *column, bool reverse);
 	void AddMeshPolygonVertexes(Vertex *v1, Vertex *v2, Vertex *v3, bool reverse);
 
-	void ConstructVertexesNormal();
-	void ConstructExternVertexesNormal();
+	const MT_Vector3 GetNormal(Vertex *vertexCenter) const;
 
 public:
 	KX_Chunk(void *sgReplicationInfo, SG_Callbacks callbacks, KX_ChunkNode *node, RAS_MaterialBucket *m_bucket);
@@ -77,7 +81,6 @@ public:
 	void ReconstructMesh();
 	void RenderMesh(RAS_IRasterizer *rasty, KX_Camera *cam);
 
-	Vertex *GetColumnExternVertex(COLUMN_TYPE column, unsigned short index);
 	inline KX_ChunkNode* GetNode() const { return m_node; }
 
 	static unsigned int m_chunkActive;

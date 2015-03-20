@@ -19,42 +19,36 @@
 #
 # The Original Code is: all of this file.
 #
-# Contributor(s): Jacques Beaurain.
+# Contributor(s): Porteries Tristan.
 #
 # ***** END GPL LICENSE BLOCK *****
 
-remove_extra_strict_flags()
+set(INC
+	.
+	..
+	../../Expressions
+	../../GameLogic
+	../../SceneGraph
+	../../Rasterizer
+	../../Physics/common
+	../../../blender/blenlib
+	../../../blender/makesdna
+	../../../../intern/container
+	../../../../intern/string
+)
 
-# set(CMAKE_BUILD_TYPE Debug)
+set(INC_SYS
+	../../../../intern/moto/include
+)
 
-# there are too many inter-includes so best define here
-if(WITH_PYTHON)
-	blender_include_dirs_sys("${PYTHON_INCLUDE_DIRS}")
-	add_definitions(-DWITH_PYTHON)
-endif()
+set(SRC
+	KX_Chunk.cpp
+	KX_ChunkNode.cpp
+	KX_Terrain.cpp
 
-add_subdirectory(BlenderRoutines)
-add_subdirectory(Converter)
-add_subdirectory(Expressions)
-add_subdirectory(GameLogic)
-add_subdirectory(Ketsji)
-add_subdirectory(Ketsji/KXNetwork)
-add_subdirectory(Ketsji/KXTerrain)
-add_subdirectory(Network)
-add_subdirectory(Network/LoopBackNetwork)
-add_subdirectory(Physics/Dummy)
-add_subdirectory(Rasterizer)
-add_subdirectory(Rasterizer/RAS_OpenGLRasterizer)
-add_subdirectory(SceneGraph)
+	KX_Chunk.h
+	KX_ChunkNode.h
+	KX_Terrain.h
+)
 
-if(WITH_BULLET)
-	add_subdirectory(Physics/Bullet)
-endif()
-
-if(WITH_PYTHON)
-	add_subdirectory(VideoTexture)
-endif()
-
-if(WITH_PLAYER)
-	add_subdirectory(GamePlayer)
-endif()
+blender_add_lib(ge_logic_terrain "${SRC}" "${INC}" "${INC_SYS}")
