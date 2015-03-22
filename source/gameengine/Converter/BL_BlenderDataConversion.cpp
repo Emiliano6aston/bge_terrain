@@ -76,6 +76,7 @@
 #include "KX_Camera.h"
 #include "KX_EmptyObject.h"
 #include "KX_FontObject.h"
+#include "KX_Terrain.h"
 
 #include "RAS_TexMatrix.h"
 #include "RAS_ICanvas.h"
@@ -125,6 +126,7 @@
 #include "DNA_mesh_types.h"
 #include "DNA_meshdata_types.h"
 #include "DNA_view3d_types.h"
+#include "DNA_terrain_types.h"
 #include "DNA_world_types.h"
 #include "DNA_sound_types.h"
 #include "DNA_key_types.h"
@@ -1765,6 +1767,15 @@ static bool bl_isConstraintInList(KX_GameObject *gameobj, set<KX_GameObject*> co
 	return false;
 }
 
+static KX_Terrain *convert_terrain(Terrain *terrain)
+{
+	return (new KX_Terrain(terrain->maxlevel, 
+						   terrain->width, 
+						   terrain->distance, 
+						   terrain->chunksize, 
+						   terrain->height));
+}
+
 /* helper for BL_ConvertBlenderObjects, avoids code duplication
  * note: all var names match args are passed from the caller */
 static void bl_ConvertBlenderObject_Single(
@@ -1966,6 +1977,12 @@ void BL_ConvertBlenderObjects(struct Main* maggie,
 	
 	// no occlusion culling by default
 	kxscene->SetDbvtOcclusionRes(0);
+
+	if (blenderscene->terrain) {
+		KX_Terrain *terrain = convert_terrain(blenderscene->terrain);
+		kxscene->SetTerrain(terrain);
+	}
+		
 
 	int activeLayerBitInfo = blenderscene->lay;
 	

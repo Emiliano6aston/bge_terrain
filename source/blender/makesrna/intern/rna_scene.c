@@ -6188,6 +6188,10 @@ void RNA_def_scene(BlenderRNA *brna)
 	RNA_def_property_ui_text(prop, "World", "World used for rendering the scene");
 	RNA_def_property_update(prop, NC_SCENE | ND_WORLD, "rna_Scene_glsl_update");
 
+	prop = RNA_def_property(srna, "terrain", PROP_POINTER, PROP_NONE);
+	RNA_def_property_flag(prop, PROP_EDITABLE);
+	RNA_def_property_ui_text(prop, "Terrain", "Terrain used for rendering the scene");
+
 	prop = RNA_def_property(srna, "cursor_location", PROP_FLOAT, PROP_XYZ_LENGTH);
 	RNA_def_property_float_sdna(prop, NULL, "cursor");
 	RNA_def_property_ui_text(prop, "Cursor Location", "3D cursor location");

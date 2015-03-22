@@ -44,6 +44,7 @@
 #include "DNA_node_types.h"
 #include "DNA_scene_types.h"
 #include "DNA_world_types.h"
+#include "DNA_terrain_types.h"
 #include "DNA_brush_types.h"
 #include "DNA_linestyle_types.h"
 
@@ -139,6 +140,37 @@ static int buttons_context_path_world(ButsContextPath *path)
 	}
 
 	/* no path to a world possible */
+	return 0;
+}
+
+/* note: this function can return 1 without adding a terrain to the path
+ * so the buttons stay visible, but be sure to check the ID type if a ID_WO */
+static int buttons_context_path_terrain(ButsContextPath *path)
+{
+	Scene *scene;
+	Terrain *terrain;
+	PointerRNA *ptr = &path->ptr[path->len - 1];
+
+	/* if we already have a (pinned) terrain, we're done */
+	if (RNA_struct_is_a(ptr->type, &RNA_Terrain)) {
+		return 1;
+	}
+	/* if we have a scene, use the scene's terrain */
+	else if (buttons_context_path_scene(path)) {
+		scene = path->ptr[path->len - 1].data;
+		terrain = scene->terrain;
+		
+		if (terrain) {
+			RNA_id_pointer_create(&scene->terrain->id, &path->ptr[path->len]);
+			path->len++;
+			return 1;
+		}
+		else {
+			return 1;
+		}
+	}
+
+	/* no path to a terrain possible */
 	return 0;
 }
 
@@ -599,6 +631,9 @@ static int buttons_context_path(const bContext *C, ButsContextPath *path, int ma
 		case BCONTEXT_WORLD:
 			found = buttons_context_path_world(path);
 			break;
+		case BCONTEXT_TERRAIN:
+			found = buttons_context_path_terrain(path);
+			break;
 		case BCONTEXT_OBJECT:
 		case BCONTEXT_PHYSICS:
 		case BCONTEXT_CONSTRAINT:
@@ -744,7 +779,7 @@ const char *buttons_context_dir[] = {
 	"texture", "texture_user", "texture_user_property", "bone", "edit_bone",
 	"pose_bone", "particle_system", "particle_system_editable", "particle_settings",
 	"cloth", "soft_body", "fluid", "smoke", "collision", "brush", "dynamic_paint",
-	"line_style", NULL
+	"line_style", "terrain", NULL
 };
 
 int buttons_context(const bContext *C, const char *member, bContextDataResult *result)
@@ -771,6 +806,10 @@ int buttons_context(const bContext *C, const char *member, bContextDataResult *r
 	}
 	else if (CTX_data_equals(member, "world")) {
 		set_pointer_type(path, result, &RNA_World);
+		return 1;
+	}
+	else if (CTX_data_equals(member, "terrain")) {
+		set_pointer_type(path, result, &RNA_Terrain);
 		return 1;
 	}
 	else if (CTX_data_equals(member, "object")) {

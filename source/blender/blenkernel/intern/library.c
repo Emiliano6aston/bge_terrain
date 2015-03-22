@@ -64,6 +64,7 @@
 #include "DNA_screen_types.h"
 #include "DNA_speaker_types.h"
 #include "DNA_sound_types.h"
+#include "DNA_terrain_types.h"
 #include "DNA_text_types.h"
 #include "DNA_vfont_types.h"
 #include "DNA_windowmanager_types.h"
@@ -113,6 +114,7 @@
 #include "BKE_sound.h"
 #include "BKE_screen.h"
 #include "BKE_scene.h"
+#include "BKE_terrain.h"
 #include "BKE_text.h"
 #include "BKE_texture.h"
 #include "BKE_world.h"
@@ -232,6 +234,9 @@ bool id_make_local(ID *id, bool test)
 		case ID_TE:
 			if (!test) BKE_texture_make_local((Tex *)id);
 			return true;
+		case ID_TER:
+			if (!test) BKE_terrain_make_local((Terrain *)id);
+			return true;
 		case ID_IM:
 			if (!test) BKE_image_make_local((Image *)id);
 			return true;
@@ -329,6 +334,9 @@ bool id_copy(ID *id, ID **newid, bool test)
 			return true;
 		case ID_TE:
 			if (!test) *newid = (ID *)BKE_texture_copy((Tex *)id);
+			return true;
+		case ID_TER:
+			if (!test) *newid = (ID *)BKE_terrain_copy((Terrain *)id);
 			return true;
 		case ID_IM:
 			if (!test) *newid = (ID *)BKE_image_copy(G.main, (Image *)id);
@@ -476,6 +484,8 @@ ListBase *which_libbase(Main *mainlib, short type)
 			return &(mainlib->mat);
 		case ID_TE:
 			return &(mainlib->tex);
+		case ID_TER:
+			return &(mainlib->terrain);
 		case ID_IM:
 			return &(mainlib->image);
 		case ID_LT:
@@ -609,6 +619,7 @@ int set_listbasepointers(Main *main, ListBase **lb)
 	lb[a++] = &(main->camera);
 
 	lb[a++] = &(main->text);
+	lb[a++] = &(main->terrain);
 	lb[a++] = &(main->sound);
 	lb[a++] = &(main->group);
 	lb[a++] = &(main->palettes);
@@ -677,6 +688,9 @@ void *BKE_libblock_alloc_notest(short type)
 			break;
 		case ID_TE:
 			id = MEM_callocN(sizeof(Tex), "tex");
+			break;
+		case ID_TER:
+			id = MEM_callocN(sizeof(Terrain), "terrain");
 			break;
 		case ID_IM:
 			id = MEM_callocN(sizeof(Image), "image");
@@ -1104,6 +1118,9 @@ void BKE_libblock_free_ex(Main *bmain, void *idv, bool do_id_user)
 			break;
 		case ID_TE:
 			BKE_texture_free((Tex *)id);
+			break;
+		case ID_TER:
+			BKE_terrain_free((Terrain *)id);
 			break;
 		case ID_IM:
 			BKE_image_free((Image *)id);

@@ -30,6 +30,7 @@ set(INC
 	../GameLogic
 	../Ketsji
 	../Ketsji/KXNetwork
+	../Ketsji/KXTerrain
 	../Network
 	../Network/LoopBackNetwork
 	../Physics/Bullet

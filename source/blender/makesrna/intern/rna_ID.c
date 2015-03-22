@@ -76,6 +76,7 @@ EnumPropertyItem id_type_items[] = {
 	{ID_SCR, "SCREEN", ICON_SPLITSCREEN, "Screen", ""},
 	{ID_SO, "SOUND", ICON_PLAY_AUDIO, "Sound", ""},
 	{ID_SPK, "SPEAKER", ICON_SPEAKER, "Speaker", ""},
+    {ID_TER, "TERRAIN", ICON_WIRE, "Terrain", ""},
 	{ID_TXT, "TEXT", ICON_TEXT, "Text", ""},
 	{ID_TE, "TEXTURE", ICON_TEXTURE_DATA, "Texture", ""},
 	{ID_WM, "WINDOWMANAGER", ICON_FULLSCREEN, "Window Manager", ""},
@@ -158,6 +159,7 @@ short RNA_type_to_ID_code(StructRNA *type)
 	if (RNA_struct_is_a(type, &RNA_Screen)) return ID_SCR;
 	if (RNA_struct_is_a(type, &RNA_Sound)) return ID_SO;
 	if (RNA_struct_is_a(type, &RNA_Speaker)) return ID_SPK;
+	if (RNA_struct_is_a(type, &RNA_Terrain)) return ID_TER;
 	if (RNA_struct_is_a(type, &RNA_Texture)) return ID_TE;
 	if (RNA_struct_is_a(type, &RNA_Text)) return ID_TXT;
 	if (RNA_struct_is_a(type, &RNA_VectorFont)) return ID_VF;
@@ -197,6 +199,7 @@ StructRNA *ID_code_to_RNA_type(short idcode)
 		case ID_SCR: return &RNA_Screen;
 		case ID_SO: return &RNA_Sound;
 		case ID_SPK: return &RNA_Speaker;
+		case ID_TER: return &RNA_Terrain;
 		case ID_TE: return &RNA_Texture;
 		case ID_TXT: return &RNA_Text;
 		case ID_VF: return &RNA_VectorFont;

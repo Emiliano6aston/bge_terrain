@@ -60,6 +60,7 @@ _modules = [
     "properties_scene",
     "properties_texture",
     "properties_world",
+    "properties_game_terrain",
     "space_clip",
     "space_console",
     "space_dopesheet",
