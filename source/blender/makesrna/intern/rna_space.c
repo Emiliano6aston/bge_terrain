@@ -195,6 +195,7 @@ static EnumPropertyItem buttons_context_items[] = {
 	{BCONTEXT_RENDER, "RENDER", ICON_SCENE, "Render", "Render"},
 	{BCONTEXT_RENDER_LAYER, "RENDER_LAYER", ICON_RENDERLAYERS, "Render Layers", "Render layers"},
 	{BCONTEXT_WORLD, "WORLD", ICON_WORLD, "World", "World"},
+	{BCONTEXT_TERRAIN, "TERRAIN", ICON_WIRE, "Terrain", "Terrain"},
 	{BCONTEXT_OBJECT, "OBJECT", ICON_OBJECT_DATA, "Object", "Object"},
 	{BCONTEXT_CONSTRAINT, "CONSTRAINT", ICON_CONSTRAINT, "Constraints", "Object constraints"},
 	{BCONTEXT_MODIFIER, "MODIFIER", ICON_MODIFIER, "Modifiers", "Object modifiers"},
@@ -1046,6 +1047,10 @@ static EnumPropertyItem *rna_SpaceProperties_context_itemf(bContext *UNUSED(C), 
 
 	if (sbuts->pathflag & (1 << BCONTEXT_WORLD)) {
 		RNA_enum_items_add_value(&item, &totitem, buttons_context_items, BCONTEXT_WORLD);
+	}
+
+	if (sbuts->pathflag & (1 << BCONTEXT_TERRAIN)) {
+		RNA_enum_items_add_value(&item, &totitem, buttons_context_items, BCONTEXT_TERRAIN);
 	}
 
 	if (sbuts->pathflag & (1 << BCONTEXT_OBJECT)) {

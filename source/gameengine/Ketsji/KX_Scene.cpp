@@ -166,6 +166,7 @@ KX_Scene::KX_Scene(class SCA_IInputDevice* keyboarddevice,
 	m_blenderScene(scene),
 	m_isActivedHysteresis(false),
 	m_lodHysteresisValue(0)
+	m_terrain(NULL)
 {
 	m_suspendedtime = 0.0;
 	m_suspendeddelta = 0.0;
@@ -240,7 +241,6 @@ KX_Scene::KX_Scene(class SCA_IInputDevice* keyboarddevice,
 		m_obstacleSimulation = NULL;
 	}
 
-	m_terrain = new KX_Terrain(16, 8192, 80., 10., 30.);
 #ifdef WITH_PYTHON
 	m_attr_dict = NULL;
 	m_draw_call_pre = NULL;
@@ -1841,20 +1841,34 @@ void KX_Scene::UpdateObjectActivity(void)
 	}
 }
 
+void KX_Scene::SetTerrain(KX_Terrain *terrain)
+{
+	m_terrain = terrain;
+}
+
+KX_Terrain *KX_Scene::GetTerrain() const
+{
+	return m_terrain;
+}
+
 void KX_Scene::CalculateVisibleTerrainChunks()
 {
-	m_terrain->CalculateVisibleChunks(m_active_camera);
+	if (m_terrain)
+		m_terrain->CalculateVisibleChunks(m_active_camera);
 }
 
 void KX_Scene::UpdateTerrainChunksMeshes()
 {
-	m_terrain->UpdateChunksMeshes();
+	if (m_terrain)
+		m_terrain->UpdateChunksMeshes();
 }
 
 void KX_Scene::RenderTerrainChunksMeshes(const MT_Transform& cameratrans, RAS_IRasterizer* rasty)
 {
-	m_terrain->RenderChunksMeshes(cameratrans, rasty);
-	KX_BlenderMaterial::EndFrame();
+	if (m_terrain) {
+		m_terrain->RenderChunksMeshes(cameratrans, rasty);
+		KX_BlenderMaterial::EndFrame();
+	}
 }
 
 void KX_Scene::SetActivityCullingRadius(float f)

@@ -1480,6 +1480,19 @@ void RNA_def_main_worlds(BlenderRNA *brna, PropertyRNA *cprop)
 	RNA_def_property_boolean_funcs(prop, "rna_Main_worlds_is_updated_get", NULL);
 }
 
+void RNA_def_main_terrain(BlenderRNA *brna, PropertyRNA *cprop)
+{
+	StructRNA *srna;
+	FunctionRNA *func;
+	PropertyRNA *parm;
+	PropertyRNA *prop;
+
+	RNA_def_property_srna(cprop, "BlendDataTerrains");
+	srna = RNA_def_struct(brna, "BlendDataTerrains", NULL);
+	RNA_def_struct_sdna(srna, "Main");
+	RNA_def_struct_ui_text(srna, "Main Terrains", "Collection of terrain");
+}
+
 void RNA_def_main_groups(BlenderRNA *brna, PropertyRNA *cprop)
 {
 	StructRNA *srna;

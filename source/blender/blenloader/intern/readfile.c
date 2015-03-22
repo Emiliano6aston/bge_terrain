@@ -85,6 +85,7 @@
 #include "DNA_particle_types.h"
 #include "DNA_property_types.h"
 #include "DNA_rigidbody_types.h"
+#include "DNA_terrain_types.h"
 #include "DNA_text_types.h"
 #include "DNA_view3d_types.h"
 #include "DNA_screen_types.h"
@@ -3508,6 +3509,41 @@ static void direct_link_world(FileData *fd, World *wrld)
 	BLI_listbase_clear(&wrld->gpumaterial);
 }
 
+/* ************ READ TERRAIN ***************** */
+
+static void lib_link_terrain(FileData *fd, Main *main)
+{
+	Terrain *terrain;
+	MTex *mtex;
+	int a;
+	
+	for (terrain = main->terrain.first; terrain; terrain = terrain->id.next) {
+		if (terrain->id.flag & LIB_NEED_LINK) {
+			terrain->id.flag -= LIB_NEED_LINK;
+		}
+	}
+}
+
+static void direct_link_terrain(FileData *fd, Terrain *terrain)
+{
+	/*int a;
+	
+	wrld->adt = newdataadr(fd, wrld->adt);
+	direct_link_animdata(fd, wrld->adt);
+	
+	for (a = 0; a < MAX_MTEX; a++) {
+		wrld->mtex[a] = newdataadr(fd, wrld->mtex[a]);
+	}
+	
+	wrld->nodetree = newdataadr(fd, wrld->nodetree);
+	if (wrld->nodetree) {
+		direct_link_id(fd, &wrld->nodetree->id);
+		direct_link_nodetree(fd, wrld->nodetree);
+	}
+	
+	wrld->preview = direct_link_preview_image(fd, wrld->preview);
+	BLI_listbase_clear(&wrld->gpumaterial);*/
+}
 
 /* ************ READ VFONT ***************** */
 
@@ -5521,6 +5557,7 @@ static void lib_link_scene(FileData *fd, Main *main)
 			
 			sce->camera = newlibadr(fd, sce->id.lib, sce->camera);
 			sce->world = newlibadr_us(fd, sce->id.lib, sce->world);
+			sce->terrain = newlibadr_us(fd, sce->id.lib, sce->terrain);
 			sce->set = newlibadr(fd, sce->id.lib, sce->set);
 			sce->gpd = newlibadr_us(fd, sce->id.lib, sce->gpd);
 			
@@ -7908,6 +7945,9 @@ static BHead *read_libblock(FileData *fd, Main *main, BHead *bhead, int flag, ID
 		case ID_TE:
 			direct_link_texture(fd, (Tex *)id);
 			break;
+		case ID_TER:
+			direct_link_terrain(fd, (Terrain *)id);
+			break;
 		case ID_IM:
 			direct_link_image(fd, (Image *)id);
 			break;
@@ -8157,6 +8197,7 @@ static void lib_link_all(FileData *fd, Main *main)
 	lib_link_ipo(fd, main);		// XXX deprecated... still needs to be maintained for version patches still
 	lib_link_key(fd, main);
 	lib_link_world(fd, main);
+	lib_link_terrain(fd, main);
 	lib_link_lamp(fd, main);
 	lib_link_latt(fd, main);
 	lib_link_text(fd, main);
@@ -9188,6 +9229,7 @@ static void expand_scene(FileData *fd, Main *mainvar, Scene *sce)
 	}
 	expand_doit(fd, mainvar, sce->camera);
 	expand_doit(fd, mainvar, sce->world);
+	expand_doit(fd, mainvar, sce->terrain);
 	
 	if (sce->adt)
 		expand_animdata(fd, mainvar, sce->adt);
