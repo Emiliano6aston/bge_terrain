@@ -84,6 +84,7 @@ typedef struct Main {
 	ListBase ipo;   // XXX deprecated
 	ListBase key;
 	ListBase world;
+	ListBase terrain;
 	ListBase screen;
 	ListBase script;
 	ListBase vfont;

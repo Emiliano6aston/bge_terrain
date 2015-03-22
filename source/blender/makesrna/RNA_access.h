@@ -590,6 +590,7 @@ extern StructRNA RNA_SubsurfModifier;
 extern StructRNA RNA_SunLamp;
 extern StructRNA RNA_SurfaceCurve;
 extern StructRNA RNA_SurfaceModifier;
+extern StructRNA RNA_Terrain;
 extern StructRNA RNA_TexMapping;
 extern StructRNA RNA_Text;
 extern StructRNA RNA_TextBox;

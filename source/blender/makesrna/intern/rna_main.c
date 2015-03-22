@@ -179,6 +179,12 @@ static void rna_Main_world_begin(CollectionPropertyIterator *iter, PointerRNA *p
 	rna_iterator_listbase_begin(iter, &bmain->world, NULL);
 }
 
+static void rna_Main_terrain_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+{
+	Main *bmain = (Main *)ptr->data;
+	rna_iterator_listbase_begin(iter, &bmain->terrain, NULL);
+}
+
 static void rna_Main_screen_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
 {
 	Main *bmain = (Main *)ptr->data;
@@ -347,6 +353,7 @@ void RNA_def_main(BlenderRNA *brna)
 		{"textures", "Texture", "rna_Main_tex_begin", "Textures", "Texture datablocks", RNA_def_main_textures},
 		{"brushes", "Brush", "rna_Main_brush_begin", "Brushes", "Brush datablocks", RNA_def_main_brushes},
 		{"worlds", "World", "rna_Main_world_begin", "Worlds", "World datablocks", RNA_def_main_worlds},
+		{"terrains", "Terrain", "rna_Main_terrain_begin", "Terrains", "Terrain datablocks", RNA_def_main_terrain},
 		{"groups", "Group", "rna_Main_group_begin", "Groups", "Group datablocks", RNA_def_main_groups},
 		{"shape_keys", "Key", "rna_Main_key_begin", "Shape Keys", "Shape Key datablocks", NULL},
 		{"scripts", "ID", "rna_Main_script_begin", "Scripts", "Script datablocks (DEPRECATED)", NULL},

@@ -49,6 +49,7 @@ void OBJECT_OT_material_slot_move(struct wmOperatorType *ot);
 void MATERIAL_OT_new(struct wmOperatorType *ot);
 void TEXTURE_OT_new(struct wmOperatorType *ot);
 void WORLD_OT_new(struct wmOperatorType *ot);
+void TERRAIN_OT_new(struct wmOperatorType *ot);
 
 void MATERIAL_OT_copy(struct wmOperatorType *ot);
 void MATERIAL_OT_paste(struct wmOperatorType *ot);

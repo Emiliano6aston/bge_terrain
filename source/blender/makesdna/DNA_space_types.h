@@ -179,7 +179,8 @@ typedef enum eSpaceButtons_Context {
 	BCONTEXT_CONSTRAINT = 11,
 	BCONTEXT_BONE_CONSTRAINT = 12,
 	BCONTEXT_RENDER_LAYER = 13,
-	
+	BCONTEXT_TERRAIN = 14,
+
 	/* always as last... */
 	BCONTEXT_TOT
 } eSpaceButtons_Context;
