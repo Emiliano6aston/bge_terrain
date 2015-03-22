@@ -84,6 +84,7 @@ set(DEFSRC
 	rna_sound.c
 	rna_space.c
 	rna_speaker.c
+	rna_terrain.c
 	rna_test.c
 	rna_text.c
 	rna_texture.c

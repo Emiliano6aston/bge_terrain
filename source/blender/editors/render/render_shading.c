@@ -39,6 +39,7 @@
 #include "DNA_particle_types.h"
 #include "DNA_scene_types.h"
 #include "DNA_space_types.h"
+#include "DNA_terrain_types.h"
 #include "DNA_world_types.h"
 
 #include "BLI_utildefines.h"
@@ -61,6 +62,7 @@
 #include "BKE_paint.h"
 #include "BKE_report.h"
 #include "BKE_scene.h"
+#include "BKE_terrain.h"
 #include "BKE_texture.h"
 #include "BKE_world.h"
 #include "BKE_editmesh.h"
@@ -614,6 +616,54 @@ void WORLD_OT_new(wmOperatorType *ot)
 	
 	/* api callbacks */
 	ot->exec = new_world_exec;
+
+	/* flags */
+	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO | OPTYPE_INTERNAL;
+}
+
+/********************** new terrain operator *********************/
+
+static int new_terrain_exec(bContext *C, wmOperator *UNUSED(op))
+{
+	Scene *scene = CTX_data_scene(C);
+	Terrain *terrain = CTX_data_pointer_get_type(C, "terrain", &RNA_Terrain).data;
+	Main *bmain = CTX_data_main(C);
+	PointerRNA ptr, idptr;
+	PropertyRNA *prop;
+
+	/* add or copy terrain */
+	if (terrain) {
+		terrain = BKE_terrain_copy(terrain);
+	}
+	else {
+		terrain = add_terrain(bmain, DATA_("Terrain"));
+	}
+
+	/* hook into UI */
+	UI_context_active_but_prop_get_templateID(C, &ptr, &prop);
+
+	if (prop) {
+		/* when creating new ID blocks, use is already 1, but RNA
+		 * pointer se also increases user, so this compensates it */
+		terrain->id.us--;
+
+		RNA_id_pointer_create(&terrain->id, &idptr);
+		RNA_property_pointer_set(&ptr, prop, idptr);
+		RNA_property_update(C, &ptr, prop);
+	}
+
+	return OPERATOR_FINISHED;
+}
+
+void TERRAIN_OT_new(wmOperatorType *ot)
+{
+	/* identifiers */
+	ot->name = "New Terrain";
+	ot->idname = "TERRAIN_OT_new";
+	ot->description = "Add a new terrain";
+	
+	/* api callbacks */
+	ot->exec = new_terrain_exec;
 
 	/* flags */
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO | OPTYPE_INTERNAL;

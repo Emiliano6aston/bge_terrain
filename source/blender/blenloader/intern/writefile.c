@@ -130,6 +130,7 @@
 #include "DNA_screen_types.h"
 #include "DNA_speaker_types.h"
 #include "DNA_sound_types.h"
+#include "DNA_terrain_types.h"
 #include "DNA_text_types.h"
 #include "DNA_view3d_types.h"
 #include "DNA_vfont_types.h"
@@ -2318,6 +2319,21 @@ static void write_worlds(WriteData *wd, ListBase *idbase)
 	}
 }
 
+static void write_terrains(WriteData *wd, ListBase *idbase)
+{
+	Terrain *terrain;
+
+	terrain= idbase->first;
+	while (terrain) {
+		if (terrain->id.us>0 || wd->current) {
+			/* write LibData */
+			writestruct(wd, ID_TER, "Terrain", 1, terrain);
+			if (terrain->id.properties) IDP_WriteProperty(terrain->id.properties, wd);
+		}
+		terrain= terrain->id.next;
+	}
+}
+
 static void write_lamps(WriteData *wd, ListBase *idbase)
 {
 	Lamp *la;
@@ -3747,6 +3763,7 @@ static int write_file_handle(
 	write_vfonts   (wd, &mainvar->vfont);
 	write_keys     (wd, &mainvar->key);
 	write_worlds   (wd, &mainvar->world);
+	write_terrains (wd, &mainvar->terrain);
 	write_texts    (wd, &mainvar->text);
 	write_speakers (wd, &mainvar->speaker);
 	write_sounds   (wd, &mainvar->sound);

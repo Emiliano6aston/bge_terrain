@@ -53,6 +53,7 @@ struct CurveMapping;
 struct Object;
 struct Brush;
 struct World;
+struct Terrain;
 struct Scene;
 struct Image;
 struct Group;
@@ -1363,7 +1364,8 @@ typedef struct Scene {
 	
 	struct Object *camera;
 	struct World *world;
-	
+	struct Terrain *terrain;
+
 	struct Scene *set;
 	
 	ListBase base;
