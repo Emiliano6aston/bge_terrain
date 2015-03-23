@@ -77,6 +77,7 @@
 #include "KX_EmptyObject.h"
 #include "KX_FontObject.h"
 #include "KX_Terrain.h"
+#include "KX_TerrainZone.h"
 
 #include "RAS_TexMatrix.h"
 #include "RAS_ICanvas.h"
@@ -579,7 +580,7 @@ static bool ConvertMaterial(
 	
 	material->IdMode = DEFAULT_BLENDER;
 	material->glslmat = (validmat) ? glslmat: false;
-	material->materialindex = mface->mat_nr;
+	material->materialindex = (mface) ? mface->mat_nr : 0;
 
 	// --------------------------------
 	if (validmat) {
@@ -858,8 +859,9 @@ static bool ConvertMaterial(
 
 	// XXX The RGB values here were meant to be temporary storage for the conversion process,
 	// but fonts now make use of them too, so we leave them in for now.
-	unsigned int rgb[4];
-	GetRGB(use_vcol, mface, mmcol, mat, rgb);
+	unsigned int rgb[4] = {0, 0, 0, 0};
+	if (mface)
+		GetRGB(use_vcol, mface, mmcol, mat, rgb);
 
 	// swap the material color, so MCol on bitmap font works
 	if (validmat && (use_vcol == false) && (mat->game.flag & GEMAT_TEXT))
@@ -883,7 +885,7 @@ static bool ConvertMaterial(
 	return true;
 }
 
-static RAS_MaterialBucket *material_from_mesh(Material *ma, MFace *mface, MTFace *tface, MCol *mcol, MTF_localLayer *layers, int lightlayer, unsigned int *rgb, MT_Point2 uvs[4][RAS_TexVert::MAX_UNIT], const char *tfaceName, KX_Scene* scene, KX_BlenderSceneConverter *converter)
+static RAS_MaterialBucket *material_from_mesh(Material *ma, MFace *mface, MTFace *tface, MCol *mcol, MTF_localLayer *layers, int lightlayer, unsigned int *rgb, MT_Point2 uvs[4][RAS_TexVert::MAX_UNIT], const char *tfaceName, KX_Scene* scene, KX_BlenderSceneConverter *converter, bool nomesh)
 {
 	RAS_IPolyMaterial* polymat = converter->FindCachedPolyMaterial(scene, ma);
 	BL_Material* bl_mat = converter->FindCachedBlenderMaterial(scene, ma);
@@ -901,10 +903,12 @@ static RAS_MaterialBucket *material_from_mesh(Material *ma, MFace *mface, MTFace
 			converter->CacheBlenderMaterial(scene, ma, bl_mat);
 	}
 
-	const bool use_vcol = GetMaterialUseVColor(ma, bl_mat->glslmat);
-	GetRGB(use_vcol, mface, mcol, ma, rgb);
+	if (!nomesh) {
+		const bool use_vcol = GetMaterialUseVColor(ma, bl_mat->glslmat);
+		GetRGB(use_vcol, mface, mcol, ma, rgb);
 
-	GetUVs(bl_mat, layers, mface, tface, uvs);
+		GetUVs(bl_mat, layers, mface, tface, uvs);
+	}
 
 	/* then the KX_BlenderMaterial */
 	if (polymat == NULL)
@@ -1081,7 +1085,7 @@ RAS_MeshObject* BL_ConvertMesh(Mesh* mesh, Object* blenderobj, KX_Scene* scene, 
 
 		{
 
-			RAS_MaterialBucket* bucket = material_from_mesh(ma, mface, tface, mcol, layers, lightlayer, rgb, uvs, tfaceName, scene, converter);
+			RAS_MaterialBucket* bucket = material_from_mesh(ma, mface, tface, mcol, layers, lightlayer, rgb, uvs, tfaceName, scene, converter, false);
 
 			// set render flags
 			bool visible = ((ma->game.flag & GEMAT_INVISIBLE)==0);
@@ -1758,13 +1762,29 @@ static bool bl_isConstraintInList(KX_GameObject *gameobj, set<KX_GameObject*> co
 	return false;
 }
 
-static KX_Terrain *convert_terrain(Terrain *terrain)
+static KX_Terrain *convert_terrain(Terrain *terrain, KX_Scene* scene, KX_BlenderSceneConverter *converter)
 {
-	return (new KX_Terrain(terrain->maxlevel, 
-						   terrain->width, 
-						   terrain->distance, 
-						   terrain->chunksize, 
-						   terrain->height));
+	unsigned int rgb[3] = {0, 0, 0};
+	MT_Point2 uvs[4][RAS_TexVert::MAX_UNIT];
+
+	RAS_MaterialBucket *bucket = material_from_mesh(terrain->material, NULL, NULL, NULL, NULL, 0, rgb, uvs, NULL, scene, converter, true);
+
+	KX_Terrain *kxterrain = new KX_Terrain(bucket,
+										   NULL,
+										   terrain->maxlevel,
+										   terrain->vertexsubdivision,
+										   terrain->width, 
+										   terrain->distance, 
+										   terrain->chunksize, 
+										   terrain->height,
+										   terrain->noisesize);
+
+	KX_TerrainZoneInfo *zoneInfo = new KX_TerrainZoneInfo(terrain->noisesize,
+														  terrain->height,
+														  0.0);
+	kxterrain->AddTerrainZoneInfo(zoneInfo);
+
+	return kxterrain;
 }
 
 /* helper for BL_ConvertBlenderObjects, avoids code duplication
@@ -1968,12 +1988,6 @@ void BL_ConvertBlenderObjects(struct Main* maggie,
 	
 	// no occlusion culling by default
 	kxscene->SetDbvtOcclusionRes(0);
-
-	if (blenderscene->terrain) {
-		KX_Terrain *terrain = convert_terrain(blenderscene->terrain);
-		kxscene->SetTerrain(terrain);
-	}
-		
 
 	int activeLayerBitInfo = blenderscene->lay;
 	
@@ -2369,6 +2383,12 @@ void BL_ConvertBlenderObjects(struct Main* maggie,
 	KX_WorldInfo* worldinfo = new KX_WorldInfo(blenderscene, blenderscene->world);
 	converter->RegisterWorldInfo(worldinfo);
 	kxscene->SetWorldInfo(worldinfo);
+
+	// convert terrain
+	if (blenderscene->terrain) {
+		KX_Terrain *terrain = convert_terrain(blenderscene->terrain, kxscene, converter);
+		kxscene->SetTerrain(terrain);
+	}
 
 	//create object representations for obstacle simulation
 	KX_ObstacleSimulation* obssimulation = kxscene->GetObstacleSimulation();
