@@ -36,6 +36,7 @@
 
 #include "DNA_terrain_types.h"
 #include "DNA_scene_types.h"
+#include "DNA_material_types.h"
 
 #include "BLI_utildefines.h"
 #include "BLI_listbase.h"
@@ -49,6 +50,11 @@
 
 void BKE_terrain_free_ex(Terrain *terrain, bool do_id_user)
 {
+	if (terrain->material) {
+		if (do_id_user)
+			terrain->material->id.us--;
+	}
+
 	BKE_icon_delete((struct ID *)terrain);
 	terrain->id.icon_id = 0;
 }
@@ -63,17 +69,26 @@ Terrain *add_terrain(Main *bmain, const char *name)
 	Terrain *terrain;
 
 	terrain = BKE_libblock_alloc(bmain, ID_TER, name);
+	terrain->material = NULL;
 
 	return terrain;
 }
 
 Terrain *BKE_terrain_copy(Terrain *terrain)
 {
-	Terrain *terrainn;
+	Terrain *terrain_new;
+	terrain_new = BKE_libblock_copy(&terrain->id);
+	terrain_new->material = terrain->material;
 
-	terrainn = BKE_libblock_copy(&terrain->id);
+	if (terrain->material) {
+		id_us_plus((ID *)terrain_new->material);
+	}
 
-	return terrainn;
+	if (terrain->id.lib) {
+		BKE_id_lib_local_paths(G.main, terrain->id.lib, &terrain_new->id);
+	}
+
+	return terrain_new;
 }
 
 void BKE_terrain_make_local(Terrain *terrain)
@@ -87,7 +102,9 @@ void BKE_terrain_make_local(Terrain *terrain)
 	 * - mixed: make copy
 	 */
 
-	if (terrain->id.lib == NULL) return;
+	if (terrain->id.lib == NULL) {
+		return;
+	}
 	if (terrain->id.us == 1) {
 		id_clear_lib_data(bmain, &terrain->id);
 		return;

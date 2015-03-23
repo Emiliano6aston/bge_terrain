@@ -166,11 +166,12 @@ const float KX_Chunk::GetZVertexPosition(float vertx, float verty) const
 	KX_Terrain *terrain = m_node->GetTerrain();
 
 	const float maxheight = terrain->GetMaxHeight();
+	const float noisesize = terrain->GetNoiseSize();
 	const MT_Point2 realPos = m_node->GetRealPos();
 
 	const float noisex = vertx + realPos.x();
 	const float noisey = verty + realPos.y();
-	const float vertz = BLI_hnoise(35., noisex, noisey, 0.) * maxheight;
+	const float vertz = BLI_hnoise(noisesize, noisex, noisey, 0.) * maxheight;
 
 	return vertz;
 }

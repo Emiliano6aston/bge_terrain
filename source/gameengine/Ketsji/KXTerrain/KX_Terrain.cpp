@@ -51,34 +51,42 @@ typedef std::map<KX_ChunkNode::Point2D, KX_Chunk*>::iterator chunkit;
 
 static STR_String camname = "Camera";
 
-KX_Terrain::KX_Terrain(unsigned short maxSubDivisions, unsigned short width, float maxDistance, float chunkSize, float maxheight)
-	:m_construct(false),
-	m_maxSubDivision(maxSubDivisions),
+KX_Terrain::KX_Terrain(RAS_MaterialBucket *bucket,
+					   KX_GameObject *templateObject,
+					   unsigned short maxLevel,
+					   unsigned short vertexSubdivision,
+					   unsigned short width,
+					   float maxDistance,
+					   float chunkSize,
+					   float maxheight,
+					   float noiseSize)
+	:m_bucket(bucket),
+	m_templateObject(templateObject),
+	m_maxChunkLevel(maxLevel),
+	m_vertexSubdivision(vertexSubdivision),
 	m_width(width),
 	m_maxDistance2(maxDistance * maxDistance),
 	m_chunkSize(chunkSize),
 	m_maxHeight(maxheight),
-	m_bucket(NULL)
+	m_noiseSize(noiseSize),
+	m_construct(false)
 {
-	DEBUG("Create terrain");
 }
 
 KX_Terrain::~KX_Terrain()
 {
 	Destruct();
+	for (unsigned short i = 0; i < m_zoneInfoList.size(); ++i) {
+		delete m_zoneInfoList[i];
+	}
+	for (unsigned short i = 0; i < m_zoneMeshList.size(); ++i) {
+		delete m_zoneMeshList[i];
+	}
 }
 
 void KX_Terrain::Construct()
 {
 	DEBUG("Construct terrain");
-	KX_GameObject* obj = (KX_GameObject*)KX_GetActiveScene()->GetInactiveList()->FindValue("Cube");
-	if (!obj)
-	{
-		DEBUG("no obj");
-		return;
-	}
-	// le materiau uilisé pour le rendu
-	m_bucket = obj->GetMesh(0)->GetMeshMaterial((unsigned int)0)->m_bucket;
 
 	m_nodeTree = NewNodeList(0, 0, 1);
 	m_construct = true;
@@ -98,7 +106,7 @@ void KX_Terrain::Destruct()
 
 void KX_Terrain::CalculateVisibleChunks(KX_Camera* culledcam)
 {
-	KX_Camera* campos = KX_GetActiveScene()->FindCamera(camname);
+	KX_Camera* campos = culledcam; //KX_GetActiveScene()->FindCamera(camname);
 
 	if (!m_construct)
 		Construct();
@@ -152,9 +160,9 @@ void KX_Terrain::RenderChunksMeshes(const MT_Transform& cameratrans, RAS_IRaster
 unsigned short KX_Terrain::GetSubdivision(float distance) const
 {
 	unsigned int ret = 2;
-	for (float i = m_maxSubDivision; i > 0.; --i)
+	for (float i = m_maxChunkLevel; i > 0.; --i)
 	{
-		if (distance > (i / m_maxSubDivision * m_maxDistance2) || ret == m_width)
+		if (distance > (i / m_maxChunkLevel * m_maxDistance2) || ret == m_width)
 			break;
 		ret *= 2;
 	}
@@ -297,4 +305,14 @@ void KX_Terrain::ScheduleEuthanasyChunks()
 			chunk->Release();
 	}
 	m_euthanasyChunkList.clear();
+}
+
+void KX_Terrain::AddTerrainZoneInfo(KX_TerrainZoneInfo *zoneInfo)
+{
+	m_zoneInfoList.push_back(zoneInfo);
+}
+
+void KX_Terrain::AddTerrainZoneMesh(KX_TerrainZoneMesh *zoneMesh)
+{
+	m_zoneMeshList.push_back(zoneMesh);
 }

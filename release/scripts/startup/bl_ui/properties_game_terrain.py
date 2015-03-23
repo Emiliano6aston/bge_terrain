@@ -49,9 +49,9 @@ class TERRAIN_PT_game_context_terrain(TerrainButtonsPanel, Panel):
             split.template_ID(scene, "terrain", new="terrain.new")
         elif terrain:
             split.template_ID(space, "pin_id")
-            
-class TERRAIN_PT_game_terrain(TerrainButtonsPanel, Panel):
-    bl_label = "Terrain"
+
+class TERRAIN_PT_game_terrain_chunk(TerrainButtonsPanel, Panel):
+    bl_label = "Chunk"
     COMPAT_ENGINES = {'BLENDER_GAME'}
 
     @classmethod
@@ -72,5 +72,24 @@ class TERRAIN_PT_game_terrain(TerrainButtonsPanel, Panel):
         row.column().prop(terrain, "distance")
         row.column().prop(terrain, "chunk_size")
 
+class TERRAIN_PT_game_terrain_mesh(TerrainButtonsPanel, Panel):
+    bl_label = "Mesh"
+    COMPAT_ENGINES = {'BLENDER_GAME'}
+
+    @classmethod
+    def poll(cls, context):
+        scene = context.scene
+        return (scene.terrain)
+
+    def draw(self, context):
+        layout = self.layout
+
+        terrain = context.terrain
+
+        row = layout.row()
+        row.column().prop(terrain, "material")
+        row.column().prop(terrain, "vertex_subdivision")
+
         row = layout.row()
         row.column().prop(terrain, "height")
+        row.column().prop(terrain, "noise_size")

@@ -62,6 +62,7 @@
 #include "BKE_material.h"
 #include "BKE_icons.h"
 #include "BKE_image.h"
+#include "BKE_terrain.h"
 #include "BKE_texture.h"
 #include "BKE_scene.h"
 #include "BKE_sound.h"
@@ -91,6 +92,7 @@
 #include "DNA_mesh_types.h"
 #include "DNA_speaker_types.h"
 #include "DNA_sound_types.h"
+#include "DNA_terrain_types.h"
 #include "DNA_text_types.h"
 #include "DNA_texture_types.h"
 #include "DNA_group_types.h"
@@ -522,6 +524,26 @@ static void rna_Main_worlds_remove(Main *bmain, ReportList *reports, PointerRNA 
 	}
 }
 
+static Terrain *rna_Main_terrains_new(Main *bmain, const char *name)
+{
+	Terrain *terrain = add_terrain(bmain, name);
+	id_us_min(&terrain->id);
+	return terrain;
+}
+static void rna_Main_terrains_remove(Main *bmain, ReportList *reports, PointerRNA *terrain_ptr)
+{
+	Group *terrain = terrain_ptr->data;
+	if (ID_REAL_USERS(terrain) <= 0) {
+		BKE_libblock_free(bmain, terrain);
+		RNA_POINTER_INVALIDATE(terrain_ptr);
+	}
+	else {
+		BKE_reportf(reports, RPT_ERROR, "Terrain '%s' must have zero users to be removed, found %d",
+		            terrain->id.name + 2, ID_REAL_USERS(terrain));
+	}
+}
+
+
 static Group *rna_Main_groups_new(Main *bmain, const char *name)
 {
 	return BKE_group_add(bmain, name);
@@ -760,6 +782,7 @@ static void rna_Main_images_tag(Main *bmain, int value) { BKE_main_id_tag_listba
 static void rna_Main_lattices_tag(Main *bmain, int value) { BKE_main_id_tag_listbase(&bmain->latt, value); }
 static void rna_Main_curves_tag(Main *bmain, int value) { BKE_main_id_tag_listbase(&bmain->curve, value); }
 static void rna_Main_metaballs_tag(Main *bmain, int value) { BKE_main_id_tag_listbase(&bmain->mball, value); }
+static void rna_Main_terrains_tag(Main *bmain, int value) { BKE_main_id_tag_listbase(&bmain->terrain, value); }
 static void rna_Main_fonts_tag(Main *bmain, int value) { BKE_main_id_tag_listbase(&bmain->vfont, value); }
 static void rna_Main_textures_tag(Main *bmain, int value) { BKE_main_id_tag_listbase(&bmain->tex, value); }
 static void rna_Main_brushes_tag(Main *bmain, int value) { BKE_main_id_tag_listbase(&bmain->brush, value); }
@@ -794,6 +817,7 @@ static int rna_Main_lattices_is_updated_get(PointerRNA *ptr) { return DAG_id_typ
 static int rna_Main_curves_is_updated_get(PointerRNA *ptr) { return DAG_id_type_tagged(ptr->data, ID_CU) != 0; }
 static int rna_Main_metaballs_is_updated_get(PointerRNA *ptr) { return DAG_id_type_tagged(ptr->data, ID_MB) != 0; }
 static int rna_Main_fonts_is_updated_get(PointerRNA *ptr) { return DAG_id_type_tagged(ptr->data, ID_VF) != 0; }
+static int rna_Main_terrains_is_updated_get(PointerRNA *ptr) { return DAG_id_type_tagged(ptr->data, ID_TER) != 0; }
 static int rna_Main_textures_is_updated_get(PointerRNA *ptr) { return DAG_id_type_tagged(ptr->data, ID_TE) != 0; }
 static int rna_Main_brushes_is_updated_get(PointerRNA *ptr) { return DAG_id_type_tagged(ptr->data, ID_BR) != 0; }
 static int rna_Main_worlds_is_updated_get(PointerRNA *ptr) { return DAG_id_type_tagged(ptr->data, ID_WO) != 0; }
@@ -1485,12 +1509,25 @@ void RNA_def_main_terrain(BlenderRNA *brna, PropertyRNA *cprop)
 	StructRNA *srna;
 	FunctionRNA *func;
 	PropertyRNA *parm;
-	PropertyRNA *prop;
 
 	RNA_def_property_srna(cprop, "BlendDataTerrains");
 	srna = RNA_def_struct(brna, "BlendDataTerrains", NULL);
 	RNA_def_struct_sdna(srna, "Main");
 	RNA_def_struct_ui_text(srna, "Main Terrains", "Collection of terrain");
+
+	func = RNA_def_function(srna, "new", "rna_Main_terrains_new");
+	RNA_def_function_ui_description(func, "Add a new terrain to the main database");
+	parm = RNA_def_string(func, "name", "Terrain", 0, "", "New name for the datablock");
+	RNA_def_property_flag(parm, PROP_REQUIRED);
+	/* return type */
+	parm = RNA_def_pointer(func, "terrain", "Terrain", "", "New terrain datablock");
+	RNA_def_function_return(func, parm);
+
+	func = RNA_def_function(srna, "remove", "rna_Main_terrains_remove");
+	RNA_def_function_flag(func, FUNC_USE_REPORTS);
+	RNA_def_function_ui_description(func, "Remove a terrain from the current blendfile");
+	parm = RNA_def_pointer(func, "terrain", "Terrain", "", "Terrain to remove");
+	RNA_def_property_flag(parm, PROP_REQUIRED | PROP_NEVER_NULL | PROP_RNAPTR);
 }
 
 void RNA_def_main_groups(BlenderRNA *brna, PropertyRNA *cprop)
