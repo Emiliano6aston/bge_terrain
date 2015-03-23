@@ -56,6 +56,7 @@
 #include "DNA_screen_types.h"
 #include "DNA_speaker_types.h"
 #include "DNA_sound_types.h"
+#include "DNA_terrain_types.h"
 #include "DNA_text_types.h"
 #include "DNA_vfont_types.h"
 #include "DNA_world_types.h"
@@ -447,6 +448,13 @@ void BKE_library_foreach_ID_link(ID *id, LibraryIDLinkCallback callback, void *u
 				CALLBACK_INVOKE(texture->vd->object, IDWALK_NOP);
 			if (texture->ot)
 				CALLBACK_INVOKE(texture->ot->object, IDWALK_NOP);
+			break;
+		}
+
+		case ID_TER:
+		{
+			Terrain *terrain = (Terrain *) id;
+			CALLBACK_INVOKE(terrain->material, IDWALK_NOP);
 			break;
 		}
 

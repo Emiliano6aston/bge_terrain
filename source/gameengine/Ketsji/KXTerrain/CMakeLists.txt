@@ -32,6 +32,7 @@ set(INC
 	../../Rasterizer
 	../../Physics/common
 	../../../blender/blenlib
+	../../../blender/blenkernel
 	../../../blender/makesdna
 	../../../../intern/container
 	../../../../intern/string
@@ -45,10 +46,12 @@ set(SRC
 	KX_Chunk.cpp
 	KX_ChunkNode.cpp
 	KX_Terrain.cpp
+	KX_TerrainZone.cpp
 
 	KX_Chunk.h
 	KX_ChunkNode.h
 	KX_Terrain.h
+	KX_TerrainZone.h
 )
 
 blender_add_lib(ge_logic_terrain "${SRC}" "${INC}" "${INC_SYS}")

@@ -3540,42 +3540,6 @@ static void direct_link_world(FileData *fd, World *wrld)
 	BLI_listbase_clear(&wrld->gpumaterial);
 }
 
-/* ************ READ TERRAIN ***************** */
-
-static void lib_link_terrain(FileData *fd, Main *main)
-{
-	Terrain *terrain;
-	MTex *mtex;
-	int a;
-	
-	for (terrain = main->terrain.first; terrain; terrain = terrain->id.next) {
-		if (terrain->id.flag & LIB_NEED_LINK) {
-			terrain->id.flag -= LIB_NEED_LINK;
-		}
-	}
-}
-
-static void direct_link_terrain(FileData *fd, Terrain *terrain)
-{
-	/*int a;
-	
-	wrld->adt = newdataadr(fd, wrld->adt);
-	direct_link_animdata(fd, wrld->adt);
-	
-	for (a = 0; a < MAX_MTEX; a++) {
-		wrld->mtex[a] = newdataadr(fd, wrld->mtex[a]);
-	}
-	
-	wrld->nodetree = newdataadr(fd, wrld->nodetree);
-	if (wrld->nodetree) {
-		direct_link_id(fd, &wrld->nodetree->id);
-		direct_link_nodetree(fd, wrld->nodetree);
-	}
-	
-	wrld->preview = direct_link_preview_image(fd, wrld->preview);
-	BLI_listbase_clear(&wrld->gpumaterial);*/
-}
-
 /* ************ READ VFONT ***************** */
 
 static void lib_link_vfont(FileData *UNUSED(fd), Main *main)
@@ -3946,6 +3910,28 @@ static void direct_link_material(FileData *fd, Material *ma)
 	
 	ma->preview = direct_link_preview_image(fd, ma->preview);
 	BLI_listbase_clear(&ma->gpumaterial);
+}
+
+
+/* ************ READ TERRAIN ***************** */
+
+static void lib_link_terrain(FileData *fd, Main *main)
+{
+	Terrain *terrain;
+	
+	for (terrain = main->terrain.first; terrain; terrain = terrain->id.next) {
+		if (terrain->id.flag & LIB_NEED_LINK) {
+			if (terrain->material) {
+				terrain->material = newlibadr_us(fd, terrain->id.lib, terrain->material);
+			}
+
+			terrain->id.flag -= LIB_NEED_LINK;
+		}
+	}
+}
+
+static void direct_link_terrain(FileData *fd, Terrain *terrain)
+{
 }
 
 /* ************ READ PARTICLE SETTINGS ***************** */
@@ -7828,6 +7814,7 @@ static const char *dataname(short id_code)
 		case ID_SCE: return "Data from SCE";
 		case ID_MA: return "Data from MA";
 		case ID_TE: return "Data from TE";
+		case ID_TER: return "Data from TER";
 		case ID_CU: return "Data from CU";
 		case ID_GR: return "Data from GR";
 		case ID_AR: return "Data from AR";
@@ -8265,12 +8252,12 @@ static void lib_link_all(FileData *fd, Main *main)
 	lib_link_curve(fd, main);
 	lib_link_mball(fd, main);
 	lib_link_material(fd, main);
+	lib_link_terrain(fd, main);
 	lib_link_texture(fd, main);
 	lib_link_image(fd, main);
 	lib_link_ipo(fd, main);		// XXX deprecated... still needs to be maintained for version patches still
 	lib_link_key(fd, main);
 	lib_link_world(fd, main);
-	lib_link_terrain(fd, main);
 	lib_link_lamp(fd, main);
 	lib_link_latt(fd, main);
 	lib_link_text(fd, main);
@@ -8919,6 +8906,11 @@ static void expand_lattice(FileData *fd, Main *mainvar, Lattice *lt)
 		expand_animdata(fd, mainvar, lt->adt);
 }
 
+static void expand_terrain(FileData *fd, Main *mainvar, Terrain *terrain)
+{
+	if (terrain->material)
+		expand_doit(fd, mainvar, terrain->material);
+}
 
 static void expand_world(FileData *fd, Main *mainvar, World *wrld)
 {
@@ -9495,6 +9487,9 @@ void BLO_expand_main(void *fdhandle, Main *mainvar)
 						break;
 					case ID_TE:
 						expand_texture(fd, mainvar, (Tex *)id);
+						break;
+					case ID_TER:
+						expand_terrain(fd, mainvar, (Terrain *)id);
 						break;
 					case ID_WO:
 						expand_world(fd, mainvar, (World *)id);

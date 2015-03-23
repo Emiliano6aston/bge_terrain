@@ -51,8 +51,14 @@ void RNA_def_terrain(BlenderRNA *brna)
 	prop = RNA_def_property(srna, "max_level", PROP_INT, PROP_NONE);
 	RNA_def_property_int_sdna(prop, NULL, "maxlevel");
 	RNA_def_property_range(prop, 0, 16);
-	RNA_def_property_ui_range(prop, 0.0, 1.0, 1, 3);
-	RNA_def_property_ui_text(prop, "Max Level", "The maximum number of level");
+	RNA_def_property_ui_range(prop, 0, 16, 1, 0);
+	RNA_def_property_ui_text(prop, "Max Level", "");
+
+	prop = RNA_def_property(srna, "vertex_subdivision", PROP_INT, PROP_NONE);
+	RNA_def_property_int_sdna(prop, NULL, "vertexsubdivision");
+	RNA_def_property_range(prop, 4, 32);
+	RNA_def_property_ui_range(prop, 4, 32, 2, 0);
+	RNA_def_property_ui_text(prop, "Vertex Subdivision", "");
 
 	prop = RNA_def_property(srna, "width", PROP_INT, PROP_NONE);
 	RNA_def_property_int_sdna(prop, NULL, "width");
@@ -73,6 +79,17 @@ void RNA_def_terrain(BlenderRNA *brna)
 	RNA_def_property_float_sdna(prop, NULL, "height");
 	RNA_def_property_range(prop, 0.0, FLT_MAX);
 	RNA_def_property_ui_text(prop, "Height", "");
+
+	prop = RNA_def_property(srna, "noise_size", PROP_FLOAT, PROP_NONE);
+	RNA_def_property_float_sdna(prop, NULL, "noisesize");
+	RNA_def_property_range(prop, 0.0, FLT_MAX);
+	RNA_def_property_ui_text(prop, "Noise Size", "");
+
+	prop = RNA_def_property(srna, "material", PROP_POINTER, PROP_NONE);
+	RNA_def_property_pointer_sdna(prop, NULL, "material");
+	RNA_def_property_struct_type(prop, "Material");
+	RNA_def_property_flag(prop, PROP_EDITABLE);
+	RNA_def_property_ui_text(prop, "Material", "");
 }
 
 #endif
