@@ -165,7 +165,7 @@ KX_Scene::KX_Scene(class SCA_IInputDevice* keyboarddevice,
 	m_ueberExecutionPriority(0),
 	m_blenderScene(scene),
 	m_isActivedHysteresis(false),
-	m_lodHysteresisValue(0)
+	m_lodHysteresisValue(0),
 	m_terrain(NULL)
 {
 	m_suspendedtime = 0.0;

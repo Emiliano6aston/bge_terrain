@@ -1,4 +1,4 @@
-/*
+ /*
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -14,40 +14,46 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
- *
- * The Original Code is Copyright (C) 2001-2002 by NaN Holding BV.
- * All rights reserved.
- *
- * The Original Code is: all of this file.
- *
- * Contributor(s): none yet.
+ * 
+ * Contributor(s): Porteries Tristan, Gros Alexis. For the 
+ * Uchronia project (2015-16).
  *
  * ***** END GPL LICENSE BLOCK *****
  */
 
-/** \file DNA_terrain_types.h
- *  \ingroup DNA
- */
+#include "KX_TerrainZone.h"
+#include "DNA_mesh_types.h"
 
-#ifndef __DNA_TERRAIN_TYPES_H__
-#define __DNA_TERRAIN_TYPES_H__
+extern "C" {
+#include "BKE_DerivedMesh.h"
+#include "BKE_cdderivedmesh.h"
+}
 
-#include "DNA_ID.h"
 
-typedef struct Terrain {
-	ID id;
-	struct Material *material;
+KX_TerrainZoneInfo::KX_TerrainZoneInfo(float resolution,
+									   float offset,
+									   float height)
+	:m_resolution(resolution),
+	m_offset(offset),
+	m_height(height)
+{
+}
 
-	int maxlevel;
-	int vertexsubdivision;
-	int width;
-	float distance;
-	float chunksize;
-	float height;
-	float noisesize;
-	int pad;
+KX_TerrainZoneInfo::~KX_TerrainZoneInfo()
+{
+}
 
-} Terrain;
+KX_TerrainZoneMesh::KX_TerrainZoneMesh(KX_TerrainZoneInfo* zoneInfo, Mesh *mesh)
+	:m_zoneInfo(zoneInfo)
+{
+	m_derivedMesh = CDDM_from_mesh(mesh);
+}
 
-#endif
+///Si ledit point est en contact, on renvoie la modif asociée à sa hauteur
+float KX_TerrainZoneMesh::GetHeightZ(const MT_Point3 &pos) const
+{
+	return 0.0;
+}
+
+
 

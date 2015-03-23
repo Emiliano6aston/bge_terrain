@@ -2328,7 +2328,13 @@ static void write_terrains(WriteData *wd, ListBase *idbase)
 		if (terrain->id.us>0 || wd->current) {
 			/* write LibData */
 			writestruct(wd, ID_TER, "Terrain", 1, terrain);
-			if (terrain->id.properties) IDP_WriteProperty(terrain->id.properties, wd);
+
+			if (terrain->id.properties) 
+				IDP_WriteProperty(terrain->id.properties, wd);
+
+			if (terrain->material) {
+				writestruct(wd, DATA, "Material", 1, terrain->material);
+			}
 		}
 		terrain= terrain->id.next;
 	}
