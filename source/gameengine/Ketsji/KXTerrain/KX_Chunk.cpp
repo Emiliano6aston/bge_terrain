@@ -132,9 +132,8 @@ void KX_Chunk::DestructMesh()
 {
 	RemoveMeshes();
 
-	if (m_meshObj)
-	{
-		RAS_MeshMaterial* meshmat = m_meshObj->GetMeshMaterial((unsigned int)0);
+	if (m_meshObj) {
+		RAS_MeshMaterial *meshmat = m_meshObj->GetMeshMaterial((unsigned int)0);
 		meshmat->m_bucket->RemoveMesh(meshmat->m_baseslot);
 		delete m_meshObj;
 	}
@@ -286,8 +285,7 @@ void KX_Chunk::AddMeshPolygonVertexes(Vertex *v1, Vertex *v2, Vertex *v3, bool r
 	MT_Point2 uvs_2[8];
 	MT_Point2 uvs_3[8];
 
-	for (unsigned short i = 0; i < 8; ++i)
-	{
+	for (unsigned short i = 0; i < 8; ++i) {
 		uvs_1[i] = MT_Point2(v1->xyz[0], v1->xyz[1]) + realPos;
 		uvs_2[i] = MT_Point2(v2->xyz[0], v2->xyz[1]) + realPos;
 		uvs_3[i] = MT_Point2(v3->xyz[0], v3->xyz[1]) + realPos;
@@ -296,14 +294,12 @@ void KX_Chunk::AddMeshPolygonVertexes(Vertex *v1, Vertex *v2, Vertex *v3, bool r
 	const MT_Vector4 tangent(0., 0., 0., 0.);
 	// normale temporaire pour eviter la duplication des vertices lors de leur ajout
 
-	if (reverse)
-	{
+	if (reverse) {
 		m_meshObj->AddVertex(poly, 0, v3->xyz, uvs_3, tangent, 255, v3->normal, false, v3->origIndex);
 		m_meshObj->AddVertex(poly, 1, v2->xyz, uvs_2, tangent, 255, v2->normal, false, v2->origIndex);
 		m_meshObj->AddVertex(poly, 2, v1->xyz, uvs_1, tangent, 255, v1->normal, false, v1->origIndex);
 	}
-	else
-	{
+	else {
 		m_meshObj->AddVertex(poly, 0, v1->xyz, uvs_1, tangent, 255, v1->normal, false, v1->origIndex);
 		m_meshObj->AddVertex(poly, 1, v2->xyz, uvs_2, tangent, 255, v2->normal, false, v2->origIndex);
 		m_meshObj->AddVertex(poly, 2, v3->xyz, uvs_3, tangent, 255, v3->normal, false, v3->origIndex);
@@ -362,12 +358,12 @@ void KX_Chunk::ConstructVertexes()
 
 			if (columnIndex == 1)
 				m_columns[COLUMN_LEFT]->SetInternVertex(vertexIndex - 1, vertex);
-			else if (columnIndex == (VERTEX_COUNT - 2))
+			else if (columnIndex == VERTEX_COUNT_INTERN)
 				m_columns[COLUMN_RIGHT]->SetInternVertex(vertexIndex - 1, vertex);
 
 			if (vertexIndex == 1)
 				m_columns[COLUMN_FRONT]->SetInternVertex(columnIndex - 1, vertex);
-			else if (vertexIndex == (VERTEX_COUNT - 2))
+			else if (vertexIndex == VERTEX_COUNT_INTERN)
 				m_columns[COLUMN_BACK]->SetInternVertex(columnIndex - 1, vertex);
 		}
 	}

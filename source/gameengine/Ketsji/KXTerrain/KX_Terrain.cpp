@@ -33,6 +33,7 @@
 #include "PHY_IPhysicsController.h"
 #include "KX_MotionState.h"
 #include "ListValue.h"
+#include "KX_TerrainZone.h"
 
 #define COLORED_PRINT(msg, color) std::cout << /*"\033[" << color << "m" <<*/ msg << /*"\033[30m" <<*/ std::endl;
 
@@ -76,6 +77,7 @@ KX_Terrain::KX_Terrain(RAS_MaterialBucket *bucket,
 KX_Terrain::~KX_Terrain()
 {
 	Destruct();
+
 	for (unsigned short i = 0; i < m_zoneInfoList.size(); ++i) {
 		delete m_zoneInfoList[i];
 	}
