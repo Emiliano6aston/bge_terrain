@@ -82,6 +82,10 @@ public:
 	inline unsigned short GetMaxLevel() const {
 		return (m_maxChunkLevel * m_maxChunkLevel * 2);
 	}
+	/// le nombre maximun de face en largeur dans un chunk
+	inline unsigned short GetVertexSubdivision() const {
+		return m_vertexSubdivision;
+	}
 	/// La distance maximal pour avoir un niveau de subdivision superieur à 1
 	inline float GetMaxDistance2() const {
 		return m_maxDistance2;
