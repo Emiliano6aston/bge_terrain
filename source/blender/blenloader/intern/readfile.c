@@ -3901,6 +3901,7 @@ static void lib_link_terrain(FileData *fd, Main *main)
 
 static void direct_link_terrain(FileData *fd, Terrain *terrain)
 {
+	link_list(fd, &terrain->zones);
 }
 
 /* ************ READ PARTICLE SETTINGS ***************** */
