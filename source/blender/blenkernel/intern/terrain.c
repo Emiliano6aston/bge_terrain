@@ -40,6 +40,9 @@
 
 #include "BLI_utildefines.h"
 #include "BLI_listbase.h"
+#include "BLI_string.h"
+#include "BLI_blenlib.h"
+#include "BLF_translation.h"
 
 #include "BKE_animsys.h"
 #include "BKE_global.h"
@@ -54,9 +57,7 @@ void BKE_terrain_free_ex(Terrain *terrain, bool do_id_user)
 		if (do_id_user)
 			terrain->material->id.us--;
 	}
-
-	BKE_icon_delete((struct ID *)terrain);
-	terrain->id.icon_id = 0;
+	BLI_freelistN(&terrain->zones);
 }
 
 void BKE_terrain_free(Terrain *terrain)
@@ -70,6 +71,7 @@ Terrain *add_terrain(Main *bmain, const char *name)
 
 	terrain = BKE_libblock_alloc(bmain, ID_TER, name);
 	terrain->material = NULL;
+	terrain->active_zoneindex = 0;
 
 	return terrain;
 }
@@ -137,4 +139,41 @@ void BKE_terrain_make_local(Terrain *terrain)
 			}
 		}
 	}
+}
+
+bool BKE_terrain_zone_remove(Terrain *terrain, int index)
+{
+	TerrainZone *zone;
+	printf("remove zone\n");
+	if (index < 0 || index > BLI_listbase_count(&terrain->zones) - 1)
+		return false;
+
+	zone = BLI_findlink(&terrain->zones, index);
+
+	BLI_remlink(&terrain->zones, zone);
+	MEM_freeN(zone);
+
+// 	terrain->active_zoneindex = BLI_listbase_count(&terrain->zones) - 1;
+	return true;
+}
+
+void BKE_terrain_zone_add(Terrain *terrain)
+{
+	TerrainZone *zone = MEM_callocN(sizeof(TerrainZone), "Terrain Zone");
+
+	BLI_strncpy(zone->name, DATA_("Terrain Zone"), sizeof(zone->name));
+
+	printf("add zone; name : %s\n", zone->name);
+
+	zone->mesh = NULL;
+	zone->height = 10.0;
+	zone->offset = 0.0;
+	zone->resolution = 100.0;
+
+	BLI_addtail(&terrain->zones, zone);
+
+	BLI_uniquename(&terrain->zones, zone, DATA_("Terrain Zone"), '.', offsetof(TerrainZone, name), sizeof(zone->name));
+
+	printf("list : %p, size now : %i\n", &terrain->zones, BLI_listbase_count(&terrain->zones));
+// 	terrain->active_zoneindex = BLI_listbase_count(&terrain->zones) - 1;
 }

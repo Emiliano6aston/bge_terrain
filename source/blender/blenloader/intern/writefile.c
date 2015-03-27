@@ -2335,6 +2335,7 @@ static void write_terrains(WriteData *wd, ListBase *idbase)
 			if (terrain->material) {
 				writestruct(wd, DATA, "Material", 1, terrain->material);
 			}
+			writelist(wd, DATA, "TerrainZone", &terrain->zones);
 		}
 		terrain= terrain->id.next;
 	}

@@ -39,8 +39,10 @@ struct Terrain;
 void BKE_terrain_free(struct Terrain *sc);
 void BKE_terrain_free_ex(struct Terrain *sc, bool do_id_user);
 struct Terrain *add_terrain(struct Main *bmian, const char *name);
-struct Terrain *BKE_terrain_copy(struct Terrain *wrld);
-void BKE_terrain_make_local(struct Terrain *wrld);
+struct Terrain *BKE_terrain_copy(struct Terrain *terrain);
+void BKE_terrain_make_local(struct Terrain *terrain);
+bool BKE_terrain_zone_remove(struct Terrain *terrain, int index);
+void BKE_terrain_zone_add(struct Terrain *terrain);
 
 #endif
 

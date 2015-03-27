@@ -625,7 +625,6 @@ void WORLD_OT_new(wmOperatorType *ot)
 
 static int new_terrain_exec(bContext *C, wmOperator *UNUSED(op))
 {
-	Scene *scene = CTX_data_scene(C);
 	Terrain *terrain = CTX_data_pointer_get_type(C, "terrain", &RNA_Terrain).data;
 	Main *bmain = CTX_data_main(C);
 	PointerRNA ptr, idptr;
@@ -667,6 +666,57 @@ void TERRAIN_OT_new(wmOperatorType *ot)
 
 	/* flags */
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO | OPTYPE_INTERNAL;
+}
+
+static int terrain_zone_add_exec(bContext *C, wmOperator *UNUSED(op))
+{
+	Terrain *terrain = CTX_data_pointer_get_type(C, "terrain", &RNA_Terrain).data;
+
+	BKE_terrain_zone_add(terrain);
+
+	return OPERATOR_FINISHED;
+}
+
+void TERRAIN_OT_zone_add(wmOperatorType *ot)
+{
+	/* identifiers */
+	ot->name = "Add Terrain Zone";
+	ot->description = "Add a zone to this terrain";
+	ot->idname = "TERRAIN_OT_zone_add";
+
+	/* api callbacks */
+	ot->exec = terrain_zone_add_exec;
+
+	/* flags */
+	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO | OPTYPE_INTERNAL;
+}
+
+static int terrain_zone_remove_exec(bContext *C, wmOperator *op)
+{
+	Terrain *terrain = CTX_data_pointer_get_type(C, "terrain", &RNA_Terrain).data;
+	int index = RNA_int_get(op->ptr, "index");
+
+	if (!BKE_terrain_zone_remove(terrain, index))
+		return OPERATOR_CANCELLED;
+
+	return OPERATOR_FINISHED;
+}
+
+void TERRAIN_OT_zone_remove(wmOperatorType *ot)
+{
+	/* identifiers */
+	ot->name = "Remove Terrain Zone";
+	ot->description = "Remove a zone from this terrain";
+	ot->idname = "TERRAIN_OT_zone_remove";
+
+	/* api callbacks */
+	ot->exec = terrain_zone_remove_exec;
+
+	/* flags */
+	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO | OPTYPE_INTERNAL;
+
+	/* properties */
+	ot->prop = RNA_def_int(ot->srna, "index", 1, 1, INT_MAX, "Index", "", 1, INT_MAX);
 }
 
 /********************** render layer operators *********************/
