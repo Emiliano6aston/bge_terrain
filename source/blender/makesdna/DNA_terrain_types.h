@@ -33,6 +33,18 @@
 #define __DNA_TERRAIN_TYPES_H__
 
 #include "DNA_ID.h"
+#include "DNA_listBase.h"
+
+typedef struct TerrainZone {
+	struct TerrainZone *next, *prev;
+	char name[64];
+
+	struct Mesh *mesh;
+	float height;
+	float offset;
+	float resolution;
+	int pad;
+} TerrainZone;
 
 typedef struct Terrain {
 	ID id;
@@ -45,8 +57,8 @@ typedef struct Terrain {
 	float chunksize;
 	float height;
 	float noisesize;
-	int pad;
-
+	int active_zoneindex;
+	ListBase zones;
 } Terrain;
 
 #endif

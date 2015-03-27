@@ -90,6 +90,34 @@ class TERRAIN_PT_game_terrain_mesh(TerrainButtonsPanel, Panel):
         row.column().prop(terrain, "material")
         row.column().prop(terrain, "vertex_subdivision")
 
+class TERRAIN_PT_game_terrain_zones(TerrainButtonsPanel, Panel):
+    bl_label = "Terrain Zones"
+    COMPAT_ENGINES = {'BLENDER_GAME'}
+
+    @classmethod
+    def poll(cls, context):
+        scene = context.scene
+        return (scene.terrain)
+
+    def draw(self, context):
+        layout = self.layout
+
+        scene = context.scene
+        terrain = scene.terrain
         row = layout.row()
-        row.column().prop(terrain, "height")
-        row.column().prop(terrain, "noise_size")
+
+        col = row.column()
+        col.template_list("UI_UL_list", "zones", terrain, "zones", terrain.zones, "active_zone_index", rows=1)
+
+        col = row.column(align=True)
+        col.operator("terrain.zone_add", icon='ZOOMIN', text="")
+        col.operator("terrain.zone_remove", icon='ZOOMOUT', text="")
+
+        zone = terrain.zones.active_zone
+        if zone:
+            row = layout.row()
+            row.column().prop(zone, "mesh")
+            row.column().prop(zone, "height")
+            row = layout.row()
+            row.column().prop(zone, "offset")
+            row.column().prop(zone, "resolution")
