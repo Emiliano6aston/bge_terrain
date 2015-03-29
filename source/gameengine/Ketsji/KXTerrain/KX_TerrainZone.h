@@ -31,8 +31,8 @@ class KX_TerrainZoneInfo
 {
 private:
 	float m_resolution;
-	float m_offset;
 	float m_height;
+	float m_offset;
 
 public:
 	KX_TerrainZoneInfo(float resolution,
@@ -44,12 +44,12 @@ public:
 		return m_resolution;
 	}
 
-	inline float GetOffset() const {
-		return m_resolution;
+	inline float GetHeightMax() const {
+		return m_height;
 	}
 
-	inline float GetHeight() const {
-		return m_resolution;
+	inline float GetOffset() const {
+		return m_offset;
 	}
 };
 
@@ -64,9 +64,10 @@ private:
 public:
 	KX_TerrainZoneMesh(KX_TerrainZoneInfo *zoneInfo,
 					   Mesh *mesh);
+	~KX_TerrainZoneMesh();
 
 	///Si ledit point est en contact, on renvoie la modif asociée à sa hauteur
-	float GetHeightZ(const MT_Point3 &pos) const;
+	float GetHeight(float x, float y) const;
 };
 
 

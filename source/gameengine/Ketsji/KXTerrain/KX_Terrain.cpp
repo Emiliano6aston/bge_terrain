@@ -58,9 +58,7 @@ KX_Terrain::KX_Terrain(RAS_MaterialBucket *bucket,
 					   unsigned short vertexSubdivision,
 					   unsigned short width,
 					   float maxDistance,
-					   float chunkSize,
-					   float maxheight,
-					   float noiseSize)
+					   float chunkSize)
 	:m_bucket(bucket),
 	m_templateObject(templateObject),
 	m_maxChunkLevel(maxLevel),
@@ -68,8 +66,7 @@ KX_Terrain::KX_Terrain(RAS_MaterialBucket *bucket,
 	m_width(width),
 	m_maxDistance2(maxDistance * maxDistance),
 	m_chunkSize(chunkSize),
-	m_maxHeight(maxheight),
-	m_noiseSize(noiseSize),
+	m_maxHeight(0.0),
 	m_construct(false)
 {
 }
@@ -179,6 +176,26 @@ KX_ChunkNode *KX_Terrain::GetNodeRelativePosition(const KX_ChunkNode::Point2D& p
 			return node;
 	}
 	return NULL;
+}
+
+const float KX_Terrain::GetVertexHeight(float x, float y) const
+{
+	/*KX_Terrain *terrain = m_node->GetTerrain();
+
+	const float maxheight = terrain->GetMaxHeight();
+	const float noisesize = terrain->GetNoiseSize();
+	const MT_Point2 realPos = m_node->GetRealPos();
+
+	const float noisex = vertx + realPos.x();
+	const float noisey = verty + realPos.y();
+	const float vertz = BLI_hnoise(noisesize, noisex, noisey, 0.) * maxheight;*/
+
+	float height = 0.0;
+
+	for (unsigned short i = 0; i < m_zoneMeshList.size(); ++i)
+		height += m_zoneMeshList[i]->GetHeight(x, y);
+
+	return height;
 }
 
 KX_ChunkNode** KX_Terrain::NewNodeList(int x, int y, unsigned short level)
@@ -311,7 +328,10 @@ void KX_Terrain::ScheduleEuthanasyChunks()
 
 void KX_Terrain::AddTerrainZoneInfo(KX_TerrainZoneInfo *zoneInfo)
 {
+	// TODO : meilleur solution
 	m_zoneInfoList.push_back(zoneInfo);
+	if (m_maxHeight < (zoneInfo->GetHeightMax() + zoneInfo->GetOffset()))
+		m_maxHeight = (zoneInfo->GetHeightMax() + zoneInfo->GetOffset());
 }
 
 void KX_Terrain::AddTerrainZoneMesh(KX_TerrainZoneMesh *zoneMesh)

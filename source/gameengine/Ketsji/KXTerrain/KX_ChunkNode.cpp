@@ -41,9 +41,6 @@ KX_ChunkNode::KX_ChunkNode(int x, int y, unsigned short relativesize, unsigned s
 	float gap = size * relativesize * 2;
 	m_radius2 = (width * width * 2) + (gap * gap);
 
-	/*DEBUG("create new chunk node, pos : " << x << " " << y << ", level : " << level << ", size : " << relativesize 
-	<< ", radius2 : " << m_radius2 << ", gap : " << gap << ", max level : " << maxlevel << ", terrain : " << terrain);*/
-
 	// la coordonnée reel du chunk
 	const float realX = x * size;
 	const float realY = y * size;
