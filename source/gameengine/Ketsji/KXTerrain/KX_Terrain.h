@@ -47,9 +47,6 @@ private:
 	float				m_maxDistance2;
 	float				m_chunkSize;
 	float				m_maxHeight;
-	float				m_noiseSize;
-
-	
 
 	bool					m_construct;
 	KX_ChunkNode		  **m_nodeTree;
@@ -66,9 +63,7 @@ public:
 			   unsigned short vertexSubdivision,
 			   unsigned short width,
 			   float maxDistance,
-			   float chunkSize,
-			   float maxheight,
-			   float noiseSize);
+			   float chunkSize);
 	~KX_Terrain();
 
 	void Construct();
@@ -94,18 +89,19 @@ public:
 	inline float GetChunkSize() const {
 		return m_chunkSize;
 	}
-	/// La hauteur maximale du mesh d'un chunk
-	inline float GetMaxHeight() const { 
+	/// La hauteur maximale
+	inline float GetMaxHeight() const {
 		return m_maxHeight;
 	}
-	/// La hauteur maximale du mesh d'un chunk
-	inline float GetNoiseSize() const { 
-		return m_noiseSize;
-	}
+
 	// le nombre de subdivision par rapport à une distance
 	unsigned short GetSubdivision(float distance) const;
-
 	KX_ChunkNode *GetNodeRelativePosition(const KX_ChunkNode::Point2D &pos);
+
+	/** La position en 3D d'un vertice. on renvoie une coordonnée et non une 
+	 * hauteur car on pourrait imaginer modifier la position en x et y.
+	 */
+	const float GetVertexHeight(float x, float y) const;
 
 	KX_ChunkNode **NewNodeList(int x, int y, unsigned short level);
 	KX_Chunk *AddChunk(KX_ChunkNode *node);

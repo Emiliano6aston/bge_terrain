@@ -3918,6 +3918,7 @@ static void direct_link_material(FileData *fd, Material *ma)
 static void lib_link_terrain(FileData *fd, Main *main)
 {
 	Terrain *terrain;
+	TerrainZone *zone;
 	
 	for (terrain = main->terrain.first; terrain; terrain = terrain->id.next) {
 		if (terrain->id.flag & LIB_NEED_LINK) {
@@ -3925,6 +3926,9 @@ static void lib_link_terrain(FileData *fd, Main *main)
 				terrain->material = newlibadr_us(fd, terrain->id.lib, terrain->material);
 			}
 
+			for (zone = terrain->zones.first; zone; zone = zone->next) {
+				zone->mesh = newlibadr_us(fd, terrain->id.lib, zone->mesh);
+			}
 			terrain->id.flag -= LIB_NEED_LINK;
 		}
 	}

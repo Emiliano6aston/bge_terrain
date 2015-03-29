@@ -76,19 +76,36 @@ public:
 
 	KX_ChunkNode* GetNodeRelativePosition(const Point2D& pos);
 
-	inline KX_Terrain* GetTerrain() const { return m_terrain; }
-	inline unsigned short GetRelativeSize() const { return m_relativeSize; }
-	inline float GetRadius2() const { return m_radius2; }
-	inline MT_Point2 GetRealPos() const { return m_realPos; }
-	inline const Point2D& GetRelativePos() const { return m_relativePos; }
-	inline MT_Point3* GetBox() { return m_box; };
+	inline KX_Terrain* GetTerrain() const {
+		return m_terrain;
+	}
+	inline unsigned short GetRelativeSize() const {
+		return m_relativeSize;
+	}
+	inline float GetRadius2() const { 
+		return m_radius2;
+	}
+	inline const MT_Point2& GetRealPos() const {
+		return m_realPos;
+	}
+	inline const Point2D& GetRelativePos() const {
+		return m_relativePos;
+	}
+	inline MT_Point3* GetBox() { 
+		return m_box;
+	}
 
 	/// Utilisé pour savoir si un noeud est visible
-	inline bool IsCulled() const { return m_culled; }
-	inline KX_Chunk* GetChunk() const { return m_chunk; }
-
+	inline bool IsCulled() const {
+		return m_culled;
+	}
+	inline KX_Chunk* GetChunk() const {
+		return m_chunk; 
+	}
 	/// Utilisé lors des tests jointures
-	inline unsigned short GetLevel() const { return m_level; }
+	inline unsigned short GetLevel() const {
+		return m_level;
+	}
 
 	static unsigned int m_finalNode;
 };
