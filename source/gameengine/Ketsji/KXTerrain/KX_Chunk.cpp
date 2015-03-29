@@ -159,23 +159,7 @@ void KX_Chunk::ReconstructMesh()
 // 	m_pPhysicsController->ReinstancePhysicsShape(NULL, m_meshObj);
 }
 
-// Alexis, tu mettra ta fonction magique ici.
-const float KX_Chunk::GetZVertexPosition(float vertx, float verty) const
-{
-	KX_Terrain *terrain = m_node->GetTerrain();
-
-	const float maxheight = terrain->GetMaxHeight();
-	const float noisesize = terrain->GetNoiseSize();
-	const MT_Point2 realPos = m_node->GetRealPos();
-
-	const float noisex = vertx + realPos.x();
-	const float noisey = verty + realPos.y();
-	const float vertz = BLI_hnoise(noisesize, noisex, noisey, 0.) * maxheight;
-
-	return vertz;
-}
-
-const MT_Point3 KX_Chunk::GetNewVertexPosition(short relx, short rely) const
+const MT_Point3 KX_Chunk::GetVertexPosition(short relx, short rely) const
 {
 	KX_Terrain *terrain = m_node->GetTerrain();
 	//La taille "réelle" du chunk
@@ -185,18 +169,20 @@ const MT_Point3 KX_Chunk::GetNewVertexPosition(short relx, short rely) const
 	const float interval = size * relativesize / POLY_COUNT;
 	// la motie de la largeur du chunk
 	const float width = size / 2 * relativesize;
+	// la position du noeud parent du chunk
+	const MT_Point2& pos = m_node->GetRealPos();
 
 	const float vertx = relx * interval - width;
 	const float verty = rely * interval - width;
-	const float vertz = GetZVertexPosition(vertx, verty);
+	const float vertz = terrain->GetVertexHeight(vertx + pos.x(), verty + pos.y());
 
-	const MT_Point3 pos = MT_Point3(vertx, verty, vertz);
-	return pos;
+	const MT_Point3 vertpos = MT_Point3(vertx, verty, vertz);
+	return vertpos;
 }
 
 KX_Chunk::Vertex *KX_Chunk::NewVertex(short relx, short rely)
 {
-	MT_Point3 pos = GetNewVertexPosition(relx, rely);
+	MT_Point3 pos = GetVertexPosition(relx, rely);
 	return new Vertex(relx, rely, pos, m_originVertexIndex++);
 }
 
@@ -244,14 +230,20 @@ KX_Chunk::Vertex *KX_Chunk::GetVertex(short x, short y) const
  *
  * Ces quatre points peuvent être des vertices déjà existant, mais parfois non.
  * Dans ce cas la on calcule la position d'un vertice virtuelle, c'est pour cela
- * que la fonction GetNewVertexPosition est séparé de NewVertex.
+ * que la fonction GetVertexPosition est séparé de NewVertex.
  */
 const MT_Vector3 KX_Chunk::GetNormal(Vertex *vertexCenter) const
 {
+	// la position du vertice donc du centre du quad
 	float x = vertexCenter->xyz.x();
 	float y = vertexCenter->xyz.y();
 
-	float smothsize = 5.0; // la taille du quad servant a calculer la normale
+	KX_Terrain *terrain = m_node->GetTerrain();
+	// la position du noeud parent du chunk
+	const MT_Point2& pos = m_node->GetRealPos();
+
+	// la taille du quad servant a calculer la normale
+	float smothsize = 5.0;
 
 	// on calcule 4 positions autours du vertice
 	float positiones[4][3] = {
@@ -262,13 +254,12 @@ const MT_Vector3 KX_Chunk::GetNormal(Vertex *vertexCenter) const
 	};
 
 	for (unsigned short i = 0; i < 4; ++i)
-		positiones[i][2] = GetZVertexPosition(positiones[i][0], positiones[i][1]);
+		positiones[i][2] = terrain->GetVertexHeight(positiones[i][0] + pos.x(), positiones[i][1] + pos.y());
 
 	float normal[3] = {0.0, 0.0, 0.0};
 	normal_quad_v3(normal, positiones[0], positiones[1], positiones[2], positiones[3]);
 
 	const MT_Vector3 finalnormal = MT_Vector3(normal);
-
 	return finalnormal;
 }
 
@@ -292,7 +283,6 @@ void KX_Chunk::AddMeshPolygonVertexes(Vertex *v1, Vertex *v2, Vertex *v3, bool r
 	}
 
 	const MT_Vector4 tangent(0., 0., 0., 0.);
-	// normale temporaire pour eviter la duplication des vertices lors de leur ajout
 
 	if (reverse) {
 		m_meshObj->AddVertex(poly, 0, v3->xyz, uvs_3, tangent, 255, v3->normal, false, v3->origIndex);
