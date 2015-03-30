@@ -219,10 +219,10 @@ KX_Chunk::Vertex *KX_Chunk::GetVertex(short x, short y) const
 /* On calcule la normale approximative d'un vertice. Pour cela on
  * fait la normale d'un quadrilatère de quatre point autour du vertice
  *
- *      2
+ *      1
  *      |
  *      |
- * 1−−−−C−−−−0
+ * 2−−−−C−−−−0
  *      |
  *      |
  *      3
@@ -232,32 +232,49 @@ KX_Chunk::Vertex *KX_Chunk::GetVertex(short x, short y) const
  * Dans ce cas la on calcule la position d'un vertice virtuelle, c'est pour cela
  * que la fonction GetVertexPosition est séparé de NewVertex.
  */
-const MT_Vector3 KX_Chunk::GetNormal(Vertex *vertexCenter) const
+const MT_Vector3 KX_Chunk::GetNormal(Vertex *vertexCenter, bool intern) const
 {
 	// la position du vertice donc du centre du quad
-	float x = vertexCenter->xyz.x();
-	float y = vertexCenter->xyz.y();
+	const float x = vertexCenter->xyz.x();
+	const float y = vertexCenter->xyz.y();
+	const unsigned short relx = vertexCenter->relpos[0];
+	const unsigned short rely = vertexCenter->relpos[1];
 
 	KX_Terrain *terrain = m_node->GetTerrain();
 	// la position du noeud parent du chunk
 	const MT_Point2& pos = m_node->GetRealPos();
 
-	// la taille du quad servant a calculer la normale
-	float smothsize = 5.0;
+	float quad[4][3];
 
-	// on calcule 4 positions autours du vertice
-	float positiones[4][3] = {
-		{x + smothsize, y, 0.0},
-		{x, y + smothsize, 0.0},
-		{x - smothsize, y, 0.0},
-		{x, y - smothsize, 0.0}
-	};
+	if (intern) {
+		Vertex *vertexes[4] = {
+			GetVertex(relx + 1, rely),
+			GetVertex(relx, rely + 1),
+			GetVertex(relx - 1, rely),
+			GetVertex(relx, rely - 1)
+		};
+		for (unsigned short i = 0; i < 4; ++i)
+			vertexes[i]->xyz.getValue(quad[i]);
+	}
+	else {
+		// la taille du quad servant a calculer la normale
+		float smothsize = 5.0;
+		// on calcule 4 positions autours du vertice
+		quad[0][0] = x + smothsize; 
+		quad[0][1] = y;
+		quad[1][0] = x; 
+		quad[1][1] = y + smothsize;
+		quad[2][0] = x - smothsize;
+		quad[2][1] = y;
+		quad[3][0] = x;
+		quad[3][1] = y - smothsize;
 
-	for (unsigned short i = 0; i < 4; ++i)
-		positiones[i][2] = terrain->GetVertexHeight(positiones[i][0] + pos.x(), positiones[i][1] + pos.y());
+		for (unsigned short i = 0; i < 4; ++i)
+			quad[i][2] = terrain->GetVertexHeight(quad[i][0] + pos.x(), quad[i][1] + pos.y());
+	}
 
 	float normal[3] = {0.0, 0.0, 0.0};
-	normal_quad_v3(normal, positiones[0], positiones[1], positiones[2], positiones[3]);
+	normal_quad_v3(normal, quad[0], quad[1], quad[2], quad[3]);
 
 	const MT_Vector3 finalnormal = MT_Vector3(normal);
 	return finalnormal;
@@ -397,21 +414,21 @@ void KX_Chunk::ConstructVertexes()
 	for (unsigned short columnIndex = COLUMN_LEFT; columnIndex <= COLUMN_RIGHT; ++columnIndex) {
 		for (unsigned short vertexIndex = 0; vertexIndex < VERTEX_COUNT; ++vertexIndex) {
 			Vertex *vertex = m_columns[columnIndex]->GetExternVertex(vertexIndex);
-			vertex->normal = GetNormal(vertex);
+			vertex->normal = GetNormal(vertex, false);
 		}
 	}
 
 	for (unsigned short columnIndex = COLUMN_FRONT; columnIndex <= COLUMN_BACK; ++columnIndex) {
 		for (unsigned short vertexIndex = 1; vertexIndex < (VERTEX_COUNT - 1); ++vertexIndex) {
 			Vertex *vertex = m_columns[columnIndex]->GetExternVertex(vertexIndex);
-			vertex->normal = GetNormal(vertex);
+			vertex->normal = GetNormal(vertex, false);
 		}
 	}
 
 	for (unsigned short columnIndex = 1; columnIndex < (VERTEX_COUNT - 1); ++columnIndex) {
 		for (unsigned short vertexIndex = 1; vertexIndex < (VERTEX_COUNT - 1); ++vertexIndex) {
 			Vertex *vertex = m_center[columnIndex - 1][vertexIndex - 1];
-			vertex->normal = GetNormal(vertex);
+			vertex->normal = GetNormal(vertex, true);
 		}
 	}
 #ifdef STATS
@@ -474,10 +491,18 @@ void KX_Chunk::ConstructCenterColumnPolygones()
 
 void KX_Chunk::ConstructJointColumnPolygones(JointColumn *column, bool reverse)
 {
+	/*     
+	 * 1)	   2)	   3)
+	 * 
+	 * 1       1--2    1--2
+	 * |\      | /     |\ |
+	 * | \     |/      | \|
+	 * 3--2    3       4--3
+	 */
+
 	for (unsigned short vertexIndex = 0; vertexIndex < POLY_COUNT; ++vertexIndex) {
 		bool firstTriangle = true;
 		bool secondTriangle = true;
-
 		Vertex *firstVertex, *secondVertex, *thirdVertex, *fourthVertex;
 
 		// les seuls points fixes
@@ -488,28 +513,14 @@ void KX_Chunk::ConstructJointColumnPolygones(JointColumn *column, bool reverse)
 			fourthVertex = column->GetExternVertex(vertexIndex + 2);
 		}
 
-		// debut de la colonne
+		// debut de la colonne cas 1
 		if (vertexIndex == 0) {
-			/*
-			 * 1 
-			 * |\
-			 * | \
-			 * 3--2
-			 */
-
 			secondVertex = column->GetInternVertex(0);
 			thirdVertex = fourthVertex;
 			secondTriangle = false;
 		}
-		// fin de la colonne
+		// fin de la colonne cas 2
 		else if (vertexIndex == (POLY_COUNT - 1)) {
-			/*
-			 * 1--2
-			 * | /
-			 * |/
-			 * 3
-			 */
-
 			if (!firstVertex->valid) {
 				firstTriangle = false;
 			}
@@ -517,14 +528,8 @@ void KX_Chunk::ConstructJointColumnPolygones(JointColumn *column, bool reverse)
 			thirdVertex = column->GetExternVertex(POLY_COUNT);
 			secondTriangle = false;
 		}
-		// miliue de la colonne
+		// milieu de la colonne cas 3
 		else {
-			/*
-			 * 1--2
-			 * |\ |
-			 * | \|
-			 * 4--3
-			 */
 			secondVertex = column->GetInternVertex(vertexIndex - 1);
 			thirdVertex = column->GetInternVertex(vertexIndex);
 			if (!firstVertex->valid) {
@@ -590,9 +595,9 @@ void KX_Chunk::EndUpdateMesh()
 
 void KX_Chunk::RenderMesh(RAS_IRasterizer *rasty, KX_Camera *cam)
 {
-	const MT_Point3 realPos = MT_Point3(m_node->GetRealPos().x(), m_node->GetRealPos().y(), 0.);
+	/*const MT_Point3 realPos = MT_Point3(m_node->GetRealPos().x(), m_node->GetRealPos().y(), 0.);
 	const MT_Point3 camPos = cam->NodeGetWorldPosition();
 	const MT_Vector3 norm = (camPos - realPos).normalized() * sqrt(m_node->GetRadius2());
 
-	KX_RasterizerDrawDebugLine(realPos, realPos + norm, MT_Vector3(1., 0., 0.));
+	KX_RasterizerDrawDebugLine(realPos, realPos + norm, MT_Vector3(1., 0., 0.));*/
 }

@@ -68,7 +68,7 @@ private:
 	void ConstructJointColumnPolygones(JointColumn *column, bool reverse);
 	void AddMeshPolygonVertexes(Vertex *v1, Vertex *v2, Vertex *v3, bool reverse);
 
-	const MT_Vector3 GetNormal(Vertex *vertexCenter) const;
+	const MT_Vector3 GetNormal(Vertex *vertexCenter, bool intern) const;
 
 public:
 	KX_Chunk(void *sgReplicationInfo, SG_Callbacks callbacks, KX_ChunkNode *node, RAS_MaterialBucket *m_bucket);
