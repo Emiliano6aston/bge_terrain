@@ -47,6 +47,7 @@ private:
 	float				m_maxDistance2;
 	float				m_chunkSize;
 	float				m_maxHeight;
+	float				m_minHeight;
 
 	bool					m_construct;
 	KX_ChunkNode		  **m_nodeTree;
@@ -92,6 +93,10 @@ public:
 	/// La hauteur maximale
 	inline float GetMaxHeight() const {
 		return m_maxHeight;
+	}
+	/// La hauteur minimale
+	inline float GetMinHeight() const {
+		return m_minHeight;
 	}
 
 	// le nombre de subdivision par rapport à une distance

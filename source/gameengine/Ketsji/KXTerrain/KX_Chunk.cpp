@@ -147,6 +147,7 @@ void KX_Chunk::ReconstructMesh()
 	if (!m_hasVertexes) {
 		ConstructVertexes();
 		m_hasVertexes = true;
+		m_node->ReCalculateBox(m_maxVertexHeight, m_minVertexHeight);
 	}
 
 	InvalidateJointVertexes();
@@ -183,6 +184,13 @@ const MT_Point3 KX_Chunk::GetVertexPosition(short relx, short rely) const
 KX_Chunk::Vertex *KX_Chunk::NewVertex(short relx, short rely)
 {
 	MT_Point3 pos = GetVertexPosition(relx, rely);
+
+	if (pos.z() > m_maxVertexHeight)
+		m_maxVertexHeight = pos.z();
+
+	if (pos.z() < m_minVertexHeight)
+		m_minVertexHeight = pos.z();
+
 	return new Vertex(relx, rely, pos, m_originVertexIndex++);
 }
 
@@ -352,6 +360,9 @@ void KX_Chunk::ConstructVertexes()
 	 * partagés lors de la création des faces.
 	 */
 	m_originVertexIndex = 0;
+
+	m_maxVertexHeight = 0.0;
+	m_minVertexHeight = 0.0;
 
 	for (unsigned short i = 0; i < 4; ++i)
 		m_columns[i] = new JointColumn((i < 2));
@@ -595,9 +606,10 @@ void KX_Chunk::EndUpdateMesh()
 
 void KX_Chunk::RenderMesh(RAS_IRasterizer *rasty, KX_Camera *cam)
 {
-	/*const MT_Point3 realPos = MT_Point3(m_node->GetRealPos().x(), m_node->GetRealPos().y(), 0.);
-	const MT_Point3 camPos = cam->NodeGetWorldPosition();
-	const MT_Vector3 norm = (camPos - realPos).normalized() * sqrt(m_node->GetRadius2());
+// 	const MT_Point3 realPos = MT_Point3(m_node->GetRealPos().x(), m_node->GetRealPos().y(), 0.);
+	/*const MT_Point3 camPos = cam->NodeGetWorldPosition();
+	const MT_Vector3 norm = (camPos - realPos).normalized() * sqrt(m_node->GetRadius2());*/
 
-	KX_RasterizerDrawDebugLine(realPos, realPos + norm, MT_Vector3(1., 0., 0.));*/
+// 	KX_RasterizerDrawDebugLine(realPos + MT_Point3(0.0, 0.0, m_minVertexHeight),
+// 							   realPos + MT_Point3(0.0, 0.0, m_maxVertexHeight), MT_Vector3(1., 0., 0.));
 }

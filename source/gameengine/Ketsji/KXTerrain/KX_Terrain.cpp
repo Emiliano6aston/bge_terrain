@@ -67,6 +67,7 @@ KX_Terrain::KX_Terrain(RAS_MaterialBucket *bucket,
 	m_maxDistance2(maxDistance * maxDistance),
 	m_chunkSize(chunkSize),
 	m_maxHeight(0.0),
+	m_minHeight(0.0),
 	m_construct(false)
 {
 }
@@ -328,10 +329,13 @@ void KX_Terrain::ScheduleEuthanasyChunks()
 
 void KX_Terrain::AddTerrainZoneInfo(KX_TerrainZoneInfo *zoneInfo)
 {
-	// TODO : meilleur solution
 	m_zoneInfoList.push_back(zoneInfo);
-	if (m_maxHeight < (zoneInfo->GetHeightMax() + zoneInfo->GetOffset()))
-		m_maxHeight = (zoneInfo->GetHeightMax() + zoneInfo->GetOffset());
+
+	const float height = zoneInfo->GetHeightMax() + zoneInfo->GetOffset();
+	if (m_maxHeight < height)
+		m_maxHeight = height;
+	if (m_minHeight > height)
+		m_minHeight = height;
 }
 
 void KX_Terrain::AddTerrainZoneMesh(KX_TerrainZoneMesh *zoneMesh)
