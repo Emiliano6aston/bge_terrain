@@ -34,8 +34,9 @@ KX_ChunkNode::KX_ChunkNode(int x, int y, unsigned short relativesize, unsigned s
 	const float size = m_terrain->GetChunkSize();
 	const float width = size / 2 * relativesize;
 
-	// la hauteur maximal du chunk
-	const float maxheight = m_terrain->GetMaxHeight();
+	// la taille maximale et minimale en hauteur de la boite de frustum culling
+	const float maxHeight = m_terrain->GetMaxHeight();
+	const float minHeight = m_terrain->GetMinHeight();
 
 	// le rayon du chunk
 	float gap = size * relativesize * 2;
@@ -46,15 +47,18 @@ KX_ChunkNode::KX_ChunkNode(int x, int y, unsigned short relativesize, unsigned s
 	const float realY = y * size;
 	m_realPos = MT_Point2(realX, realY);
 
-	// creation de la boite utilisé pour le frustum culling
-	m_box[0] = MT_Point3(realX - width, realY - width, 0.);
-	m_box[1] = MT_Point3(realX + width, realY - width, 0.);
-	m_box[2] = MT_Point3(realX + width, realY + width, 0.);
-	m_box[3] = MT_Point3(realX - width, realY + width, 0.);
-	m_box[4] = MT_Point3(realX - width, realY - width, maxheight);
-	m_box[5] = MT_Point3(realX + width, realY - width, maxheight);
-	m_box[6] = MT_Point3(realX + width, realY + width, maxheight);
-	m_box[7] = MT_Point3(realX - width, realY + width, maxheight);
+	/* creation d'une boite temporaire maximale pour la creation
+	 * recursive des noeuds. Celle ci sera redimensionner plus tard pour
+	 * une meilleur optimization
+	 */
+	m_box[0] = MT_Point3(realX - width, realY - width, minHeight);
+	m_box[1] = MT_Point3(realX + width, realY - width, minHeight);
+	m_box[2] = MT_Point3(realX + width, realY + width, minHeight);
+	m_box[3] = MT_Point3(realX - width, realY + width, minHeight);
+	m_box[4] = MT_Point3(realX - width, realY - width, maxHeight);
+	m_box[5] = MT_Point3(realX + width, realY - width, maxHeight);
+	m_box[6] = MT_Point3(realX + width, realY + width, maxHeight);
+	m_box[7] = MT_Point3(realX - width, realY + width, maxHeight);
 }
 
 KX_ChunkNode::~KX_ChunkNode()
@@ -142,6 +146,20 @@ void KX_ChunkNode::CalculateVisible(KX_Camera *culledcam, KX_Camera* campos)
 		DestructChunk();
 	}
 }
+
+void KX_ChunkNode::ReCalculateBox(float max, float min)
+{
+	// redimensionnement de la boite
+	m_box[0].z() = min;
+	m_box[1].z() = min;
+	m_box[2].z() = min;
+	m_box[3].z() = min;
+	m_box[4].z() = max;
+	m_box[5].z() = max;
+	m_box[6].z() = max;
+	m_box[7].z() = max;
+}
+
 
 KX_ChunkNode *KX_ChunkNode::GetNodeRelativePosition(const Point2D& pos)
 {
