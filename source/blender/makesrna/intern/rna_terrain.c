@@ -90,18 +90,28 @@ static void rna_def_terrain_zone(BlenderRNA *brna)
 
 	prop = RNA_def_property(srna, "height", PROP_FLOAT, PROP_NONE);
 	RNA_def_property_float_sdna(prop, NULL, "height");
-	RNA_def_property_range(prop, 0.0, FLT_MAX);
+	RNA_def_property_range(prop, -FLT_MAX, FLT_MAX);
 	RNA_def_property_ui_text(prop, "Height", "");
 
 	prop = RNA_def_property(srna, "offset", PROP_FLOAT, PROP_NONE);
 	RNA_def_property_float_sdna(prop, NULL, "offset");
-	RNA_def_property_range(prop, 0.0, FLT_MAX);
+	RNA_def_property_range(prop, -FLT_MAX, FLT_MAX);
 	RNA_def_property_ui_text(prop, "Offset", "");
 
 	prop = RNA_def_property(srna, "resolution", PROP_FLOAT, PROP_NONE);
 	RNA_def_property_float_sdna(prop, NULL, "resolution");
 	RNA_def_property_range(prop, 0.0, FLT_MAX);
 	RNA_def_property_ui_text(prop, "Resolution", "");
+
+	prop = RNA_def_property(srna, "use_zone_vertex_color", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_sdna(prop, NULL, "use_vertexcolor", 1);
+	RNA_def_property_ui_text(prop, "Zone Vertex Color", "");
+
+	prop = RNA_def_property(srna, "vertex_color", PROP_FLOAT, PROP_COLOR);
+	RNA_def_property_float_sdna(prop, NULL, "vertexcolor");
+	RNA_def_property_array(prop, 3);
+	RNA_def_property_range(prop, 0.0, 1.0);
+	RNA_def_property_ui_text(prop, "Vertex Color", "");
 }
 
 static void rna_def_terrain_zone_collection(BlenderRNA *brna, PropertyRNA *cprop)

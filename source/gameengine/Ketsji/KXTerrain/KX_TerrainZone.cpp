@@ -91,14 +91,14 @@ float KX_TerrainZoneMesh::GetHeight(float x, float y) const
 				(float)mcol[i * 4 + 2].g / 255,
 				(float)mcol[i * 4 + 2].b / 255
 			};
-			float weight[2];
+			float weight[3];
 			float color[3];
 
 			barycentric_weights_v2(v1.co, v2.co, v3.co, point, weight);
 			interp_v3_v3v3v3(color, c1, c2, c3, weight);
 
 			const float noise = BLI_hnoise(m_zoneInfo->GetResolution(), x, y, 0.0);
-			return noise * m_zoneInfo->GetHeightMax() * color[0] + m_zoneInfo->GetOffset();
+			return (noise * m_zoneInfo->GetHeightMax() + m_zoneInfo->GetOffset()) * color[0];
 		}
 	}
 	return 0.0;
