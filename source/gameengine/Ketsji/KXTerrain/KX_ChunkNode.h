@@ -74,6 +74,8 @@ public:
 	/// Teste si le noeud est visible et créer des sous noeuds si besoin
 	void CalculateVisible(KX_Camera *culledcam, KX_Camera* campos);
 
+	void ReCalculateBox(float max, float min);
+
 	KX_ChunkNode* GetNodeRelativePosition(const Point2D& pos);
 
 	inline KX_Terrain* GetTerrain() const {

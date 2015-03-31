@@ -42,6 +42,9 @@ private:
 	Vertex *m_center[VERTEX_COUNT_INTERN][VERTEX_COUNT_INTERN];
 	bool m_hasVertexes;
 
+	float m_maxVertexHeight;
+	float m_minVertexHeight;
+
 	// les dernières jointures
 	bool m_lastHasJoint[4];
 
@@ -51,6 +54,8 @@ private:
 	KX_ChunkNode *m_lastChunkNode[4];
 
 	unsigned int m_originVertexIndex;
+
+	unsigned short m_life;
 
 	/// construction du mesh
 	void ConstructMesh();

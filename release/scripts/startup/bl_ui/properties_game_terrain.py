@@ -117,7 +117,10 @@ class TERRAIN_PT_game_terrain_zones(TerrainButtonsPanel, Panel):
         if zone:
             row = layout.row()
             row.column().prop(zone, "mesh")
-            row.column().prop(zone, "height")
+            row.column().prop(zone, "use_zone_vertex_color")
             row = layout.row()
+            row.column().prop(zone, "height")
             row.column().prop(zone, "offset")
+            row = layout.row()
             row.column().prop(zone, "resolution")
+            row.column().prop(zone, "vertex_color")

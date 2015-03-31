@@ -43,6 +43,8 @@ typedef struct TerrainZone {
 	float height;
 	float offset;
 	float resolution;
+	int use_vertexcolor;
+	float vertexcolor[3];
 	int pad;
 } TerrainZone;
 
