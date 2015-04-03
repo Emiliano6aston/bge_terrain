@@ -33,14 +33,17 @@ struct KX_Chunk::Vertex // vertex temporaire
 {
 	MT_Point3 xyz;
 	short relpos[2];
+	unsigned int rgba;
 	unsigned int origIndex;
 	bool valid;
 	MT_Vector3 normal;
 
 	Vertex(short relx, short rely,
 		   const MT_Point3 &pos,
+		   unsigned int color,
 		   unsigned int origindex)
-		:origIndex(origindex),
+		:rgba(color),
+		origIndex(origindex),
 		valid(true)
 	{
 		relpos[0] = relx;
@@ -160,7 +163,7 @@ void KX_Chunk::ReconstructMesh()
 // 	m_pPhysicsController->ReinstancePhysicsShape(NULL, m_meshObj);
 }
 
-const MT_Point3 KX_Chunk::GetVertexPosition(short relx, short rely) const
+const MT_Point2 KX_Chunk::GetVertexPosition(short relx, short rely) const
 {
 	KX_Terrain *terrain = m_node->GetTerrain();
 	//La taille "réelle" du chunk
@@ -170,28 +173,37 @@ const MT_Point3 KX_Chunk::GetVertexPosition(short relx, short rely) const
 	const float interval = size * relativesize / POLY_COUNT;
 	// la motie de la largeur du chunk
 	const float width = size / 2 * relativesize;
-	// la position du noeud parent du chunk
-	const MT_Point2& pos = m_node->GetRealPos();
 
 	const float vertx = relx * interval - width;
 	const float verty = rely * interval - width;
-	const float vertz = terrain->GetVertexHeight(vertx + pos.x(), verty + pos.y());
 
-	const MT_Point3 vertpos = MT_Point3(vertx, verty, vertz);
+	const MT_Point2 vertpos = MT_Point2(vertx, verty);
 	return vertpos;
 }
 
 KX_Chunk::Vertex *KX_Chunk::NewVertex(short relx, short rely)
 {
-	MT_Point3 pos = GetVertexPosition(relx, rely);
+	KX_Terrain *terrain = m_node->GetTerrain();
+	// la position du noeud parent du chunk
+	const MT_Point2& nodepos = m_node->GetRealPos();
 
-	if (pos.z() > m_maxVertexHeight)
-		m_maxVertexHeight = pos.z();
+	MT_Point2 vertpos = GetVertexPosition(relx, rely);
 
-	if (pos.z() < m_minVertexHeight)
-		m_minVertexHeight = pos.z();
+	// toutes les informations sur le vertice dut au zone : la hauteur, sa couleur
+	VertexZoneInfo *info = terrain->GetVertexInfo(nodepos.x() + vertpos.x(), nodepos.y() + vertpos.y());
+	const float vertz = info->height;
 
-	return new Vertex(relx, rely, pos, m_originVertexIndex++);
+	if (vertz > m_maxVertexHeight)
+		m_maxVertexHeight = vertz;
+
+	if (vertz < m_minVertexHeight)
+		m_minVertexHeight = vertz;
+
+	unsigned int color = rgb_to_cpack(info->color[0], info->color[1], info->color[2]);
+
+	Vertex *vertex = new Vertex(relx, rely, MT_Point3(vertpos.x(), vertpos.y(), vertz), color, m_originVertexIndex++);
+	delete info;
+	return vertex;
 }
 
 /* Cette fonction permet d'acceder à un vertice comme si ils étaient
@@ -277,8 +289,11 @@ const MT_Vector3 KX_Chunk::GetNormal(Vertex *vertexCenter, bool intern) const
 		quad[3][0] = x;
 		quad[3][1] = y - smothsize;
 
-		for (unsigned short i = 0; i < 4; ++i)
-			quad[i][2] = terrain->GetVertexHeight(quad[i][0] + pos.x(), quad[i][1] + pos.y());
+		for (unsigned short i = 0; i < 4; ++i) {
+			VertexZoneInfo *info = terrain->GetVertexInfo(quad[i][0] + pos.x(), quad[i][1] + pos.y());
+			quad[i][2] = info->height;
+			delete info;
+		}
 	}
 
 	float normal[3] = {0.0, 0.0, 0.0};
@@ -310,14 +325,14 @@ void KX_Chunk::AddMeshPolygonVertexes(Vertex *v1, Vertex *v2, Vertex *v3, bool r
 	const MT_Vector4 tangent(0., 0., 0., 0.);
 
 	if (reverse) {
-		m_meshObj->AddVertex(poly, 0, v3->xyz, uvs_3, tangent, 255, v3->normal, false, v3->origIndex);
-		m_meshObj->AddVertex(poly, 1, v2->xyz, uvs_2, tangent, 255, v2->normal, false, v2->origIndex);
-		m_meshObj->AddVertex(poly, 2, v1->xyz, uvs_1, tangent, 255, v1->normal, false, v1->origIndex);
+		m_meshObj->AddVertex(poly, 0, v3->xyz, uvs_3, tangent, v3->rgba, v3->normal, false, v3->origIndex);
+		m_meshObj->AddVertex(poly, 1, v2->xyz, uvs_2, tangent, v2->rgba, v2->normal, false, v2->origIndex);
+		m_meshObj->AddVertex(poly, 2, v1->xyz, uvs_1, tangent, v1->rgba, v1->normal, false, v1->origIndex);
 	}
 	else {
-		m_meshObj->AddVertex(poly, 0, v1->xyz, uvs_1, tangent, 255, v1->normal, false, v1->origIndex);
-		m_meshObj->AddVertex(poly, 1, v2->xyz, uvs_2, tangent, 255, v2->normal, false, v2->origIndex);
-		m_meshObj->AddVertex(poly, 2, v3->xyz, uvs_3, tangent, 255, v3->normal, false, v3->origIndex);
+		m_meshObj->AddVertex(poly, 0, v1->xyz, uvs_1, tangent, v1->rgba, v1->normal, false, v1->origIndex);
+		m_meshObj->AddVertex(poly, 1, v2->xyz, uvs_2, tangent, v2->rgba, v2->normal, false, v2->origIndex);
+		m_meshObj->AddVertex(poly, 2, v3->xyz, uvs_3, tangent, v3->rgba, v3->normal, false, v3->origIndex);
 	}
 }
 
