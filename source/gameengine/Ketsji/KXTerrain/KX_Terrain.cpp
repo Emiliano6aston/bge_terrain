@@ -15,6 +15,9 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  *
+ * Contributor(s): Porteries Tristan, Gros Alexis. For the 
+ * Uchronia project (2015-16).
+ *
  * ***** END GPL LICENSE BLOCK *****
  */
  
@@ -33,7 +36,7 @@
 #include "PHY_IPhysicsController.h"
 #include "KX_MotionState.h"
 #include "ListValue.h"
-#include "KX_TerrainZone.h"
+#include "DNA_terrain_types.h"
 
 #define COLORED_PRINT(msg, color) std::cout << /*"\033[" << color << "m" <<*/ msg << /*"\033[30m" <<*/ std::endl;
 
@@ -76,9 +79,6 @@ KX_Terrain::~KX_Terrain()
 {
 	Destruct();
 
-	for (unsigned short i = 0; i < m_zoneInfoList.size(); ++i) {
-		delete m_zoneInfoList[i];
-	}
 	for (unsigned short i = 0; i < m_zoneMeshList.size(); ++i) {
 		delete m_zoneMeshList[i];
 	}
@@ -179,24 +179,15 @@ KX_ChunkNode *KX_Terrain::GetNodeRelativePosition(const KX_ChunkNode::Point2D& p
 	return NULL;
 }
 
-const float KX_Terrain::GetVertexHeight(float x, float y) const
+VertexZoneInfo *KX_Terrain::GetVertexInfo(float x, float y) const
 {
-	/*KX_Terrain *terrain = m_node->GetTerrain();
-
-	const float maxheight = terrain->GetMaxHeight();
-	const float noisesize = terrain->GetNoiseSize();
-	const MT_Point2 realPos = m_node->GetRealPos();
-
-	const float noisex = vertx + realPos.x();
-	const float noisey = verty + realPos.y();
-	const float vertz = BLI_hnoise(noisesize, noisex, noisey, 0.) * maxheight;*/
-
-	float height = 0.0;
+	VertexZoneInfo *info = new VertexZoneInfo();
+	info->height = 0.0;
 
 	for (unsigned short i = 0; i < m_zoneMeshList.size(); ++i)
-		height += m_zoneMeshList[i]->GetHeight(x, y);
+		m_zoneMeshList[i]->GetVertexInfo(x, y, info);
 
-	return height;
+	return info;
 }
 
 KX_ChunkNode** KX_Terrain::NewNodeList(int x, int y, unsigned short level)
@@ -327,18 +318,14 @@ void KX_Terrain::ScheduleEuthanasyChunks()
 	m_euthanasyChunkList.clear();
 }
 
-void KX_Terrain::AddTerrainZoneInfo(KX_TerrainZoneInfo *zoneInfo)
+void KX_Terrain::AddTerrainZoneMesh(KX_TerrainZoneMesh *zoneMesh)
 {
-	m_zoneInfoList.push_back(zoneInfo);
+	m_zoneMeshList.push_back(zoneMesh);
 
-	const float height = zoneInfo->GetHeightMax() + zoneInfo->GetOffset();
+	TerrainZone *zoneInfo = zoneMesh->GetTerrainZoneInfo();
+	const float height = zoneInfo->height + zoneInfo->offset;
 	if (m_maxHeight < height)
 		m_maxHeight = height;
 	if (m_minHeight > height)
 		m_minHeight = height;
-}
-
-void KX_Terrain::AddTerrainZoneMesh(KX_TerrainZoneMesh *zoneMesh)
-{
-	m_zoneMeshList.push_back(zoneMesh);
 }

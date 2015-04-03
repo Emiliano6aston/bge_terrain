@@ -40,12 +40,19 @@ typedef struct TerrainZone {
 	char name[64];
 
 	struct Mesh *mesh;
+
 	float height;
 	float offset;
 	float resolution;
-	int use_vertexcolor;
+
+	float clampstart;
+	float clampend;
+
 	float vertexcolor[3];
-	int pad;
+
+	int flag;
+
+	int pad1;
 } TerrainZone;
 
 typedef struct Terrain {
@@ -57,11 +64,16 @@ typedef struct Terrain {
 	int width;
 	float distance;
 	float chunksize;
-	float height;
-	float noisesize;
+
 	int active_zoneindex;
 	ListBase zones;
 } Terrain;
 
-#endif
+#define TERRAIN_ZONE_MESH						(1 << 0)
+#define TERRAIN_ZONE_PERLIN_NOISE				(1 << 1)
+#define TERRAIN_ZONE_CLAMP						(1 << 2)
+#define TERRAIN_ZONE_MESH_VERTEX_COLOR_INTERP	(1 << 3)
+#define TERRAIN_ZONE_VERTEX_COLOR				(1 << 4)
+
+#endif /*__DNA_TERRAIN_TYPES_H__*/
 

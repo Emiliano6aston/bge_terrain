@@ -62,7 +62,7 @@ private:
 	void DestructMesh();
 
 	void ConstructVertexes();
-	const MT_Point3 GetVertexPosition(short relx, short rely) const;
+	const MT_Point2 GetVertexPosition(short relx, short rely) const;
 	Vertex *NewVertex(short relx, short rely);
 	Vertex *GetVertex(short x, short y) const;
 

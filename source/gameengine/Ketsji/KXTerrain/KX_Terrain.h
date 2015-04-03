@@ -28,13 +28,12 @@
 #include <vector>
 #include "MT_Transform.h"
 #include "KX_ChunkNode.h" // for Point2D
+#include "KX_TerrainZone.h"
 
 class RAS_IRasterizer;
 class RAS_MaterialBucket;
 class CListValue;
 class KX_GameObject;
-class KX_TerrainZoneInfo;
-class KX_TerrainZoneMesh;
 
 class KX_Terrain
 {
@@ -54,7 +53,6 @@ private:
 	std::vector<KX_Chunk *>	m_chunkList;
 	std::vector<KX_Chunk *>	m_euthanasyChunkList;
 
-	std::vector<KX_TerrainZoneInfo *>	m_zoneInfoList;
 	std::vector<KX_TerrainZoneMesh *>	m_zoneMeshList;
 
 public:
@@ -106,14 +104,13 @@ public:
 	/** La position en 3D d'un vertice. on renvoie une coordonnée et non une 
 	 * hauteur car on pourrait imaginer modifier la position en x et y.
 	 */
-	const float GetVertexHeight(float x, float y) const;
+	VertexZoneInfo *GetVertexInfo(float x, float y) const;
 
 	KX_ChunkNode **NewNodeList(int x, int y, unsigned short level);
 	KX_Chunk *AddChunk(KX_ChunkNode *node);
 	void RemoveChunk(KX_Chunk *chunk);
 	void ScheduleEuthanasyChunks();
 
-	void AddTerrainZoneInfo(KX_TerrainZoneInfo *zoneInfo);
 	void AddTerrainZoneMesh(KX_TerrainZoneMesh *zoneMesh);
 };
 

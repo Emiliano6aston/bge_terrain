@@ -30,7 +30,7 @@ class TerrainButtonsPanel:
 class TERRAIN_PT_game_context_terrain(TerrainButtonsPanel, Panel):
     bl_label = ""
     bl_options = {'HIDE_HEADER'}
-    COMPAT_ENGINES = {'BLENDER_GAME'}
+    COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_GAME'}
 
     @classmethod
     def poll(cls, context):
@@ -52,7 +52,7 @@ class TERRAIN_PT_game_context_terrain(TerrainButtonsPanel, Panel):
 
 class TERRAIN_PT_game_terrain_chunk(TerrainButtonsPanel, Panel):
     bl_label = "Chunk"
-    COMPAT_ENGINES = {'BLENDER_GAME'}
+    COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_GAME'}
 
     @classmethod
     def poll(cls, context):
@@ -74,7 +74,7 @@ class TERRAIN_PT_game_terrain_chunk(TerrainButtonsPanel, Panel):
 
 class TERRAIN_PT_game_terrain_mesh(TerrainButtonsPanel, Panel):
     bl_label = "Mesh"
-    COMPAT_ENGINES = {'BLENDER_GAME'}
+    COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_GAME'}
 
     @classmethod
     def poll(cls, context):
@@ -92,7 +92,7 @@ class TERRAIN_PT_game_terrain_mesh(TerrainButtonsPanel, Panel):
 
 class TERRAIN_PT_game_terrain_zones(TerrainButtonsPanel, Panel):
     bl_label = "Terrain Zones"
-    COMPAT_ENGINES = {'BLENDER_GAME'}
+    COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_GAME'}
 
     @classmethod
     def poll(cls, context):
@@ -113,14 +113,101 @@ class TERRAIN_PT_game_terrain_zones(TerrainButtonsPanel, Panel):
         col.operator("terrain.zone_add", icon='ZOOMIN', text="")
         col.operator("terrain.zone_remove", icon='ZOOMOUT', text="")
 
+class TERRAIN_PT_game_terrain_zones_mesh(TerrainButtonsPanel, Panel):
+    bl_label = "Zone Mesh"
+    COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_GAME'}
+
+    def draw_header(self, context):
+        scene = context.scene
+        terrain = scene.terrain
         zone = terrain.zones.active_zone
+        if zone:
+            self.layout.prop(zone, "use_mesh", text="")
+
+    def draw(self, context):
+        layout = self.layout
+
+        scene = context.scene
+        terrain = scene.terrain
+        row = layout.row()
+
+        zone = terrain.zones.active_zone
+        layout.active = zone.use_mesh
+
         if zone:
             row = layout.row()
             row.column().prop(zone, "mesh")
-            row.column().prop(zone, "use_zone_vertex_color")
+            row.column().prop(zone, "use_mesh_vertex_color_interp")
+
+class TERRAIN_PT_game_terrain_zones_heights(TerrainButtonsPanel, Panel):
+    bl_label = "Heights"
+    COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_GAME'}
+
+    def draw(self, context):
+        layout = self.layout
+
+        scene = context.scene
+        terrain = scene.terrain
+        split = layout.split()
+
+        zone = terrain.zones.active_zone
+
+        if zone:
+            col = split.column()
+            sub = col.column()
+            sub.prop(zone, "use_perlin_noise")
+            sub.prop(zone, "offset")
+
+            col = split.column()
+            sub = col.column()
+            sub.active = zone.use_perlin_noise
+            sub.prop(zone, "resolution")
+            sub.prop(zone, "height")
+
+class TERRAIN_PT_game_terrain_zones_clamp(TerrainButtonsPanel, Panel):
+    bl_label = "Zone Clamp"
+    COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_GAME'}
+
+    def draw_header(self, context):
+        scene = context.scene
+        terrain = scene.terrain
+        zone = terrain.zones.active_zone
+        if zone:
+            self.layout.prop(zone, "use_clamp", text="")
+
+    def draw(self, context):
+        layout = self.layout
+
+        scene = context.scene
+        terrain = scene.terrain
+        row = layout.row()
+
+        zone = terrain.zones.active_zone
+        layout.active = zone.use_clamp
+
+        if zone:
             row = layout.row()
-            row.column().prop(zone, "height")
-            row.column().prop(zone, "offset")
+            row.column().prop(zone, "clamp_start")
+            row.column().prop(zone, "clamp_end")
+
+class TERRAIN_PT_game_terrain_zones_vertex_info(TerrainButtonsPanel, Panel):
+    bl_label = "Zone Vertex Info"
+    COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_GAME'}
+
+    def draw(self, context):
+        layout = self.layout
+
+        scene = context.scene
+        terrain = scene.terrain
+        row = layout.row()
+
+        zone = terrain.zones.active_zone
+        layout.active = zone.use_vertex_color
+
+        if zone:
             row = layout.row()
-            row.column().prop(zone, "resolution")
+            row.column().prop(zone, "use_vertex_color")
             row.column().prop(zone, "vertex_color")
+
+if __name__ == "__main__":  # only for live edit.
+    bpy.utils.register_module(__name__)
