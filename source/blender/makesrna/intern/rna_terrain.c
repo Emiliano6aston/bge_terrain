@@ -82,11 +82,23 @@ static void rna_def_terrain_zone(BlenderRNA *brna)
 	RNA_def_property_ui_text(prop, "Line Set Name", "Terrain Zone set name");
 	RNA_def_struct_name_property(srna, prop);
 
+	prop = RNA_def_property(srna, "use_mesh", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_sdna(prop, NULL, "flag", TERRAIN_ZONE_MESH);
+	RNA_def_property_ui_text(prop, "Use Mesh", "");
+
 	prop = RNA_def_property(srna, "mesh", PROP_POINTER, PROP_NONE);
 	RNA_def_property_pointer_sdna(prop, NULL, "mesh");
 	RNA_def_property_struct_type(prop, "Mesh");
 	RNA_def_property_flag(prop, PROP_EDITABLE);
 	RNA_def_property_ui_text(prop, "Mesh", "");
+
+	prop = RNA_def_property(srna, "use_mesh_vertex_color_interp", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_sdna(prop, NULL, "flag", TERRAIN_ZONE_MESH_VERTEX_COLOR_INTERP);
+	RNA_def_property_ui_text(prop, "Use Mesh Vertex Color Interpolation", "");
+
+	prop = RNA_def_property(srna, "use_perlin_noise", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_sdna(prop, NULL, "flag", TERRAIN_ZONE_PERLIN_NOISE);
+	RNA_def_property_ui_text(prop, "Use Perlin Noise", "");
 
 	prop = RNA_def_property(srna, "height", PROP_FLOAT, PROP_NONE);
 	RNA_def_property_float_sdna(prop, NULL, "height");
@@ -103,9 +115,23 @@ static void rna_def_terrain_zone(BlenderRNA *brna)
 	RNA_def_property_range(prop, 0.0, FLT_MAX);
 	RNA_def_property_ui_text(prop, "Resolution", "");
 
-	prop = RNA_def_property(srna, "use_zone_vertex_color", PROP_BOOLEAN, PROP_NONE);
-	RNA_def_property_boolean_sdna(prop, NULL, "use_vertexcolor", 1);
-	RNA_def_property_ui_text(prop, "Zone Vertex Color", "");
+	prop = RNA_def_property(srna, "use_clamp", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_sdna(prop, NULL, "flag", TERRAIN_ZONE_CLAMP);
+	RNA_def_property_ui_text(prop, "Use Clamp", "");
+
+	prop = RNA_def_property(srna, "clamp_start", PROP_FLOAT, PROP_NONE);
+	RNA_def_property_float_sdna(prop, NULL, "clampstart");
+	RNA_def_property_range(prop, -FLT_MAX, FLT_MAX);
+	RNA_def_property_ui_text(prop, "Clamp Start", "");
+
+	prop = RNA_def_property(srna, "clamp_end", PROP_FLOAT, PROP_NONE);
+	RNA_def_property_float_sdna(prop, NULL, "clampend");
+	RNA_def_property_range(prop, -FLT_MAX, FLT_MAX);
+	RNA_def_property_ui_text(prop, "Clamp End", "");
+
+	prop = RNA_def_property(srna, "use_vertex_color", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_sdna(prop, NULL, "flag", TERRAIN_ZONE_VERTEX_COLOR);
+	RNA_def_property_ui_text(prop, "Use Vertex Color", "");
 
 	prop = RNA_def_property(srna, "vertex_color", PROP_FLOAT, PROP_COLOR);
 	RNA_def_property_float_sdna(prop, NULL, "vertexcolor");
@@ -177,16 +203,6 @@ void RNA_def_terrain(BlenderRNA *brna)
 	RNA_def_property_float_sdna(prop, NULL, "chunksize");
 	RNA_def_property_range(prop, 0.0, FLT_MAX);
 	RNA_def_property_ui_text(prop, "Chunk Size", "");
-
-	prop = RNA_def_property(srna, "height", PROP_FLOAT, PROP_NONE);
-	RNA_def_property_float_sdna(prop, NULL, "height");
-	RNA_def_property_range(prop, 0.0, FLT_MAX);
-	RNA_def_property_ui_text(prop, "Height", "");
-
-	prop = RNA_def_property(srna, "noise_size", PROP_FLOAT, PROP_NONE);
-	RNA_def_property_float_sdna(prop, NULL, "noisesize");
-	RNA_def_property_range(prop, 0.0, FLT_MAX);
-	RNA_def_property_ui_text(prop, "Noise Size", "");
 
 	prop = RNA_def_property(srna, "material", PROP_POINTER, PROP_NONE);
 	RNA_def_property_pointer_sdna(prop, NULL, "material");

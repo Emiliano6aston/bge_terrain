@@ -1778,16 +1778,8 @@ static KX_Terrain *convert_terrain(Terrain *terrain, KX_Scene* scene, KX_Blender
 										   terrain->chunksize);
 
 	for (TerrainZone *zone = (TerrainZone *)terrain->zones.first; zone; zone = (TerrainZone *)zone->next) {
-		if (zone->mesh) {
-			KX_TerrainZoneInfo *zoneInfo = new KX_TerrainZoneInfo(zone->resolution,
-																zone->height,
-																zone->offset);
-
-			KX_TerrainZoneMesh *zoneMesh = new KX_TerrainZoneMesh(zoneInfo, zone->mesh);
-
-			kxterrain->AddTerrainZoneInfo(zoneInfo);
-			kxterrain->AddTerrainZoneMesh(zoneMesh);
-		}
+		KX_TerrainZoneMesh *zoneMesh = new KX_TerrainZoneMesh(zone, zone->mesh);
+		kxterrain->AddTerrainZoneMesh(zoneMesh);
 	}
 
 	return kxterrain;

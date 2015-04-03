@@ -21,53 +21,50 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+#ifndef __KX_TERRAIN_ZONE_H__
+#define __KX_TERRAIN_ZONE_H__
+
 #include "MT_Point2.h"
 #include "MT_Point3.h"
 
+extern "C" {
+#include "BKE_DerivedMesh.h"
+#include "BKE_cdderivedmesh.h"
+}
+
 class Mesh;
 class DerivedMesh;
+class TerrainZone;
 
-class KX_TerrainZoneInfo
+struct VertexZoneInfo
 {
-private:
-	float m_resolution;
-	float m_height;
-	float m_offset;
-
-public:
-	KX_TerrainZoneInfo(float resolution,
-					   float offset,
-					   float height);
-	~KX_TerrainZoneInfo();
-
-	inline float GetResolution() const {
-		return m_resolution;
-	}
-
-	inline float GetHeightMax() const {
-		return m_height;
-	}
-
-	inline float GetOffset() const {
-		return m_offset;
-	}
+	float height;
+	float color[3];
 };
 
 class KX_TerrainZoneMesh
 {
 private:
 	//La configuration que suit cette zone:
-	KX_TerrainZoneInfo* m_zoneInfo;
-	MT_Point2 m_hitBox[4];
+	TerrainZone *m_zoneInfo;
+	float m_box[4];
 	DerivedMesh *m_derivedMesh;
 
 public:
-	KX_TerrainZoneMesh(KX_TerrainZoneInfo *zoneInfo,
+	KX_TerrainZoneMesh(TerrainZone *zoneInfo,
 					   Mesh *mesh);
 	~KX_TerrainZoneMesh();
 
+	float GetClampedHeight(const float orgheight, const float interp) const;
+	float GetMeshColorInterp(const float *point, const unsigned int faceindex, const MVert &v1, const MVert &v2, const MVert &v3) const;
+	float GetHeight(const float x, const float y, const float interp) const;
+
 	///Si ledit point est en contact, on renvoie la modif asociée à sa hauteur
-	float GetHeight(float x, float y) const;
+	void GetVertexInfo(const float x, const float y, VertexZoneInfo *info) const;
+
+	inline TerrainZone *GetTerrainZoneInfo() const {
+		return m_zoneInfo;
+	}
 };
 
-
+#endif // __KX_TERRAIN_ZONE_H__
