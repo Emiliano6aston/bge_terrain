@@ -1,3 +1,26 @@
+ /*
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ * Contributor(s): Porteries Tristan, Gros Alexis. For the 
+ * Uchronia project (2015-16).
+ *
+ * ***** END GPL LICENSE BLOCK *****
+ */
+
 #ifndef __KX_CHUNK_NODE_H__
 #define __KX_CHUNK_NODE_H__
 
@@ -5,7 +28,9 @@
 #include "MT_Point3.h"
 
 class KX_Terrain;
+class KX_GameObject;
 class KX_Camera;
+class CListValue;
 class KX_Chunk;
 
 /*
@@ -39,7 +64,9 @@ private:
 	MT_Point2 m_realPos;
 
 	/// Le rayon du noeud
-	float m_radius2;
+	float m_radius2Camera;
+	float m_radius2Object;
+	float m_radius2NoGap;
 
 	/// La boite englobant le noeud pour le frustum culling
 	MT_Point3 m_box[8];
@@ -51,28 +78,33 @@ private:
 	const unsigned short m_level;
 
 	/// Tableau de 4 sous noeuds
-	KX_ChunkNode** m_nodeList;
+	KX_ChunkNode **m_nodeList;
 
 	/// Le chunk ou objet avec mesh et physique
-	KX_Chunk* m_chunk;
+	KX_Chunk *m_chunk;
 
 	/// Le terrain utilisé comme usine à chunks
-	KX_Terrain* m_terrain;
+	KX_Terrain *m_terrain;
 
-	bool NeedCreateSubChunks(KX_Camera* campos) const;
-	void DestructAllNodes();
-	void ConstructAllNodes();
+	bool NeedCreateNodes(CListValue *objects, KX_Camera *cam) const;
+	bool InNode(CListValue *objects) const;
+	void DestructNodes();
+	void ConstructNodes();
 	void DestructChunk();
 	void ConstructChunk();
+	void DisableChunkVisibility();
 
 	void MarkCulled(KX_Camera* culldecam);
 
 public:
-	KX_ChunkNode(int x, int y, unsigned short relativesize, unsigned short level, KX_Terrain* terrain);
+	KX_ChunkNode(int x, int y, 
+				 unsigned short relativesize, 
+				 unsigned short level, 
+				 KX_Terrain* terrain);
 	virtual ~KX_ChunkNode();
 
 	/// Teste si le noeud est visible et créer des sous noeuds si besoin
-	void CalculateVisible(KX_Camera *culledcam, KX_Camera* campos);
+	void CalculateVisible(KX_Camera *culledcam, CListValue *objects);
 
 	void ReCalculateBox(float max, float min);
 
@@ -83,9 +115,6 @@ public:
 	}
 	inline unsigned short GetRelativeSize() const {
 		return m_relativeSize;
-	}
-	inline float GetRadius2() const { 
-		return m_radius2;
 	}
 	inline const MT_Point2& GetRealPos() const {
 		return m_realPos;
@@ -109,7 +138,7 @@ public:
 		return m_level;
 	}
 
-	static unsigned int m_finalNode;
+	static unsigned int m_activeNode;
 };
 
 bool operator<(const KX_ChunkNode::Point2D& pos1, const KX_ChunkNode::Point2D& pos2);
