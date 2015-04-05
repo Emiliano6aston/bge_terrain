@@ -61,6 +61,7 @@ KX_Terrain::KX_Terrain(RAS_MaterialBucket *bucket,
 					   unsigned short vertexSubdivision,
 					   unsigned short width,
 					   float maxDistance,
+					   float physicsMaxDistance,
 					   float chunkSize)
 	:m_bucket(bucket),
 	m_templateObject(templateObject),
@@ -68,11 +69,21 @@ KX_Terrain::KX_Terrain(RAS_MaterialBucket *bucket,
 	m_vertexSubdivision(vertexSubdivision),
 	m_width(width),
 	m_maxDistance2(maxDistance * maxDistance),
+	m_physicsMaxDistance2(physicsMaxDistance * physicsMaxDistance),
 	m_chunkSize(chunkSize),
 	m_maxHeight(0.0),
 	m_minHeight(0.0),
 	m_construct(false)
 {
+	unsigned int realmaxlevel = 1;
+	for (unsigned int i = 1; i < m_width; i *= 2) {
+		++realmaxlevel;
+	}
+	--realmaxlevel;
+	std::cout << "max level : " << realmaxlevel << std::endl;
+
+	if (m_maxChunkLevel > realmaxlevel)
+		m_maxChunkLevel = realmaxlevel;
 }
 
 KX_Terrain::~KX_Terrain()
@@ -88,7 +99,7 @@ void KX_Terrain::Construct()
 {
 	DEBUG("Construct terrain");
 
-	m_nodeTree = NewNodeList(0, 0, 1);
+	m_nodeTree = NewNodeList(0, 0, 2);
 	m_construct = true;
 }
 
@@ -106,24 +117,29 @@ void KX_Terrain::Destruct()
 
 void KX_Terrain::CalculateVisibleChunks(KX_Camera* culledcam)
 {
-	KX_Camera* campos = culledcam; //KX_GetActiveScene()->FindCamera(camname);
+	culledcam = KX_GetActiveScene()->FindCamera(camname);
+	MT_Transform camtrans(culledcam->GetWorldToCamera());
+	MT_Matrix4x4 viewmat(camtrans);
+
+	culledcam->SetModelviewMatrix(viewmat);
 
 	if (!m_construct)
 		Construct();
 
 	double starttime = KX_GetActiveEngine()->GetRealTime();
 
-	m_nodeTree[0]->CalculateVisible(culledcam, campos);
-	m_nodeTree[1]->CalculateVisible(culledcam, campos);
-	m_nodeTree[2]->CalculateVisible(culledcam, campos);
-	m_nodeTree[3]->CalculateVisible(culledcam, campos);
+	CListValue *objects = KX_GetActiveScene()->GetObjectList();
+	m_nodeTree[0]->CalculateVisible(culledcam, objects);
+	m_nodeTree[1]->CalculateVisible(culledcam, objects);
+	m_nodeTree[2]->CalculateVisible(culledcam, objects);
+	m_nodeTree[3]->CalculateVisible(culledcam, objects);
 
 	ScheduleEuthanasyChunks();
 
 	double endtime = KX_GetActiveEngine()->GetRealTime();
 	DEBUG(__func__ << " spend " << endtime - starttime << " time");
-// 	DEBUG(KX_Chunk::m_chunkActive << " active chunk");
-// 	DEBUG(m_chunkList.size() << " chunk");
+// 	std::cout << KX_ChunkNode::m_activeNode << " nodes" << std::endl;
+// 	std::cout << m_chunkList.size() << " chunk" << std::endl;
 }
 void KX_Terrain::UpdateChunksMeshes()
 {
@@ -149,7 +165,7 @@ void KX_Terrain::RenderChunksMeshes(const MT_Transform& cameratrans, RAS_IRaster
 	for (unsigned int i = 0; i < m_chunkList.size(); ++i) {
 		KX_Chunk* chunk = m_chunkList[i];
 		chunk->RenderMesh(rasty, cam);
-		chunk->SetCulled(false); // toujours faux
+// 		chunk->SetCulled(false); // toujours faux
 		chunk->UpdateBuckets(false);
 	}
 
@@ -157,14 +173,16 @@ void KX_Terrain::RenderChunksMeshes(const MT_Transform& cameratrans, RAS_IRaster
 	DEBUG(__func__ << " spend " << endtime - starttime << " time");
 }
 
-unsigned short KX_Terrain::GetSubdivision(float distance) const
+unsigned short KX_Terrain::GetSubdivision(float distance, bool iscamera) const
 {
-	unsigned int ret = 2;
+	unsigned int ret = 1;
+	// les objets non pas besoin d'une aussi grande subdivision que la camera
+	float maxdistance = iscamera ? m_maxDistance2 : m_physicsMaxDistance2;
 	for (float i = m_maxChunkLevel; i > 0.; --i)
 	{
-		if (distance > (i / m_maxChunkLevel * m_maxDistance2) || ret == m_width)
+		if (distance > (i / m_maxChunkLevel * maxdistance) || ret == m_maxChunkLevel)
 			break;
-		ret *= 2;
+		++ret;
 	}
 	return ret;
 }
@@ -195,14 +213,14 @@ KX_ChunkNode** KX_Terrain::NewNodeList(int x, int y, unsigned short level)
 	KX_ChunkNode** nodeList = (KX_ChunkNode**)malloc(4 * sizeof(KX_ChunkNode*));
 
 	// la taille relative d'un chunk, = 2 si le noeud et final
-	unsigned short relativesize = m_width / level;
+	unsigned short relativesize = m_width / pow(2, level);
 	// la largeur du chunk 
 	unsigned short width = relativesize / 2;
 
-	nodeList[0] = new KX_ChunkNode(x - width, y - width, relativesize, level * 2, this);
-	nodeList[1] = new KX_ChunkNode(x + width, y - width, relativesize, level * 2, this);
-	nodeList[2] = new KX_ChunkNode(x - width, y + width, relativesize, level * 2, this);
-	nodeList[3] = new KX_ChunkNode(x + width, y + width, relativesize, level * 2, this);
+	nodeList[0] = new KX_ChunkNode(x - width, y - width, relativesize, level + 1, this);
+	nodeList[1] = new KX_ChunkNode(x + width, y - width, relativesize, level + 1, this);
+	nodeList[2] = new KX_ChunkNode(x - width, y + width, relativesize, level + 1, this);
+	nodeList[3] = new KX_ChunkNode(x + width, y + width, relativesize, level + 1, this);
 
 	return nodeList;
 }
@@ -278,6 +296,7 @@ KX_Chunk* KX_Terrain::AddChunk(KX_ChunkNode* node)
 	rootnode->UpdateWorldData(0);
 	rootnode->SetBBox(orgnode->BBox());
 	rootnode->SetRadius(orgnode->Radius());
+	chunk->NodeUpdateGS(0.0);
 
 	chunk->ActivateGraphicController(true);
 	////////////////////////// AJOUT DANS LA LISTE ///////////////////////////
@@ -288,7 +307,7 @@ KX_Chunk* KX_Terrain::AddChunk(KX_ChunkNode* node)
 
 	chunk->RemoveMeshes();
 
-	chunk->SetCulled(false); // toujours faux
+	chunk->SetCulled(false);
 	chunk->UpdateBuckets(false);
 
 	return chunk;
