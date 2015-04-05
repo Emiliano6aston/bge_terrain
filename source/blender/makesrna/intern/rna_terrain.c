@@ -199,6 +199,11 @@ void RNA_def_terrain(BlenderRNA *brna)
 	RNA_def_property_range(prop, 0.0, FLT_MAX);
 	RNA_def_property_ui_text(prop, "Distance", "");
 
+	prop = RNA_def_property(srna, "physics_distance", PROP_FLOAT, PROP_NONE);
+	RNA_def_property_float_sdna(prop, NULL, "physicsdistance");
+	RNA_def_property_range(prop, 0.0, FLT_MAX);
+	RNA_def_property_ui_text(prop, "Physics Distance", "");
+
 	prop = RNA_def_property(srna, "chunk_size", PROP_FLOAT, PROP_NONE);
 	RNA_def_property_float_sdna(prop, NULL, "chunksize");
 	RNA_def_property_range(prop, 0.0, FLT_MAX);

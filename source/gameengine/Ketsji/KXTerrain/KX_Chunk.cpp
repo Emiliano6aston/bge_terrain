@@ -86,6 +86,15 @@ struct KX_Chunk::JointColumn
 	void SetInternVertex(unsigned short index, Vertex *vertex) { m_columnInterne[index] = vertex; }
 	Vertex *GetInternVertex(unsigned short index) { return m_columnInterne[index]; }
 	Vertex *GetExternVertex(unsigned short index) { return m_columnExterne[index]; }
+	Vertex *GetExternVertexNext(unsigned short index)
+	{
+		for (++index; index < VERTEX_COUNT; ++index) {
+			Vertex *vertex = m_columnExterne[index];
+			if (vertex->valid)
+				return vertex;
+		}
+		return NULL;
+	}
 };
 
 KX_Chunk::KX_Chunk(void *sgReplicationInfo, SG_Callbacks callbacks, KX_ChunkNode *node, RAS_MaterialBucket *bucket)
@@ -160,7 +169,7 @@ void KX_Chunk::ReconstructMesh()
 
 	m_meshObj->SchedulePolygons(0);
 
-// 	m_pPhysicsController->ReinstancePhysicsShape(NULL, m_meshObj);
+	m_pPhysicsController->ReinstancePhysicsShape(NULL, m_meshObj);
 }
 
 const MT_Point2 KX_Chunk::GetVertexPosition(short relx, short rely) const
@@ -468,7 +477,7 @@ void KX_Chunk::InvalidateJointVertexes()
 	for (unsigned short vertexIndex = 0; vertexIndex < VERTEX_COUNT; ++vertexIndex) {
 		for (unsigned short columnIndex = COLUMN_LEFT; columnIndex <= COLUMN_RIGHT; ++columnIndex) {
 			Vertex* vertex = m_columns[columnIndex]->GetExternVertex(vertexIndex);
-			if (vertexIndex % 2 && m_lastHasJoint[columnIndex])
+			if (m_lastHasJoint[columnIndex] && vertexIndex % (m_lastHasJoint[columnIndex] * 2))
 				vertex->Invalidate();
 			else
 				vertex->Validate();
@@ -478,7 +487,7 @@ void KX_Chunk::InvalidateJointVertexes()
 	for (unsigned short vertexIndex = 1; vertexIndex < (VERTEX_COUNT - 1); ++vertexIndex) {
 		for (unsigned short columnIndex = COLUMN_FRONT; columnIndex <= COLUMN_BACK; ++columnIndex) {
 			Vertex* vertex = m_columns[columnIndex]->GetExternVertex(vertexIndex);
-			if (vertexIndex % 2 && m_lastHasJoint[columnIndex])
+			if (m_lastHasJoint[columnIndex] && vertexIndex % (m_lastHasJoint[columnIndex] * 2))
 				vertex->Invalidate();
 			else
 				vertex->Validate();
@@ -536,7 +545,10 @@ void KX_Chunk::ConstructJointColumnPolygones(JointColumn *column, bool reverse)
 		fourthVertex = column->GetExternVertex(vertexIndex + 1);
 
 		if (!fourthVertex->valid) {
-			fourthVertex = column->GetExternVertex(vertexIndex + 2);
+			fourthVertex = column->GetExternVertexNext(vertexIndex);
+			if (!fourthVertex) {
+				std::cout << "Error fourth vertex NULL ! , index : " << vertexIndex << std::endl;
+			}
 		}
 
 		// debut de la colonne cas 1
@@ -547,6 +559,7 @@ void KX_Chunk::ConstructJointColumnPolygones(JointColumn *column, bool reverse)
 		}
 		// fin de la colonne cas 2
 		else if (vertexIndex == (POLY_COUNT - 1)) {
+			// si il y aun joit on ne fait rien
 			if (!firstVertex->valid) {
 				firstTriangle = false;
 			}
@@ -588,10 +601,10 @@ void KX_Chunk::UpdateMesh()
 	m_lastChunkNode[COLUMN_BACK] = terrain->GetNodeRelativePosition(KX_ChunkNode::Point2D(pos.x, pos.y + relativewidth));
 
 	// ensemble de 4 variables verifiant si il y aura besoin d'une jointure
-	const bool hasJointLeft = m_lastChunkNode[COLUMN_LEFT] ? m_lastChunkNode[COLUMN_LEFT]->GetLevel() < m_node->GetLevel() : false;
-	const bool hasJointRight = m_lastChunkNode[COLUMN_RIGHT] ? m_lastChunkNode[COLUMN_RIGHT]->GetLevel() < m_node->GetLevel() : false;
-	const bool hasJointFront = m_lastChunkNode[COLUMN_FRONT] ? m_lastChunkNode[COLUMN_FRONT]->GetLevel() < m_node->GetLevel() : false;
-	const bool hasJointBack = m_lastChunkNode[COLUMN_BACK] ? m_lastChunkNode[COLUMN_BACK]->GetLevel() < m_node->GetLevel() : false;
+	const unsigned short hasJointLeft = m_lastChunkNode[COLUMN_LEFT] ? (m_node->GetLevel() - m_lastChunkNode[COLUMN_LEFT]->GetLevel()) : 0;
+	const unsigned short hasJointRight = m_lastChunkNode[COLUMN_RIGHT] ? (m_node->GetLevel() - m_lastChunkNode[COLUMN_RIGHT]->GetLevel()) : 0;
+	const unsigned short hasJointFront = m_lastChunkNode[COLUMN_FRONT] ? (m_node->GetLevel() - m_lastChunkNode[COLUMN_FRONT]->GetLevel()) : 0;
+	const unsigned short hasJointBack = m_lastChunkNode[COLUMN_BACK] ? (m_node->GetLevel() - m_lastChunkNode[COLUMN_BACK]->GetLevel()) : 0;
 
 	if (!m_meshObj) {
 		m_lastHasJoint[COLUMN_LEFT] = hasJointLeft;
@@ -621,10 +634,10 @@ void KX_Chunk::EndUpdateMesh()
 
 void KX_Chunk::RenderMesh(RAS_IRasterizer *rasty, KX_Camera *cam)
 {
-// 	const MT_Point3 realPos = MT_Point3(m_node->GetRealPos().x(), m_node->GetRealPos().y(), 0.);
-	/*const MT_Point3 camPos = cam->NodeGetWorldPosition();
-	const MT_Vector3 norm = (camPos - realPos).normalized() * sqrt(m_node->GetRadius2());*/
+	const MT_Point3 realPos = MT_Point3(m_node->GetRealPos().x(), m_node->GetRealPos().y(), 0.);
+// 	const MT_Point3 camPos = cam->NodeGetWorldPosition();
+// 	const MT_Vector3 norm = (camPos - realPos).normalized() * sqrt(m_node->GetRadius2());
 
-// 	KX_RasterizerDrawDebugLine(realPos + MT_Point3(0.0, 0.0, m_minVertexHeight),
-// 							   realPos + MT_Point3(0.0, 0.0, m_maxVertexHeight), MT_Vector3(1., 0., 0.));
+	KX_RasterizerDrawDebugLine(realPos + MT_Point3(0.0, 0.0, m_minVertexHeight + 1.0),
+							   realPos + MT_Point3(0.0, 0.0, m_maxVertexHeight - 1.0), MT_Vector3(1., 0., 0.));
 }

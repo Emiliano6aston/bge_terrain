@@ -1774,7 +1774,8 @@ static KX_Terrain *convert_terrain(Terrain *terrain, KX_Scene* scene, KX_Blender
 										   terrain->maxlevel,
 										   terrain->vertexsubdivision,
 										   terrain->width, 
-										   terrain->distance, 
+										   terrain->distance,
+										   terrain->physicsdistance,
 										   terrain->chunksize);
 
 	for (TerrainZone *zone = (TerrainZone *)terrain->zones.first; zone; zone = (TerrainZone *)zone->next) {

@@ -44,6 +44,7 @@ private:
 	unsigned short		m_vertexSubdivision;
 	unsigned short		m_width;
 	float				m_maxDistance2;
+	float				m_physicsMaxDistance2;
 	float				m_chunkSize;
 	float				m_maxHeight;
 	float				m_minHeight;
@@ -62,6 +63,7 @@ public:
 			   unsigned short vertexSubdivision,
 			   unsigned short width,
 			   float maxDistance,
+			   float physicsMaxDistance,
 			   float chunkSize);
 	~KX_Terrain();
 
@@ -74,7 +76,7 @@ public:
 
 	/// Le niveau de subdivision maximal
 	inline unsigned short GetMaxLevel() const {
-		return (m_maxChunkLevel * m_maxChunkLevel * 2);
+		return m_maxChunkLevel;
 	}
 	/// le nombre maximun de face en largeur dans un chunk
 	inline unsigned short GetVertexSubdivision() const {
@@ -83,6 +85,9 @@ public:
 	/// La distance maximal pour avoir un niveau de subdivision superieur à 1
 	inline float GetMaxDistance2() const {
 		return m_maxDistance2;
+	}
+	inline float GetPhysicsMaxDistance2() const {
+		return m_physicsMaxDistance2;
 	}
 	/// La taille de tous les chunks
 	inline float GetChunkSize() const {
@@ -98,7 +103,7 @@ public:
 	}
 
 	// le nombre de subdivision par rapport à une distance
-	unsigned short GetSubdivision(float distance) const;
+	unsigned short GetSubdivision(float distance, bool iscamera) const;
 	KX_ChunkNode *GetNodeRelativePosition(const KX_ChunkNode::Point2D &pos);
 
 	/** La position en 3D d'un vertice. on renvoie une coordonnée et non une 

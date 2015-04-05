@@ -1,3 +1,26 @@
+ /*
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ * Contributor(s): Porteries Tristan, Gros Alexis. For the 
+ * Uchronia project (2015-16).
+ *
+ * ***** END GPL LICENSE BLOCK *****
+ */
+
 #include "KX_Terrain.h"
 #include "KX_Chunk.h"
 
@@ -19,9 +42,12 @@
 
 #define DEBUGNOENDL(msg) std::cout << msg;
 
-unsigned int KX_ChunkNode::m_finalNode = 0;
+unsigned int KX_ChunkNode::m_activeNode = 0;
 
-KX_ChunkNode::KX_ChunkNode(int x, int y, unsigned short relativesize, unsigned short level, KX_Terrain *terrain)
+KX_ChunkNode::KX_ChunkNode(int x, int y, 
+						   unsigned short relativesize, 
+						   unsigned short level,
+						   KX_Terrain *terrain)
 	:m_relativePos(Point2D(x, y)),
 	m_relativeSize(relativesize),
 	m_culled(false),
@@ -30,6 +56,7 @@ KX_ChunkNode::KX_ChunkNode(int x, int y, unsigned short relativesize, unsigned s
 	m_chunk(NULL),
 	m_terrain(terrain)
 {
+	++m_activeNode;
 	// la taille et sa moitié du chunk
 	const float size = m_terrain->GetChunkSize();
 	const float width = size / 2 * relativesize;
@@ -39,8 +66,10 @@ KX_ChunkNode::KX_ChunkNode(int x, int y, unsigned short relativesize, unsigned s
 	const float minHeight = m_terrain->GetMinHeight();
 
 	// le rayon du chunk
+	m_radius2NoGap = (width * width * 2);
+	m_radius2Object = m_radius2NoGap + (width * width * 2);
 	float gap = size * relativesize * 2;
-	m_radius2 = (width * width * 2) + (gap * gap);
+	m_radius2Camera = m_radius2NoGap + (gap * gap);
 
 	// la coordonnée reel du chunk
 	const float realX = x * size;
@@ -63,20 +92,21 @@ KX_ChunkNode::KX_ChunkNode(int x, int y, unsigned short relativesize, unsigned s
 
 KX_ChunkNode::~KX_ChunkNode()
 {
-	DestructAllNodes();
+	DestructNodes();
 	DestructChunk();
+	--m_activeNode;
 }
 
-void KX_ChunkNode::ConstructAllNodes()
+void KX_ChunkNode::ConstructNodes()
 {
-	if (!m_nodeList)
+	if (!m_nodeList) {
 		m_nodeList = m_terrain->NewNodeList(m_relativePos.x, m_relativePos.y, m_level);
+	}
 }
 
-void KX_ChunkNode::DestructAllNodes()
+void KX_ChunkNode::DestructNodes()
 {
-	if (m_nodeList)
-	{
+	if (m_nodeList) {
 		delete m_nodeList[0];
 		delete m_nodeList[1];
 		delete m_nodeList[2];
@@ -89,28 +119,77 @@ void KX_ChunkNode::DestructAllNodes()
 
 void KX_ChunkNode::ConstructChunk()
 {
-	if (!m_chunk)
-	{
+	if (!m_chunk) {
 		m_chunk = m_terrain->AddChunk(this);
 		m_chunk->AddRef();
+	}
+	else {
+		m_chunk->SetVisible(true, false);
 	}
 }
 
 void KX_ChunkNode::DestructChunk()
 {
-	if (m_chunk)
-	{
+	if (m_chunk) {
 		m_terrain->RemoveChunk(m_chunk);
 		m_chunk->Release();
 		m_chunk = NULL;
 	}
 }
 
-bool KX_ChunkNode::NeedCreateSubChunks(KX_Camera* campos) const
+void KX_ChunkNode::DisableChunkVisibility()
 {
-	const float distance2 = MT_Point3(m_realPos.x(), m_realPos.y(), 0.).distance2(campos->NodeGetWorldPosition()) - m_radius2;
-	const unsigned short subdivision = m_terrain->GetSubdivision(distance2);
-	return subdivision >= (m_level*2);
+	if (m_chunk) {
+		m_chunk->SetVisible(false, false);
+	}
+}
+
+bool KX_ChunkNode::NeedCreateNodes(CListValue *objects, KX_Camera *cam) const
+{
+	bool needcreatenode = false;
+
+	for (unsigned i = 0; i < objects->GetCount(); ++i) {
+		KX_GameObject *object = (KX_GameObject *)objects->GetValue(i);
+
+		bool iscamera = (object->GetGameObjectType() == SCA_IObject::OBJ_CAMERA);
+		if ((!object->GetVisible() || 
+			!object->GetPhysicsController()) && 
+			!iscamera)
+		{
+			continue;
+		}
+
+		float distance2 = MT_Point3(m_realPos.x(), m_realPos.y(), 0.).distance2(object->NodeGetWorldPosition());
+		distance2 -= iscamera ? m_radius2Camera : m_radius2Object;
+
+		needcreatenode = (m_terrain->GetSubdivision(distance2, iscamera) > m_level);
+		if (needcreatenode)
+			break;
+	}
+
+	return needcreatenode;
+}
+
+bool KX_ChunkNode::InNode(CListValue *objects) const
+{
+	bool innode = false;
+
+	for (unsigned i = 0; i < objects->GetCount(); ++i) {
+		KX_GameObject *object = (KX_GameObject *)objects->GetValue(i);
+
+		if ((!object->GetVisible() ||
+			!object->GetPhysicsController()))
+		{
+			continue;
+		}
+
+		const float objdistance2 = MT_Point3(m_realPos.x(), m_realPos.y(), 0.).distance2(object->NodeGetWorldPosition()) - m_radius2NoGap;
+		innode = (objdistance2 < 0.0);
+		if (innode)
+			break;
+	}
+
+	return innode;
 }
 
 void KX_ChunkNode::MarkCulled(KX_Camera* culledcam)
@@ -118,32 +197,60 @@ void KX_ChunkNode::MarkCulled(KX_Camera* culledcam)
 	m_culled = culledcam->BoxInsideFrustum(m_box) == KX_Camera::OUTSIDE;
 }
 
-void KX_ChunkNode::CalculateVisible(KX_Camera *culledcam, KX_Camera* campos)
+void KX_ChunkNode::CalculateVisible(KX_Camera *culledcam, CListValue *objects)
 {
 	MarkCulled(culledcam); // on test si le chunk est visible
-	if (!m_culled) // si oui on essai de créer des chunks et des les mettres à jour
-	{
-		if (NeedCreateSubChunks(campos))
-		{
-			// si on a besoin des sous chunks et qu'ils n'existent pas déjà
-			ConstructAllNodes();
+
+	// si le noeud est visible
+	if (!m_culled) {
+		// le noeud est a une distance suffisante d'un des objets dans la liste requise pour une subdivision
+		if (NeedCreateNodes(objects, culledcam)) {
+			// donc on subdivise les noeuds
+			ConstructNodes();
+			// et supprimons le chunk
 			DestructChunk();
 
-			m_nodeList[0]->CalculateVisible(culledcam, campos);
-			m_nodeList[1]->CalculateVisible(culledcam, campos);
-			m_nodeList[2]->CalculateVisible(culledcam, campos);
-			m_nodeList[3]->CalculateVisible(culledcam, campos);
+			// puis on fais la même chose avec nos nouveaux noeuds
+			m_nodeList[0]->CalculateVisible(culledcam, objects);
+			m_nodeList[1]->CalculateVisible(culledcam, objects);
+			m_nodeList[2]->CalculateVisible(culledcam, objects);
+			m_nodeList[3]->CalculateVisible(culledcam, objects);
 		}
-		else // si on en a pas besoin et qu'ils existent
-		{
-			DestructAllNodes();
+		// sinon si aucun des objets n'est assez près
+		else {
+			// on détruit les anciens noeuds
+			DestructNodes();
+			// et créons le chunk
 			ConstructChunk();
 		}
 	}
-	else // si le chunk est invisible
-	{
-		DestructAllNodes();
-		DestructChunk();
+	// si le noeud est invisible
+	else {
+		// si un des objets a sa position dans la zone recouverte par le noeud
+		if (InNode(objects)) {
+			if (m_level != m_terrain->GetMaxLevel())
+			{
+				// donc on subdivise les noeuds
+				ConstructNodes();
+				DestructChunk();
+
+				// puis on fais la même chose avec nos nouveau noeuds
+				m_nodeList[0]->CalculateVisible(culledcam, objects);
+				m_nodeList[1]->CalculateVisible(culledcam, objects);
+				m_nodeList[2]->CalculateVisible(culledcam, objects);
+				m_nodeList[3]->CalculateVisible(culledcam, objects);
+			}
+			else {
+				ConstructChunk();
+				DestructNodes();
+			}
+		}
+		// sinon si aucun objets ne se situent sur le noeud
+		else {
+			DestructNodes();
+			DestructChunk();
+		}
+		DisableChunkVisibility();
 	}
 }
 

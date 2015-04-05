@@ -62,7 +62,9 @@ typedef struct Terrain {
 	int maxlevel;
 	int vertexsubdivision;
 	int width;
+	int pad1;
 	float distance;
+	float physicsdistance;
 	float chunksize;
 
 	int active_zoneindex;
