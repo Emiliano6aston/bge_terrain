@@ -46,7 +46,7 @@ private:
 	float m_minVertexHeight;
 
 	// les dernières jointures
-	bool m_lastHasJoint[4];
+	unsigned short m_lastHasJoint[4];
 
 	/* variables temporaire utilisé par UpdateMesh et EndUpdateMesh, 
 	 * cela evite de rearcourir tous l'arbre
