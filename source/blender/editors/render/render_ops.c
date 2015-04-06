@@ -56,6 +56,7 @@ void ED_operatortypes_render(void)
 	WM_operatortype_append(TERRAIN_OT_new); // only for the BGE
 	WM_operatortype_append(TERRAIN_OT_zone_add); // only for the BGE
 	WM_operatortype_append(TERRAIN_OT_zone_remove); // only for the BGE
+	WM_operatortype_append(TERRAIN_OT_zone_move); // only for the BGE
 
 	WM_operatortype_append(MATERIAL_OT_copy);
 	WM_operatortype_append(MATERIAL_OT_paste);

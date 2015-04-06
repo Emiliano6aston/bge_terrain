@@ -54,14 +54,17 @@ public:
 	};
 
 private:
+	/// Le noeud parent
+	KX_ChunkNode *m_parentNode;
+
 	/// La position relative du noeud, à multiplier par la largeur d'un chunk pour retrouver la position réelle
 	const Point2D m_relativePos;
-
 	/// La taille relative du noeud la plus petite taille est 1
 	const unsigned short m_relativeSize;
-
 	/// La position réelle du noeud
 	MT_Point2 m_realPos;
+	/// Plus ce nombre est grand plus ce noeud est loin dans le QuadTree
+	const unsigned short m_level;
 
 	/// Le rayon du noeud
 	float m_radius2Camera;
@@ -70,16 +73,18 @@ private:
 
 	/// La boite englobant le noeud pour le frustum culling
 	MT_Point3 m_box[8];
+	/// 
+	bool m_boxModified;
+	/// la hauteur maximal de la boite
+	float m_maxBoxHeight;
+	/// la hauteur minimal de la boite
+	float m_minBoxHeight;
 
 	/// Le noeud est il visible ?
-	bool m_culled;
-
-	/// Plus ce nombre est grand plus ce noeud est loin dans le QuadTree
-	const unsigned short m_level;
+	short m_culledState;
 
 	/// Tableau de 4 sous noeuds
 	KX_ChunkNode **m_nodeList;
-
 	/// Le chunk ou objet avec mesh et physique
 	KX_Chunk *m_chunk;
 
@@ -97,7 +102,8 @@ private:
 	void MarkCulled(KX_Camera* culldecam);
 
 public:
-	KX_ChunkNode(int x, int y, 
+	KX_ChunkNode(KX_ChunkNode *parentNode,
+				 int x, int y, 
 				 unsigned short relativesize, 
 				 unsigned short level, 
 				 KX_Terrain* terrain);
@@ -106,7 +112,14 @@ public:
 	/// Teste si le noeud est visible et créer des sous noeuds si besoin
 	void CalculateVisible(KX_Camera *culledcam, CListValue *objects);
 
-	void ReCalculateBox(float max, float min);
+	/// On remet à 0 les variables m_maxBoxHeight et m_minBoxHeight
+	void ResetBoxHeight();
+	/* On verifie que les arguments max et min ne sont pas plus grand/petit 
+	 * que m_maxBoxHeight et m_minBoxHeight
+	 */
+	void CheckBoxHeight(float max, float min);
+	/// Reconstruction de la boite
+	void ReConstructBox();
 
 	KX_ChunkNode* GetNodeRelativePosition(const Point2D& pos);
 
@@ -127,8 +140,8 @@ public:
 	}
 
 	/// Utilisé pour savoir si un noeud est visible
-	inline bool IsCulled() const {
-		return m_culled;
+	inline bool GetCulledState() const {
+		return m_culledState;
 	}
 	inline KX_Chunk* GetChunk() const {
 		return m_chunk; 

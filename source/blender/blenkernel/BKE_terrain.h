@@ -43,6 +43,8 @@ struct Terrain *BKE_terrain_copy(struct Terrain *terrain);
 void BKE_terrain_make_local(struct Terrain *terrain);
 bool BKE_terrain_zone_remove(struct Terrain *terrain, int index);
 void BKE_terrain_zone_add(struct Terrain *terrain);
+void BKE_terrain_zone_move_up(struct Terrain *terrain);
+void BKE_terrain_zone_move_down(struct Terrain *terrain);
 
 #endif
 
