@@ -44,14 +44,16 @@
 
 unsigned int KX_ChunkNode::m_activeNode = 0;
 
-KX_ChunkNode::KX_ChunkNode(int x, int y, 
+KX_ChunkNode::KX_ChunkNode(KX_ChunkNode *parentNode,
+						   int x, int y, 
 						   unsigned short relativesize, 
 						   unsigned short level,
 						   KX_Terrain *terrain)
-	:m_relativePos(Point2D(x, y)),
+	:m_parentNode(parentNode),
+	m_relativePos(Point2D(x, y)),
 	m_relativeSize(relativesize),
-	m_culled(false),
 	m_level(level),
+	m_boxModified(false),
 	m_nodeList(NULL),
 	m_chunk(NULL),
 	m_terrain(terrain)
@@ -100,7 +102,7 @@ KX_ChunkNode::~KX_ChunkNode()
 void KX_ChunkNode::ConstructNodes()
 {
 	if (!m_nodeList) {
-		m_nodeList = m_terrain->NewNodeList(m_relativePos.x, m_relativePos.y, m_level);
+		m_nodeList = m_terrain->NewNodeList(this, m_relativePos.x, m_relativePos.y, m_level);
 	}
 }
 
@@ -194,15 +196,27 @@ bool KX_ChunkNode::InNode(CListValue *objects) const
 
 void KX_ChunkNode::MarkCulled(KX_Camera* culledcam)
 {
-	m_culled = culledcam->BoxInsideFrustum(m_box) == KX_Camera::OUTSIDE;
+	// TODO
+	/*if (m_parentNode) {
+		if (m_parentNode->GetCulledState() == KX_Camera::INSIDE) {
+			m_culledState == KX_Camera::INSIDE;
+			return;
+		}
+		else if (m_parentNode->GetCulledState() == KX_Camera::OUTSIDE) {
+			m_culledState == KX_Camera::OUTSIDE;
+			return;
+		}
+	}*/
+	m_culledState = culledcam->BoxInsideFrustum(m_box);
 }
 
 void KX_ChunkNode::CalculateVisible(KX_Camera *culledcam, CListValue *objects)
 {
+	ReConstructBox();
 	MarkCulled(culledcam); // on test si le chunk est visible
 
 	// si le noeud est visible
-	if (!m_culled) {
+	if (m_culledState != KX_Camera::OUTSIDE) {
 		// le noeud est a une distance suffisante d'un des objets dans la liste requise pour une subdivision
 		if (NeedCreateNodes(objects, culledcam)) {
 			// donc on subdivise les noeuds
@@ -252,19 +266,53 @@ void KX_ChunkNode::CalculateVisible(KX_Camera *culledcam, CListValue *objects)
 		}
 		DisableChunkVisibility();
 	}
+
+	/*MT_Vector3 color(1.0, 1.0, 1.0);
+	if (m_culledState == KX_Camera::OUTSIDE)
+		color = MT_Vector3(1.0, 0.0, 0.0);
+	else if (m_culledState == KX_Camera::INSIDE)
+		color = MT_Vector3(0.0, 1.0, 0.0);
+
+	const MT_Point3 realPos = MT_Point3(m_realPos.x(), m_realPos.y(), 0.);
+	KX_RasterizerDrawDebugLine(realPos + MT_Point3(0.0, 0.0, m_minBoxHeight),
+							   realPos + MT_Point3(0.0, 0.0, m_maxBoxHeight), color);*/
+	ResetBoxHeight();
 }
 
-void KX_ChunkNode::ReCalculateBox(float max, float min)
+void KX_ChunkNode::ResetBoxHeight()
 {
-	// redimensionnement de la boite
-	m_box[0].z() = min;
-	m_box[1].z() = min;
-	m_box[2].z() = min;
-	m_box[3].z() = min;
-	m_box[4].z() = max;
-	m_box[5].z() = max;
-	m_box[6].z() = max;
-	m_box[7].z() = max;
+	m_maxBoxHeight = 0.0;
+	m_minBoxHeight = 0.0;
+}
+
+void KX_ChunkNode::CheckBoxHeight(float max, float min)
+{
+	m_boxModified = true;
+
+	if (max > m_maxBoxHeight)
+		m_maxBoxHeight = max;
+	if (min < m_minBoxHeight)
+		m_minBoxHeight = min;
+
+	if (m_parentNode)
+		m_parentNode->CheckBoxHeight(max, min);
+}
+
+void KX_ChunkNode::ReConstructBox()
+{
+	if (m_boxModified) {
+		m_boxModified = false;
+
+		// redimensionnement de la boite
+		m_box[0].z() = m_minBoxHeight;
+		m_box[1].z() = m_minBoxHeight;
+		m_box[2].z() = m_minBoxHeight;
+		m_box[3].z() = m_minBoxHeight;
+		m_box[4].z() = m_maxBoxHeight;
+		m_box[5].z() = m_maxBoxHeight;
+		m_box[6].z() = m_maxBoxHeight;
+		m_box[7].z() = m_maxBoxHeight;
+	}
 }
 
 
@@ -272,7 +320,7 @@ KX_ChunkNode *KX_ChunkNode::GetNodeRelativePosition(const Point2D& pos)
 {
 	unsigned short relativewidth = m_relativeSize / 2;
 
-	if(!m_culled &&
+	if(m_culledState != KX_Camera::OUTSIDE &&
 	   (m_relativePos.x - relativewidth) < pos.x && pos.x < (m_relativePos.x + relativewidth) &&
 	   (m_relativePos.y - relativewidth) < pos.y && pos.y < (m_relativePos.y + relativewidth))
 	{

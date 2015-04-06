@@ -144,7 +144,6 @@ void BKE_terrain_make_local(Terrain *terrain)
 bool BKE_terrain_zone_remove(Terrain *terrain, int index)
 {
 	TerrainZone *zone;
-	printf("remove zone\n");
 	if (index < 0 || index > BLI_listbase_count(&terrain->zones) - 1)
 		return false;
 
@@ -163,7 +162,6 @@ void BKE_terrain_zone_add(Terrain *terrain)
 
 	BLI_strncpy(zone->name, DATA_("Terrain Zone"), sizeof(zone->name));
 
-	printf("add zone; name : %s\n", zone->name);
 
 	zone->mesh = NULL;
 	zone->height = 10.0;
@@ -174,6 +172,33 @@ void BKE_terrain_zone_add(Terrain *terrain)
 
 	BLI_uniquename(&terrain->zones, zone, DATA_("Terrain Zone"), '.', offsetof(TerrainZone, name), sizeof(zone->name));
 
-	printf("list : %p, size now : %i\n", &terrain->zones, BLI_listbase_count(&terrain->zones));
 // 	terrain->active_zoneindex = BLI_listbase_count(&terrain->zones) - 1;
+}
+
+void BKE_terrain_zone_move_up(Terrain *terrain)
+{
+	TerrainZone *zone;
+	TerrainZone *prevzone;
+
+	zone = BLI_findlink(&terrain->zones, terrain->active_zoneindex);
+	prevzone = zone->prev;
+
+	if (zone && prevzone) {
+		BLI_listbase_swaplinks(&terrain->zones, zone, prevzone);
+		--terrain->active_zoneindex;
+	}
+}
+
+void BKE_terrain_zone_move_down(Terrain *terrain)
+{
+	TerrainZone *zone;
+	TerrainZone *nextzone;
+
+	zone = BLI_findlink(&terrain->zones, terrain->active_zoneindex);
+	nextzone = zone->next;
+
+	if (zone && nextzone) {
+		BLI_listbase_swaplinks(&terrain->zones, zone, nextzone);
+		++terrain->active_zoneindex;
+	}
 }

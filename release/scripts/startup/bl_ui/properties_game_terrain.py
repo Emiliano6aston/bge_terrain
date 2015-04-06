@@ -116,6 +116,8 @@ class TERRAIN_PT_game_terrain_zones(TerrainButtonsPanel, Panel):
         col = row.column(align=True)
         col.operator("terrain.zone_add", icon='ZOOMIN', text="")
         col.operator("terrain.zone_remove", icon='ZOOMOUT', text="")
+        col.operator("terrain.zone_move", text="", icon='TRIA_UP').direction = 'UP'
+        col.operator("terrain.zone_move", text="", icon='TRIA_DOWN').direction = 'DOWN'
 
 class TERRAIN_PT_game_terrain_zones_mesh(TerrainButtonsPanel, Panel):
     bl_label = "Zone Mesh"
