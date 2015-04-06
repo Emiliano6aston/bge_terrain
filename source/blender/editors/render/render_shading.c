@@ -719,6 +719,48 @@ void TERRAIN_OT_zone_remove(wmOperatorType *ot)
 	ot->prop = RNA_def_int(ot->srna, "index", 1, 1, INT_MAX, "Index", "", 1, INT_MAX);
 }
 
+static int terrain_zone_move_exec(bContext *C, wmOperator *op)
+{
+	Terrain *terrain = CTX_data_pointer_get_type(C, "terrain", &RNA_Terrain).data;
+	int dir = RNA_enum_get(op->ptr, "direction");
+
+	TerrainZone *zone;
+	TerrainZone *otherzone;
+
+	if (BLI_listbase_count(&terrain->zones) == 0)
+		return OPERATOR_CANCELLED;
+
+	if (dir == 1)
+		BKE_terrain_zone_move_up(terrain);
+	else
+		BKE_terrain_zone_move_down(terrain);
+
+	return OPERATOR_FINISHED;
+}
+
+void TERRAIN_OT_zone_move(wmOperatorType *ot)
+{
+	static EnumPropertyItem direction_items[] = {
+		{1, "UP", 0, "Up", ""},
+		{-1, "DOWN", 0, "Down", ""},
+		{0, NULL, 0, NULL, NULL}
+	};
+
+	/* identifiers */
+	ot->name = "Move Terrain Zone";
+	ot->idname = "TERRAIN_OT_zone_move";
+	ot->description = "Change the position of a terrain zone";
+
+	/* api callbacks */
+	ot->exec = terrain_zone_move_exec;
+
+	/* flags */
+	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO | OPTYPE_INTERNAL;
+
+	/* props */
+	RNA_def_enum(ot->srna, "direction", direction_items, 0, "Direction", "Direction to move, UP or DOWN");
+}
+
 /********************** render layer operators *********************/
 
 static int render_layer_add_exec(bContext *C, wmOperator *UNUSED(op))

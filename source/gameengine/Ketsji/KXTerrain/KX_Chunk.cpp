@@ -159,7 +159,6 @@ void KX_Chunk::ReconstructMesh()
 	if (!m_hasVertexes) {
 		ConstructVertexes();
 		m_hasVertexes = true;
-		m_node->ReCalculateBox(m_maxVertexHeight, m_minVertexHeight);
 	}
 
 	InvalidateJointVertexes();
@@ -626,6 +625,7 @@ void KX_Chunk::UpdateMesh()
 
 		ReconstructMesh();
 	}
+	m_node->CheckBoxHeight(m_maxVertexHeight, m_minVertexHeight);
 }
 
 void KX_Chunk::EndUpdateMesh()
@@ -634,10 +634,10 @@ void KX_Chunk::EndUpdateMesh()
 
 void KX_Chunk::RenderMesh(RAS_IRasterizer *rasty, KX_Camera *cam)
 {
-	const MT_Point3 realPos = MT_Point3(m_node->GetRealPos().x(), m_node->GetRealPos().y(), 0.);
+// 	const MT_Point3 realPos = MT_Point3(m_node->GetRealPos().x(), m_node->GetRealPos().y(), 0.);
 // 	const MT_Point3 camPos = cam->NodeGetWorldPosition();
 // 	const MT_Vector3 norm = (camPos - realPos).normalized() * sqrt(m_node->GetRadius2());
 
-	KX_RasterizerDrawDebugLine(realPos + MT_Point3(0.0, 0.0, m_minVertexHeight + 1.0),
-							   realPos + MT_Point3(0.0, 0.0, m_maxVertexHeight - 1.0), MT_Vector3(1., 0., 0.));
+	/*KX_RasterizerDrawDebugLine(realPos + MT_Point3(0.0, 0.0, m_minVertexHeight + 1.0),
+							   realPos + MT_Point3(0.0, 0.0, m_maxVertexHeight - 1.0), MT_Vector3(1., 0., 0.));*/
 }
