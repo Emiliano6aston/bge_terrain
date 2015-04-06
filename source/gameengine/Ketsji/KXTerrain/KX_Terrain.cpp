@@ -99,7 +99,7 @@ void KX_Terrain::Construct()
 {
 	DEBUG("Construct terrain");
 
-	m_nodeTree = NewNodeList(0, 0, 2);
+	m_nodeTree = NewNodeList(NULL, 0, 0, 2);
 	m_construct = true;
 }
 
@@ -208,7 +208,7 @@ VertexZoneInfo *KX_Terrain::GetVertexInfo(float x, float y) const
 	return info;
 }
 
-KX_ChunkNode** KX_Terrain::NewNodeList(int x, int y, unsigned short level)
+KX_ChunkNode** KX_Terrain::NewNodeList(KX_ChunkNode *parentNode, int x, int y, unsigned short level)
 {
 	KX_ChunkNode** nodeList = (KX_ChunkNode**)malloc(4 * sizeof(KX_ChunkNode*));
 
@@ -217,10 +217,10 @@ KX_ChunkNode** KX_Terrain::NewNodeList(int x, int y, unsigned short level)
 	// la largeur du chunk 
 	unsigned short width = relativesize / 2;
 
-	nodeList[0] = new KX_ChunkNode(x - width, y - width, relativesize, level + 1, this);
-	nodeList[1] = new KX_ChunkNode(x + width, y - width, relativesize, level + 1, this);
-	nodeList[2] = new KX_ChunkNode(x - width, y + width, relativesize, level + 1, this);
-	nodeList[3] = new KX_ChunkNode(x + width, y + width, relativesize, level + 1, this);
+	nodeList[0] = new KX_ChunkNode(parentNode, x - width, y - width, relativesize, level + 1, this);
+	nodeList[1] = new KX_ChunkNode(parentNode, x + width, y - width, relativesize, level + 1, this);
+	nodeList[2] = new KX_ChunkNode(parentNode, x - width, y + width, relativesize, level + 1, this);
+	nodeList[3] = new KX_ChunkNode(parentNode, x + width, y + width, relativesize, level + 1, this);
 
 	return nodeList;
 }

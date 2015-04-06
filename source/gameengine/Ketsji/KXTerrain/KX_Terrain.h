@@ -111,7 +111,7 @@ public:
 	 */
 	VertexZoneInfo *GetVertexInfo(float x, float y) const;
 
-	KX_ChunkNode **NewNodeList(int x, int y, unsigned short level);
+	KX_ChunkNode **NewNodeList(KX_ChunkNode *parentNode, int x, int y, unsigned short level);
 	KX_Chunk *AddChunk(KX_ChunkNode *node);
 	void RemoveChunk(KX_Chunk *chunk);
 	void ScheduleEuthanasyChunks();
