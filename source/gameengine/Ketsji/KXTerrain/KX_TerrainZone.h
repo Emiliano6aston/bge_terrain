@@ -55,6 +55,9 @@ public:
 					   Mesh *mesh);
 	~KX_TerrainZoneMesh();
 
+	float GetMaxHeight() const;
+	float GetMinHeight() const;
+
 	float GetClampedHeight(const float orgheight, const float interp) const;
 	float GetMeshColorInterp(const float *point, const unsigned int faceindex, const MVert &v1, const MVert &v2, const MVert &v3) const;
 	float GetHeight(const float x, const float y, const float interp) const;

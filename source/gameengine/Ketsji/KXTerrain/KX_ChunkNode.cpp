@@ -54,6 +54,7 @@ KX_ChunkNode::KX_ChunkNode(KX_ChunkNode *parentNode,
 	m_relativeSize(relativesize),
 	m_level(level),
 	m_boxModified(false),
+	m_culledState(KX_Camera::INSIDE),
 	m_nodeList(NULL),
 	m_chunk(NULL),
 	m_terrain(terrain)
@@ -196,17 +197,16 @@ bool KX_ChunkNode::InNode(CListValue *objects) const
 
 void KX_ChunkNode::MarkCulled(KX_Camera* culledcam)
 {
-	// TODO
-	/*if (m_parentNode) {
+	if (m_parentNode) {
 		if (m_parentNode->GetCulledState() == KX_Camera::INSIDE) {
-			m_culledState == KX_Camera::INSIDE;
+			m_culledState = KX_Camera::INSIDE;
 			return;
 		}
 		else if (m_parentNode->GetCulledState() == KX_Camera::OUTSIDE) {
-			m_culledState == KX_Camera::OUTSIDE;
+			m_culledState = KX_Camera::OUTSIDE;
 			return;
 		}
-	}*/
+	}
 	m_culledState = culledcam->BoxInsideFrustum(m_box);
 }
 

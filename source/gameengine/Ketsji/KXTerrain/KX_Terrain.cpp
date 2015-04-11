@@ -101,6 +101,7 @@ void KX_Terrain::Construct()
 
 	m_nodeTree = NewNodeList(NULL, 0, 0, 2);
 	m_construct = true;
+	std::cout << "max height : " << m_maxHeight << ", min height : " << m_minHeight << std::endl;
 }
 
 void KX_Terrain::Destruct()
@@ -341,10 +342,15 @@ void KX_Terrain::AddTerrainZoneMesh(KX_TerrainZoneMesh *zoneMesh)
 {
 	m_zoneMeshList.push_back(zoneMesh);
 
-	TerrainZone *zoneInfo = zoneMesh->GetTerrainZoneInfo();
-	const float height = zoneInfo->height + zoneInfo->offset;
-	if (m_maxHeight < height)
-		m_maxHeight = height;
-	if (m_minHeight > height)
-		m_minHeight = height;
+	const float maxheight = zoneMesh->GetMaxHeight();
+	const float minheight = zoneMesh->GetMinHeight();
+
+	if (m_maxHeight < maxheight)
+		m_maxHeight = maxheight;
+	if (m_minHeight > minheight)
+		m_minHeight = minheight;
+
+	if (maxheight < minheight) {
+		std::cout << "Warning : min height greater than max height !" << std::endl;
+	}
 }
