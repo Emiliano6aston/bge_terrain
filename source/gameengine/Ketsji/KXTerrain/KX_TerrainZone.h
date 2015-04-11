@@ -35,6 +35,7 @@ extern "C" {
 class Mesh;
 class DerivedMesh;
 class TerrainZone;
+class KX_Terrain;
 
 struct VertexZoneInfo
 {
@@ -45,20 +46,21 @@ struct VertexZoneInfo
 class KX_TerrainZoneMesh
 {
 private:
-	//La configuration que suit cette zone:
+	KX_Terrain *m_terrain;
 	TerrainZone *m_zoneInfo;
 	float m_box[4];
 	DerivedMesh *m_derivedMesh;
 
 public:
-	KX_TerrainZoneMesh(TerrainZone *zoneInfo,
+	KX_TerrainZoneMesh(KX_Terrain *terrain,
+					   TerrainZone *zoneInfo,
 					   Mesh *mesh);
 	~KX_TerrainZoneMesh();
 
 	float GetMaxHeight() const;
 	float GetMinHeight() const;
 
-	float GetClampedHeight(const float orgheight, const float interp) const;
+	float GetClampedHeight(const float orgheight, const float interp, const float x, const float y, const float *v1, const float *v2, const float *v3) const;
 	float GetMeshColorInterp(const float *point, const unsigned int faceindex, const MVert &v1, const MVert &v2, const MVert &v3) const;
 	float GetHeight(const float x, const float y, const float interp) const;
 
