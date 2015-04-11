@@ -1788,7 +1788,7 @@ static KX_Terrain *convert_terrain(Terrain *terrain, KX_Scene* scene, KX_Blender
 										   terrain->chunksize);
 
 	for (TerrainZone *zone = (TerrainZone *)terrain->zones.first; zone; zone = (TerrainZone *)zone->next) {
-		KX_TerrainZoneMesh *zoneMesh = new KX_TerrainZoneMesh(zone, zone->mesh);
+		KX_TerrainZoneMesh *zoneMesh = new KX_TerrainZoneMesh(kxterrain, zone, zone->mesh);
 		kxterrain->AddTerrainZoneMesh(zoneMesh);
 	}
 
