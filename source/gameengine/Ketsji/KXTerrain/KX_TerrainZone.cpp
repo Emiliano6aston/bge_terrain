@@ -22,14 +22,16 @@
  */
 
 #include "KX_TerrainZone.h"
+#include "KX_Terrain.h"
 #include "DNA_mesh_types.h"
 #include "DNA_terrain_types.h"
 #include <iostream>
 #include "BLI_math.h"
 #include "BLI_noise.h"
 
-KX_TerrainZoneMesh::KX_TerrainZoneMesh(TerrainZone *zoneInfo, Mesh *mesh)
-	:m_zoneInfo(zoneInfo)
+KX_TerrainZoneMesh::KX_TerrainZoneMesh(KX_Terrain *terrain, TerrainZone *zoneInfo, Mesh *mesh)
+	:m_terrain(terrain),
+	m_zoneInfo(zoneInfo)
 {
 	m_box[0] = 0.0; // min x
 	m_box[1] = 0.0; // max x
@@ -114,17 +116,28 @@ float KX_TerrainZoneMesh::GetMinHeight() const
 	return minheight;
 }
 
-float KX_TerrainZoneMesh::GetClampedHeight(const float orgheight, const float interp) const
+float KX_TerrainZoneMesh::GetClampedHeight(const float orgheight, const float interp, const float x, const float y, const float *v1, const float *v2, const float *v3) const
 {
 	float height = orgheight;
 
 	if (m_zoneInfo->flag & TERRAIN_ZONE_CLAMP) {
-		if (orgheight > m_zoneInfo->clampend) {
-			height = m_zoneInfo->clampend + (orgheight - m_zoneInfo->clampend) * interp;
+		/*if (m_zoneInfo->flag & TERRAIN_ZONE_CLAMP_MESH) {
+			if (v1 && v2 && v3)) {
+				float start[3] = {x, y, 1000.0};
+				float normal[3] = {0.0, 0.0, -1000.0};
+				float lambda;
+				isect_ray_tri_v3(start, normal, v1, v2, v3, &lambda, NULL);
+				std::cout << "lambda : " << lambda << std::endl;
+			}
 		}
-		else if (orgheight < m_zoneInfo->clampstart) {
-			height = m_zoneInfo->clampstart + (orgheight - m_zoneInfo->clampstart) * interp;
-		}
+		else {*/
+			if (orgheight > m_zoneInfo->clampend) {
+				height = m_zoneInfo->clampend + (orgheight - m_zoneInfo->clampend) * interp;
+			}
+			else if (orgheight < m_zoneInfo->clampstart) {
+				height = m_zoneInfo->clampstart + (orgheight - m_zoneInfo->clampstart) * interp;
+			}
+		// }
 	}
 
 	return height;
@@ -208,7 +221,7 @@ void KX_TerrainZoneMesh::GetVertexInfo(const float x, const float y, VertexZoneI
 					const float interp = GetMeshColorInterp(point, i, v1, v2, v3);
 					hit = true;
 					// on accéde à la hauteur précedente avec peut être une modification
-					height += GetClampedHeight(info->height, 1.0 - interp);
+					height += GetClampedHeight(info->height, 1.0 - interp, x, y, v1.co, v2.co, v3.co);
 					height += GetHeight(x, y, interp);
 
 					break;
@@ -217,11 +230,11 @@ void KX_TerrainZoneMesh::GetVertexInfo(const float x, const float y, VertexZoneI
 		}
 		// si on ne touche rien il faut tout de même garder la valeur précedente
 		if (!hit) {
-			height += GetClampedHeight(info->height, 1.0);
+			height += GetClampedHeight(info->height, 1.0, x, y, NULL, NULL, NULL);
 		}
 	}
 	else {
-		height += GetClampedHeight(info->height, 1.0);
+		height += GetClampedHeight(info->height, 1.0, x, y, NULL, NULL, NULL);
 		height += GetHeight(x, y, 1.0);
 	}
 
