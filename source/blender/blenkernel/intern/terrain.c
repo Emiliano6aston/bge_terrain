@@ -71,6 +71,12 @@ Terrain *add_terrain(Main *bmain, const char *name)
 
 	terrain = BKE_libblock_alloc(bmain, ID_TER, name);
 	terrain->material = NULL;
+	terrain->maxlevel = 6;
+	terrain->width = 64;
+	terrain->vertexsubdivision = 4;
+	terrain->distance = 500.0;
+	terrain->physicsdistance = 0.0;
+	terrain->chunksize = 30.0;
 	terrain->active_zoneindex = 0;
 
 	return terrain;
@@ -144,7 +150,7 @@ void BKE_terrain_make_local(Terrain *terrain)
 bool BKE_terrain_zone_remove(Terrain *terrain, int index)
 {
 	TerrainZone *zone;
-	if (index < 0 || index > BLI_listbase_count(&terrain->zones) - 1)
+	if (0 < index || index < BLI_listbase_count(&terrain->zones) - 1)
 		return false;
 
 	zone = BLI_findlink(&terrain->zones, index);
@@ -152,7 +158,7 @@ bool BKE_terrain_zone_remove(Terrain *terrain, int index)
 	BLI_remlink(&terrain->zones, zone);
 	MEM_freeN(zone);
 
-// 	terrain->active_zoneindex = BLI_listbase_count(&terrain->zones) - 1;
+	terrain->active_zoneindex = BLI_listbase_count(&terrain->zones) - 1;
 	return true;
 }
 
@@ -167,12 +173,15 @@ void BKE_terrain_zone_add(Terrain *terrain)
 	zone->height = 10.0;
 	zone->offset = 0.0;
 	zone->resolution = 100.0;
+	zone->clampstart = 0.0;
+	zone->clampend = 0.0;
+	zone->vertexcolor[0] = 1.0;
+	zone->vertexcolor[1] = 1.0;
+	zone->vertexcolor[2] = 1.0;
 
 	BLI_addtail(&terrain->zones, zone);
 
 	BLI_uniquename(&terrain->zones, zone, DATA_("Terrain Zone"), '.', offsetof(TerrainZone, name), sizeof(zone->name));
-
-// 	terrain->active_zoneindex = BLI_listbase_count(&terrain->zones) - 1;
 }
 
 void BKE_terrain_zone_move_up(Terrain *terrain)
