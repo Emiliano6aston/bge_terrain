@@ -25,9 +25,7 @@
 #include "DNA_mesh_types.h"
 #include "DNA_terrain_types.h"
 #include <iostream>
-#include "BLI_math_geom.h"
-#include "BLI_math_vector.h"
-#include "BLI_math_color.h"
+#include "BLI_math.h"
 #include "BLI_noise.h"
 
 KX_TerrainZoneMesh::KX_TerrainZoneMesh(TerrainZone *zoneInfo, Mesh *mesh)
@@ -66,6 +64,54 @@ KX_TerrainZoneMesh::~KX_TerrainZoneMesh()
 {
 	if (m_derivedMesh)
 		m_derivedMesh->release(m_derivedMesh);
+}
+
+float KX_TerrainZoneMesh::GetMaxHeight() const
+{
+	float maxheight = 0.0;
+
+	// clampage
+	if (m_zoneInfo->flag & TERRAIN_ZONE_CLAMP) {
+		maxheight += max_ff(m_zoneInfo->clampstart, m_zoneInfo->clampend);
+	}
+
+	// decalge a l'origine
+	if (m_zoneInfo->offset > 0.0) {
+		maxheight += m_zoneInfo->offset;
+	}
+
+	// bruit de perlin
+	if (m_zoneInfo->flag & TERRAIN_ZONE_PERLIN_NOISE) {
+		if (m_zoneInfo->height > 0.0) {
+			maxheight += m_zoneInfo->height;
+		}
+	}
+
+	return maxheight;
+}
+
+float KX_TerrainZoneMesh::GetMinHeight() const
+{
+	float minheight = 0.0;
+
+	// clampage
+	if (m_zoneInfo->flag & TERRAIN_ZONE_CLAMP) {
+		minheight += min_ff(m_zoneInfo->clampstart, m_zoneInfo->clampend);
+	}
+
+	// decalge a l'origine
+	if (m_zoneInfo->offset < 0.0) {
+		minheight += m_zoneInfo->offset;
+	}
+
+	// bruit de perlin
+	if (m_zoneInfo->flag & TERRAIN_ZONE_PERLIN_NOISE) {
+		if (m_zoneInfo->height < 0.0) {
+			minheight += m_zoneInfo->height;
+		}
+	}
+
+	return minheight;
 }
 
 float KX_TerrainZoneMesh::GetClampedHeight(const float orgheight, const float interp) const
