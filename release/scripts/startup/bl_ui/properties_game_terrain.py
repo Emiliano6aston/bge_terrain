@@ -136,14 +136,15 @@ class TERRAIN_PT_game_terrain_zones_mesh(TerrainButtonsPanel, Panel):
         scene = context.scene
         terrain = scene.terrain
         row = layout.row()
+        
+        if terrain:
+            zone = terrain.zones.active_zone
 
-        zone = terrain.zones.active_zone
-        layout.active = zone.use_mesh
-
-        if zone:
-            row = layout.row()
-            row.column().prop(zone, "mesh")
-            row.column().prop(zone, "use_mesh_vertex_color_interp")
+            if zone:
+                layout.active = zone.use_mesh
+                row = layout.row()
+                row.column().prop(zone, "mesh")
+                row.column().prop(zone, "use_mesh_vertex_color_interp")
 
 class TERRAIN_PT_game_terrain_zones_heights(TerrainButtonsPanel, Panel):
     bl_label = "Heights"
@@ -156,19 +157,20 @@ class TERRAIN_PT_game_terrain_zones_heights(TerrainButtonsPanel, Panel):
         terrain = scene.terrain
         split = layout.split()
 
-        zone = terrain.zones.active_zone
-
-        if zone:
-            col = split.column()
-            sub = col.column()
-            sub.prop(zone, "use_perlin_noise")
-            sub.prop(zone, "offset")
-
-            col = split.column()
-            sub = col.column()
-            sub.active = zone.use_perlin_noise
-            sub.prop(zone, "resolution")
-            sub.prop(zone, "height")
+        if terrain:
+            zone = terrain.zones.active_zone
+            
+            if zone:
+                col = split.column()
+                sub = col.column()
+                sub.prop(zone, "use_perlin_noise")
+                sub.prop(zone, "offset")
+            
+                col = split.column()
+                sub = col.column()
+                sub.active = zone.use_perlin_noise
+                sub.prop(zone, "resolution")
+                sub.prop(zone, "height")
 
 class TERRAIN_PT_game_terrain_zones_clamp(TerrainButtonsPanel, Panel):
     bl_label = "Zone Clamp"
@@ -188,13 +190,14 @@ class TERRAIN_PT_game_terrain_zones_clamp(TerrainButtonsPanel, Panel):
         terrain = scene.terrain
         row = layout.row()
 
-        zone = terrain.zones.active_zone
-        layout.active = zone.use_clamp
-
-        if zone:
-            row = layout.row()
-            row.column().prop(zone, "clamp_start")
-            row.column().prop(zone, "clamp_end")
+        if terrain:
+            zone = terrain.zones.active_zone
+            
+            if zone:
+                layout.active = zone.use_clamp
+                row = layout.row()
+                row.column().prop(zone, "clamp_start")
+                row.column().prop(zone, "clamp_end")
 
 class TERRAIN_PT_game_terrain_zones_vertex_info(TerrainButtonsPanel, Panel):
     bl_label = "Zone Vertex Info"
@@ -207,13 +210,14 @@ class TERRAIN_PT_game_terrain_zones_vertex_info(TerrainButtonsPanel, Panel):
         terrain = scene.terrain
         row = layout.row()
 
-        zone = terrain.zones.active_zone
-        layout.active = zone.use_vertex_color
-
-        if zone:
-            row = layout.row()
-            row.column().prop(zone, "use_vertex_color")
-            row.column().prop(zone, "vertex_color")
+        if terrain:
+            zone = terrain.zones.active_zone
+            
+            if zone:
+                layout.active = zone.use_vertex_color
+                row = layout.row()
+                row.column().prop(zone, "use_vertex_color")
+                row.column().prop(zone, "vertex_color")
 
 if __name__ == "__main__":  # only for live edit.
     bpy.utils.register_module(__name__)
