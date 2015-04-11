@@ -118,12 +118,6 @@ void KX_Terrain::Destruct()
 
 void KX_Terrain::CalculateVisibleChunks(KX_Camera* culledcam)
 {
-	culledcam = KX_GetActiveScene()->FindCamera(camname);
-	MT_Transform camtrans(culledcam->GetWorldToCamera());
-	MT_Matrix4x4 viewmat(camtrans);
-
-	culledcam->SetModelviewMatrix(viewmat);
-
 	if (!m_construct)
 		Construct();
 
