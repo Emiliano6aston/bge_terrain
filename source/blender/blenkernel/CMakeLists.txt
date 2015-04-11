@@ -171,9 +171,9 @@ set(SRC
 	intern/speaker.c
 	intern/subsurf_ccg.c
 	intern/suggestions.c
-	intern/terrain.c
 	intern/text.c
 	intern/texture.c
+	intern/terrain.c
 	intern/tracking.c
 	intern/tracking_auto.c
 	intern/tracking_detect.c
@@ -278,11 +278,9 @@ set(SRC
 	BKE_speaker.h
 	BKE_subsurf.h
 	BKE_suggestions.h
-	BKE_editmesh.h
-	BKE_editmesh_bvh.h
-	BKE_terrain.h
 	BKE_text.h
 	BKE_texture.h
+	BKE_terrain.h
 	BKE_tracking.h
 	BKE_unit.h
 	BKE_utildefines.h
