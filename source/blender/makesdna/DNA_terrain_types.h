@@ -60,8 +60,8 @@ typedef struct Terrain {
 	struct Material *material;
 
 	int maxlevel;
-	int vertexsubdivision;
 	int width;
+	int vertexsubdivision;
 	int pad1;
 	float distance;
 	float physicsdistance;
