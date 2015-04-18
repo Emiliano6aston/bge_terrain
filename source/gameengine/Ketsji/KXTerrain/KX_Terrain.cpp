@@ -168,6 +168,12 @@ void KX_Terrain::RenderChunksMeshes(const MT_Transform& cameratrans, RAS_IRaster
 	DEBUG(__func__ << " spend " << endtime - starttime << " time");
 }
 
+void KX_Terrain::DrawDebugNode()
+{
+	for (unsigned int i = 0; i < 4; ++i)
+		m_nodeTree[i]->DrawDebugInfo(KX_ChunkNode::DEBUG_BOX);
+}
+
 unsigned short KX_Terrain::GetSubdivision(float distance, bool iscamera) const
 {
 	unsigned int ret = 1;

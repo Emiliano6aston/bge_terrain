@@ -1241,6 +1241,7 @@ void KX_KetsjiEngine::RenderFrame(KX_Scene* scene, KX_Camera* cam)
 	SG_SetActiveStage(SG_STAGE_RENDER);
 	// render debug info for terrain and update visible flags
 	scene->RenderTerrainChunksMeshes(camtrans, m_rasterizer);
+	scene->DrawDebugTerrainNode();
 
 #ifdef WITH_PYTHON
 	PHY_SetActiveEnvironment(scene->GetPhysicsEnvironment());
