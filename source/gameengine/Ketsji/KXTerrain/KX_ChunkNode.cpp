@@ -31,6 +31,8 @@
 
 #include <stdio.h>
 
+#include "glew-mx.h"
+
 #define COLORED_PRINT(msg, color) std::cout << /*"\033[" << color << "m" <<*/ msg << /*"\033[30m" <<*/ std::endl;
 
 #define DEBUG(msg) std::cout << "Debug (" << __func__ << ", " << this << ") : " << msg << std::endl
@@ -151,7 +153,7 @@ bool KX_ChunkNode::NeedCreateNodes(CListValue *objects, KX_Camera *cam) const
 {
 	bool needcreatenode = false;
 
-	for (unsigned i = 0; i < objects->GetCount(); ++i) {
+	for (unsigned int i = 0; i < objects->GetCount(); ++i) {
 		KX_GameObject *object = (KX_GameObject *)objects->GetValue(i);
 
 		bool iscamera = (object->GetGameObjectType() == SCA_IObject::OBJ_CAMERA);
@@ -177,7 +179,7 @@ bool KX_ChunkNode::InNode(CListValue *objects) const
 {
 	bool innode = false;
 
-	for (unsigned i = 0; i < objects->GetCount(); ++i) {
+	for (unsigned int i = 0; i < objects->GetCount(); ++i) {
 		KX_GameObject *object = (KX_GameObject *)objects->GetValue(i);
 
 		if ((!object->GetVisible() ||
@@ -279,6 +281,30 @@ void KX_ChunkNode::CalculateVisible(KX_Camera *culledcam, CListValue *objects)
 	ResetBoxHeight();
 }
 
+void KX_ChunkNode::DrawDebugInfo(DEBUG_DRAW_MODE mode)
+{
+	if (mode == DEBUG_BOX) {
+// 		glDisable(GL_DEPTH_TEST);
+		glColor4f(1.0, 0.0, 0.0, 1.0 / m_level);
+		glBegin(GL_QUADS);
+		for (unsigned int i = 0; i < 4; ++i)
+			glVertex3f(m_box[i].x(), m_box[i].y(), m_box[i].z());
+		glEnd();
+
+		glColor4f(0.0, 1.0, 0.0, 1.0 / m_level);
+		glBegin(GL_QUADS);
+		for (unsigned int i = 4; i < 8; ++i)
+			glVertex3f(m_box[i].x(), m_box[i].y(), m_box[i].z());
+		glEnd();
+// 		glEnable(GL_DEPTH_TEST);
+	}
+
+	if (m_nodeList) {
+		for (unsigned int i = 0; i < 4; ++i)
+			m_nodeList[i]->DrawDebugInfo(mode);
+	}
+}
+
 void KX_ChunkNode::ResetBoxHeight()
 {
 	m_maxBoxHeight = 0.0;
@@ -304,14 +330,10 @@ void KX_ChunkNode::ReConstructBox()
 		m_boxModified = false;
 
 		// redimensionnement de la boite
-		m_box[0].z() = m_minBoxHeight;
-		m_box[1].z() = m_minBoxHeight;
-		m_box[2].z() = m_minBoxHeight;
-		m_box[3].z() = m_minBoxHeight;
-		m_box[4].z() = m_maxBoxHeight;
-		m_box[5].z() = m_maxBoxHeight;
-		m_box[6].z() = m_maxBoxHeight;
-		m_box[7].z() = m_maxBoxHeight;
+		for (unsigned int i = 0; i < 4; ++i)
+			m_box[i].z() = m_minBoxHeight;
+		for (unsigned int i = 4; i < 8; ++i)
+			m_box[i].z() = m_maxBoxHeight;
 	}
 }
 
@@ -321,8 +343,8 @@ KX_ChunkNode *KX_ChunkNode::GetNodeRelativePosition(const Point2D& pos)
 	unsigned short relativewidth = m_relativeSize / 2;
 
 	if(m_culledState != KX_Camera::OUTSIDE &&
-	   (m_relativePos.x - relativewidth) < pos.x && pos.x < (m_relativePos.x + relativewidth) &&
-	   (m_relativePos.y - relativewidth) < pos.y && pos.y < (m_relativePos.y + relativewidth))
+	  (m_relativePos.x - relativewidth) < pos.x && pos.x < (m_relativePos.x + relativewidth) &&
+	  (m_relativePos.y - relativewidth) < pos.y && pos.y < (m_relativePos.y + relativewidth))
 	{
 		if (m_nodeList) {
 			for (unsigned short i = 0; i < 4; ++i) {

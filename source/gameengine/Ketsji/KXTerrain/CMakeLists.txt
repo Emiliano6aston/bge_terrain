@@ -40,6 +40,7 @@ set(INC
 
 set(INC_SYS
 	../../../../intern/moto/include
+	../../../../intern/glew-mx
 )
 
 set(SRC

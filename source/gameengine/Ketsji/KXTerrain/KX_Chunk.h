@@ -85,7 +85,10 @@ public:
 	void ReconstructMesh();
 	void RenderMesh(RAS_IRasterizer *rasty, KX_Camera *cam);
 
-	inline KX_ChunkNode* GetNode() const { return m_node; }
+	inline KX_ChunkNode* GetNode() const
+	{
+		return m_node;
+	}
 
 	static unsigned int m_chunkActive;
 };

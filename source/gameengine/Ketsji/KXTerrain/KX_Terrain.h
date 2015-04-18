@@ -73,32 +73,40 @@ public:
 	void CalculateVisibleChunks(KX_Camera *culledcam);
 	void UpdateChunksMeshes();
 	void RenderChunksMeshes(const MT_Transform &cameratrans, RAS_IRasterizer *rasty);
+	void DrawDebugNode();
 
 	/// Le niveau de subdivision maximal
-	inline unsigned short GetMaxLevel() const {
+	inline unsigned short GetMaxLevel() const
+	{
 		return m_maxChunkLevel;
 	}
 	/// le nombre maximun de face en largeur dans un chunk
-	inline unsigned short GetVertexSubdivision() const {
+	inline unsigned short GetVertexSubdivision() const
+	{
 		return m_vertexSubdivision;
 	}
 	/// La distance maximal pour avoir un niveau de subdivision superieur à 1
-	inline float GetMaxDistance2() const {
+	inline float GetMaxDistance2() const
+	{
 		return m_maxDistance2;
 	}
-	inline float GetPhysicsMaxDistance2() const {
+	inline float GetPhysicsMaxDistance2() const
+	{
 		return m_physicsMaxDistance2;
 	}
 	/// La taille de tous les chunks
-	inline float GetChunkSize() const {
+	inline float GetChunkSize() const
+	{
 		return m_chunkSize;
 	}
 	/// La hauteur maximale
-	inline float GetMaxHeight() const {
+	inline float GetMaxHeight() const
+	{
 		return m_maxHeight;
 	}
 	/// La hauteur minimale
-	inline float GetMinHeight() const {
+	inline float GetMinHeight() const
+	{
 		return m_minHeight;
 	}
 
