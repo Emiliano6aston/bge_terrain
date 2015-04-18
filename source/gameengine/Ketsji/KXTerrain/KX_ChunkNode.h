@@ -53,6 +53,10 @@ public:
 		}
 	};
 
+	enum DEBUG_DRAW_MODE {
+		DEBUG_BOX=0,
+	};
+
 private:
 	/// Le noeud parent
 	KX_ChunkNode *m_parentNode;
@@ -111,6 +115,8 @@ public:
 
 	/// Teste si le noeud est visible et créer des sous noeuds si besoin
 	void CalculateVisible(KX_Camera *culledcam, CListValue *objects);
+	/// Draw debug info for culling box
+	void DrawDebugInfo(DEBUG_DRAW_MODE mode);
 
 	/// On remet à 0 les variables m_maxBoxHeight et m_minBoxHeight
 	void ResetBoxHeight();
@@ -123,31 +129,39 @@ public:
 
 	KX_ChunkNode* GetNodeRelativePosition(const Point2D& pos);
 
-	inline KX_Terrain* GetTerrain() const {
+	inline KX_Terrain* GetTerrain() const
+	{
 		return m_terrain;
 	}
-	inline unsigned short GetRelativeSize() const {
+	inline unsigned short GetRelativeSize() const
+	{
 		return m_relativeSize;
 	}
-	inline const MT_Point2& GetRealPos() const {
+	inline const MT_Point2& GetRealPos() const
+	{
 		return m_realPos;
 	}
-	inline const Point2D& GetRelativePos() const {
+	inline const Point2D& GetRelativePos() const
+	{
 		return m_relativePos;
 	}
-	inline MT_Point3* GetBox() { 
+	inline MT_Point3* GetBox()
+	{ 
 		return m_box;
 	}
 
 	/// Utilisé pour savoir si un noeud est visible
-	inline bool GetCulledState() const {
+	inline bool GetCulledState() const
+	{
 		return m_culledState;
 	}
-	inline KX_Chunk* GetChunk() const {
+	inline KX_Chunk* GetChunk() const
+	{
 		return m_chunk; 
 	}
 	/// Utilisé lors des tests jointures
-	inline unsigned short GetLevel() const {
+	inline unsigned short GetLevel() const
+	{
 		return m_level;
 	}
 
