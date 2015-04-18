@@ -1871,6 +1871,12 @@ void KX_Scene::RenderTerrainChunksMeshes(const MT_Transform& cameratrans, RAS_IR
 	}
 }
 
+void KX_Scene::DrawDebugTerrainNode()
+{
+	if (m_terrain)
+		m_terrain->DrawDebugNode();
+}
+
 void KX_Scene::SetActivityCullingRadius(float f)
 {
 	if (f < 0.5)
