@@ -34,6 +34,7 @@ set(INC
 	../../../blender/blenlib
 	../../../blender/blenkernel
 	../../../blender/makesdna
+	../../../blender/gpu
 	../../../../intern/container
 	../../../../intern/string
 )

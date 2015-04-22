@@ -32,6 +32,8 @@
 #include <stdio.h>
 
 #include "glew-mx.h"
+#include "GPU_draw.h"
+#include "GPU_material.h"
 
 #define COLORED_PRINT(msg, color) std::cout << /*"\033[" << color << "m" <<*/ msg << /*"\033[30m" <<*/ std::endl;
 
@@ -85,14 +87,14 @@ KX_ChunkNode::KX_ChunkNode(KX_ChunkNode *parentNode,
 	 * recursive des noeuds. Celle ci sera redimensionner plus tard pour
 	 * une meilleur optimization
 	 */
-	m_box[0] = MT_Point3(realX - width, realY - width, minHeight);
-	m_box[1] = MT_Point3(realX + width, realY - width, minHeight);
-	m_box[2] = MT_Point3(realX + width, realY + width, minHeight);
-	m_box[3] = MT_Point3(realX - width, realY + width, minHeight);
-	m_box[4] = MT_Point3(realX - width, realY - width, maxHeight);
-	m_box[5] = MT_Point3(realX + width, realY - width, maxHeight);
-	m_box[6] = MT_Point3(realX + width, realY + width, maxHeight);
-	m_box[7] = MT_Point3(realX - width, realY + width, maxHeight);
+	m_box[0] = MT_Point3(realX - width, realY - width, minHeight - 1.0);
+	m_box[1] = MT_Point3(realX + width, realY - width, minHeight - 1.0);
+	m_box[2] = MT_Point3(realX + width, realY + width, minHeight - 1.0);
+	m_box[3] = MT_Point3(realX - width, realY + width, minHeight - 1.0);
+	m_box[4] = MT_Point3(realX - width, realY - width, maxHeight + 1.0);
+	m_box[5] = MT_Point3(realX + width, realY - width, maxHeight + 1.0);
+	m_box[6] = MT_Point3(realX + width, realY + width, maxHeight + 1.0);
+	m_box[7] = MT_Point3(realX - width, realY + width, maxHeight + 1.0);
 }
 
 KX_ChunkNode::~KX_ChunkNode()
@@ -284,19 +286,20 @@ void KX_ChunkNode::CalculateVisible(KX_Camera *culledcam, CListValue *objects)
 void KX_ChunkNode::DrawDebugInfo(DEBUG_DRAW_MODE mode)
 {
 	if (mode == DEBUG_BOX) {
-// 		glDisable(GL_DEPTH_TEST);
-		glColor4f(1.0, 0.0, 0.0, 1.0 / m_level);
+		glDisable(GL_CULL_FACE);
+		GPU_set_material_alpha_blend(GPU_BLEND_ALPHA);
+
+		glColor4f(1.0, 0.0, 0.0, 0.5 / m_level);
 		glBegin(GL_QUADS);
 		for (unsigned int i = 0; i < 4; ++i)
-			glVertex3f(m_box[i].x(), m_box[i].y(), m_box[i].z());
+			glVertex3f(m_box[i].x(), m_box[i].y(), m_box[i].z() - 0.2 / m_level);
 		glEnd();
 
-		glColor4f(0.0, 1.0, 0.0, 1.0 / m_level);
+		glColor4f(0.0, 1.0, 0.0, 0.5 / m_level);
 		glBegin(GL_QUADS);
 		for (unsigned int i = 4; i < 8; ++i)
-			glVertex3f(m_box[i].x(), m_box[i].y(), m_box[i].z());
+			glVertex3f(m_box[i].x(), m_box[i].y(), m_box[i].z() + 0.2 / m_level);
 		glEnd();
-// 		glEnable(GL_DEPTH_TEST);
 	}
 
 	if (m_nodeList) {
@@ -331,9 +334,9 @@ void KX_ChunkNode::ReConstructBox()
 
 		// redimensionnement de la boite
 		for (unsigned int i = 0; i < 4; ++i)
-			m_box[i].z() = m_minBoxHeight;
+			m_box[i].z() = m_minBoxHeight - 1.0;
 		for (unsigned int i = 4; i < 8; ++i)
-			m_box[i].z() = m_maxBoxHeight;
+			m_box[i].z() = m_maxBoxHeight + 1.0;
 	}
 }
 
