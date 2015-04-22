@@ -195,7 +195,7 @@ float KX_TerrainZoneMesh::GetHeight(const float x, const float y, const float in
 }
 
 // Si ledit point est en contact, on renvoie la modif asociée à sa hauteur
-void KX_TerrainZoneMesh::GetVertexInfo(const float x, const float y, VertexZoneInfo *info) const
+void KX_TerrainZoneMesh::GetVertexInfo(const float x, const float y, VertexZoneInfo *r_info) const
 {
 	float height = 0.0;
 	bool hit = false;
@@ -221,7 +221,7 @@ void KX_TerrainZoneMesh::GetVertexInfo(const float x, const float y, VertexZoneI
 					const float interp = GetMeshColorInterp(point, i, v1, v2, v3);
 					hit = true;
 					// on accéde à la hauteur précedente avec peut être une modification
-					height += GetClampedHeight(info->height, 1.0 - interp, x, y, v1.co, v2.co, v3.co);
+					height += GetClampedHeight(r_info->height, 1.0 - interp, x, y, v1.co, v2.co, v3.co);
 					height += GetHeight(x, y, interp);
 
 					break;
@@ -230,16 +230,16 @@ void KX_TerrainZoneMesh::GetVertexInfo(const float x, const float y, VertexZoneI
 		}
 		// si on ne touche rien il faut tout de même garder la valeur précedente
 		if (!hit) {
-			height += GetClampedHeight(info->height, 1.0, x, y, NULL, NULL, NULL);
+			height += GetClampedHeight(r_info->height, 1.0, x, y, NULL, NULL, NULL);
 		}
 	}
 	else {
-		height += GetClampedHeight(info->height, 1.0, x, y, NULL, NULL, NULL);
+		height += GetClampedHeight(r_info->height, 1.0, x, y, NULL, NULL, NULL);
 		height += GetHeight(x, y, 1.0);
 	}
 
-	info->height = height;
+	r_info->height = height;
 	if (hit && m_zoneInfo->flag & TERRAIN_ZONE_VERTEX_COLOR) {
-		copy_v3_v3(info->color, m_zoneInfo->vertexcolor);
+		copy_v3_v3(r_info->color, m_zoneInfo->vertexcolor);
 	}
 }
