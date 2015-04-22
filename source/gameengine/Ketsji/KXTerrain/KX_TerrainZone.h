@@ -39,16 +39,22 @@ class KX_Terrain;
 
 struct VertexZoneInfo
 {
+	/// Vertex height
 	float height;
+	/// Vertex color
 	float color[3];
 };
 
 class KX_TerrainZoneMesh
 {
 private:
+	/// The terrain used as parent.
 	KX_Terrain *m_terrain;
+	/// All info on the zone WARNING blender data, no modification on.
 	TerrainZone *m_zoneInfo;
+	/// The box used to optimize.
 	float m_box[4];
+	/// The mesh.
 	DerivedMesh *m_derivedMesh;
 
 public:
@@ -57,15 +63,41 @@ public:
 					   Mesh *mesh);
 	~KX_TerrainZoneMesh();
 
+	/// Return the maximum possible height.
 	float GetMaxHeight() const;
+	/// Return the minimum possible height.
 	float GetMinHeight() const;
 
-	float GetClampedHeight(const float orgheight, const float interp, const float x, const float y, const float *v1, const float *v2, const float *v3) const;
+	/** Compute an height clamped.
+	 * \param orgheight The previous height.
+	 * \param interp The interpolation of the mesh on this point.
+	 * \param x The position on x.
+	 * \param y The position on y.
+	 * \param v1 The first vertex of the triangle hited.
+	 * \param v2 The second vertex of the triangle hited.
+	 * \param v3 The firth vertex of the triangle hited.
+	 * \return The height clamped
+	 */
+	float GetClampedHeight(const float orgheight, const float interp, const float x, const float y,
+						   const float *v1, const float *v2, const float *v3) const;
+
+	/** Compute the interpolation on a position.
+	 * \param point The 2d point.
+	 * \param faceindex The index of the face.
+	 * \param v1 The first vertex of the face.
+	 * \param v2 The second vertex of the face.
+	 * \param v3 The firth vertex of the face.
+	 * \return The interpolation on this position.
+	 */
 	float GetMeshColorInterp(const float *point, const unsigned int faceindex, const MVert &v1, const MVert &v2, const MVert &v3) const;
 	float GetHeight(const float x, const float y, const float interp) const;
 
-	///Si ledit point est en contact, on renvoie la modif asociée à sa hauteur
-	void GetVertexInfo(const float x, const float y, VertexZoneInfo *info) const;
+	/** Compute all vertex infos : height and color.
+	 * \param x The position on x.
+	 * \param y The position on y.
+	 * \param r_info All vertex infos.
+	 */
+	void GetVertexInfo(const float x, const float y, VertexZoneInfo *r_info) const;
 
 	inline TerrainZone *GetTerrainZoneInfo() const {
 		return m_zoneInfo;
