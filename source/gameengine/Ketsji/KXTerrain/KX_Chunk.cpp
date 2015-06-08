@@ -168,7 +168,7 @@ void KX_Chunk::ReconstructMesh()
 
 	m_meshObj->SchedulePolygons(0);
 
-	m_pPhysicsController->ReinstancePhysicsShape(NULL, m_meshObj);
+	m_pPhysicsController->ReinstancePhysicsShape(NULL, m_meshObj, false);
 }
 
 const MT_Point2 KX_Chunk::GetVertexPosition(short relx, short rely) const
