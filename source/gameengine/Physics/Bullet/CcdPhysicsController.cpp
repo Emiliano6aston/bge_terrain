@@ -1712,13 +1712,17 @@ PHY_IPhysicsController*	CcdPhysicsController::GetReplicaForSensors()
  *
  * Most of the logic behind this is in m_shapeInfo->UpdateMesh(...)
  */
-bool CcdPhysicsController::ReinstancePhysicsShape(KX_GameObject *from_gameobj, RAS_MeshObject *from_meshobj)
+bool CcdPhysicsController::ReinstancePhysicsShape(KX_GameObject *from_gameobj, RAS_MeshObject *from_meshobj, bool share)
 {
 	if (m_shapeInfo->m_shapeType != PHY_SHAPE_MESH)
 		return false;
 
 	if (!from_gameobj && !from_meshobj)
 		from_gameobj = KX_GameObject::GetClientObject((KX_ClientObjectInfo*)GetNewClientInfo());
+
+	if (!share) {
+		
+	}
 
 	/* updates the arrays used for making the new bullet mesh */
 	m_shapeInfo->UpdateMesh(from_gameobj, from_meshobj);
@@ -2623,6 +2627,23 @@ void CcdShapeConstructionInfo::AddShape(CcdShapeConstructionInfo* shapeInfo)
 {
 	m_shapeArray.push_back(shapeInfo);
 	shapeInfo->AddRef();
+}
+
+CcdShapeConstructionInfo::CcdShapeConstructionInfo(const CcdShapeConstructionInfo &other)
+{
+	m_shapeType = other.m_shapeType;
+	m_radius = other.m_radius;
+	m_height = other.m_height;
+	m_halfExtend = other.m_halfExtend;
+	m_childScale = other.m_childScale;
+	m_userData = other.m_userData;
+	m_refCount = other.m_refCount;
+	m_meshObject = other.m_meshObject;
+	m_triangleIndexVertexArray = NULL;
+	m_forceReInstance = false;
+	m_weldingThreshold1 = other.m_weldingThreshold1;
+	m_shapeProxy = other.m_shapeProxy;
+	m_childTrans = other.m_childTrans;
 }
 
 CcdShapeConstructionInfo::~CcdShapeConstructionInfo()
