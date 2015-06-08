@@ -170,8 +170,10 @@ void KX_Terrain::RenderChunksMeshes(const MT_Transform& cameratrans, RAS_IRaster
 
 void KX_Terrain::DrawDebugNode()
 {
+#ifdef DRAW_DEBUG
 	for (unsigned int i = 0; i < 4; ++i)
 		m_nodeTree[i]->DrawDebugInfo(KX_ChunkNode::DEBUG_BOX);
+#endif // DRAW_DEBUG
 }
 
 unsigned short KX_Terrain::GetSubdivision(float distance, bool iscamera) const
