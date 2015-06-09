@@ -18,8 +18,10 @@ class RAS_IRasterizer;
 class KX_Chunk : public KX_GameObject
 {
 public:
-	/// Variables utilisées pour faire des statistiques de temps.
+	/// Variables utilisées pour faire des statistiques.
 
+	/// Le nombre de recréation de mesh par frame.
+	static unsigned int meshRecreation;
 	/// Le temps dépensé pour créer le chunk, sans création de mesh.
 	static double chunkCreationTime;
 	/// Le temps dépensé pour calculer les normales de tous les vertices.

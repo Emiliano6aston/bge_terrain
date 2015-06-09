@@ -28,6 +28,7 @@
 #define STATS
 
 unsigned int KX_Chunk::m_chunkActive = 0;
+unsigned int KX_Chunk::meshRecreation = 0;
 double KX_Chunk::chunkCreationTime = 0.0;
 double KX_Chunk::normalComputingTime = 0.0;
 double KX_Chunk::vertexAddingTime = 0.0;
@@ -37,6 +38,7 @@ double KX_Chunk::physicsCreatingTime = 0.0;
 
 void KX_Chunk::ResetTime()
 {
+	meshRecreation = 0;
 	chunkCreationTime = 0.0;
 	normalComputingTime = 0.0;
 	vertexAddingTime = 0.0;
@@ -48,12 +50,13 @@ void KX_Chunk::ResetTime()
 void KX_Chunk::PrintTime()
 {
 	std::cout << "Time Stats : " << std::endl
-		<< "\t Chunk Creation Time : \t\t" << chunkCreationTime << std::endl
-		<< "\t Normal Computing Time : \t" << normalComputingTime << std::endl
-		<< "\t Vertex Adding Time : \t\t" << vertexAddingTime << std::endl
-		<< "\t Vertex Creating Time : \t" << vertexCreatingTime << std::endl
-		<< "\t Poly Adding Time : \t\t" << polyAddingTime << std::endl
-		<< "\t Physics Creating Time : \t" << physicsCreatingTime << std::endl
+		<< "\t Mesh Recreation Per Frame : \t" << meshRecreation << std::endl
+		<< "\t Chunk Creation Time : \t\t\t" << chunkCreationTime << std::endl
+		<< "\t Normal Computing Time : \t\t" << normalComputingTime << std::endl
+		<< "\t Vertex Adding Time : \t\t\t" << vertexAddingTime << std::endl
+		<< "\t Vertex Creating Time : \t\t" << vertexCreatingTime << std::endl
+		<< "\t Poly Adding Time : \t\t\t" << polyAddingTime << std::endl
+		<< "\t Physics Creating Time : \t\t" << physicsCreatingTime << std::endl
 		<< std::endl;
 }
 
@@ -184,6 +187,8 @@ void KX_Chunk::ReconstructMesh()
 #ifdef STATS
 	double starttime;
 	double endtime;
+
+	meshRecreation++;
 #endif
 
 	DestructMesh();
@@ -205,7 +210,8 @@ void KX_Chunk::ReconstructMesh()
 	starttime = KX_GetActiveEngine()->GetRealTime();
 #endif
 
-	m_pPhysicsController->ReinstancePhysicsShape(NULL, m_meshObj, false);
+	if (m_pPhysicsController)
+		m_pPhysicsController->ReinstancePhysicsShape(NULL, m_meshObj, false);
 
 #ifdef STATS
 	endtime = KX_GetActiveEngine()->GetRealTime();
