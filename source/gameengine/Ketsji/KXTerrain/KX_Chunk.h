@@ -18,6 +18,24 @@ class RAS_IRasterizer;
 class KX_Chunk : public KX_GameObject
 {
 public:
+	/// Variables utilisées pour faire des statistiques de temps.
+
+	/// Le temps dépensé pour créer le chunk, sans création de mesh.
+	static double chunkCreationTime;
+	/// Le temps dépensé pour calculer les normales de tous les vertices.
+	static double normalComputingTime;
+	/// Le temps dépensé pour ajouter les vertice dans le mesh final.
+	static double vertexAddingTime;
+	/// Le temps dépensé pour créer les vertices : allocation plus constructeur.
+	static double vertexCreatingTime;
+	/// Le temps dépensé pour ajouter les polygones, comprend aussi la recherche de vertices en doublons.
+	static double polyAddingTime;
+	/// Le temps dépensé pour créer le mesh physique.
+	static double physicsCreatingTime;
+
+	static void ResetTime();
+	static void PrintTime();
+
 	struct Vertex;
 	struct JointColumn;
 

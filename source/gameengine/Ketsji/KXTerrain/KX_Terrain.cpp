@@ -121,8 +121,6 @@ void KX_Terrain::CalculateVisibleChunks(KX_Camera* culledcam)
 	if (!m_construct)
 		Construct();
 
-	double starttime = KX_GetActiveEngine()->GetRealTime();
-
 	CListValue *objects = KX_GetActiveScene()->GetObjectList();
 	m_nodeTree[0]->CalculateVisible(culledcam, objects);
 	m_nodeTree[1]->CalculateVisible(culledcam, objects);
@@ -131,15 +129,12 @@ void KX_Terrain::CalculateVisibleChunks(KX_Camera* culledcam)
 
 	ScheduleEuthanasyChunks();
 
-	double endtime = KX_GetActiveEngine()->GetRealTime();
-	DEBUG(__func__ << " spend " << endtime - starttime << " time");
 // 	std::cout << KX_ChunkNode::m_activeNode << " nodes" << std::endl;
 // 	std::cout << m_chunkList.size() << " chunk" << std::endl;
 }
 void KX_Terrain::UpdateChunksMeshes()
 {
-	double starttime = KX_GetActiveEngine()->GetRealTime();
-
+	//KX_Chunk::ResetTime();
 	for (unsigned int i = 0; i < m_chunkList.size(); ++i) {
 		m_chunkList[i]->UpdateMesh();
 	}
@@ -147,14 +142,11 @@ void KX_Terrain::UpdateChunksMeshes()
 	for (unsigned int i = 0; i < m_chunkList.size(); ++i) {
 		m_chunkList[i]->EndUpdateMesh();
 	}
-	double endtime = KX_GetActiveEngine()->GetRealTime();
-	DEBUG(__func__ << " spend " << endtime - starttime << " time");
+	KX_Chunk::PrintTime();
 }
 
 void KX_Terrain::RenderChunksMeshes(const MT_Transform& cameratrans, RAS_IRasterizer* rasty)
 {
-	double starttime = KX_GetActiveEngine()->GetRealTime();
-
 	KX_Camera* cam = KX_GetActiveScene()->FindCamera(camname);
 	// rendu du mesh
 	for (unsigned int i = 0; i < m_chunkList.size(); ++i) {
@@ -164,8 +156,6 @@ void KX_Terrain::RenderChunksMeshes(const MT_Transform& cameratrans, RAS_IRaster
 		chunk->UpdateBuckets(false);
 	}
 
-	double endtime = KX_GetActiveEngine()->GetRealTime();
-	DEBUG(__func__ << " spend " << endtime - starttime << " time");
 }
 
 void KX_Terrain::DrawDebugNode()
@@ -230,6 +220,15 @@ KX_ChunkNode** KX_Terrain::NewNodeList(KX_ChunkNode *parentNode, int x, int y, u
 
 KX_Chunk* KX_Terrain::AddChunk(KX_ChunkNode* node)
 {
+#ifdef STATS
+	double starttime;
+	double endtime;
+#endif
+
+#ifdef STATS
+	starttime = KX_GetActiveEngine()->GetRealTime();
+#endif
+
 	KX_Scene* scene = KX_GetActiveScene();
 	KX_GameObject* orgobj = (KX_GameObject*)KX_GetActiveScene()->GetInactiveList()->FindValue("Cube");
 	SG_Node* orgnode = orgobj->GetSGNode();
@@ -312,6 +311,11 @@ KX_Chunk* KX_Terrain::AddChunk(KX_ChunkNode* node)
 
 	chunk->SetCulled(false);
 	chunk->UpdateBuckets(false);
+
+#ifdef STATS
+	endtime = KX_GetActiveEngine()->GetRealTime();
+	KX_Chunk::chunkCreationTime += endtime - starttime;
+#endif
 
 	return chunk;
 }
