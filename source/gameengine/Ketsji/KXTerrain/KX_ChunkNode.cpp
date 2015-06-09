@@ -310,12 +310,15 @@ void KX_ChunkNode::DrawDebugInfo(DEBUG_DRAW_MODE mode)
 
 void KX_ChunkNode::ResetBoxHeight()
 {
+#ifdef OPTIMIZED_CULLING_BOX
 	m_maxBoxHeight = 0.0;
 	m_minBoxHeight = 0.0;
+#endif
 }
 
 void KX_ChunkNode::CheckBoxHeight(float max, float min)
 {
+#ifdef OPTIMIZED_CULLING_BOX
 	m_boxModified = true;
 
 	if (max > m_maxBoxHeight)
@@ -325,10 +328,12 @@ void KX_ChunkNode::CheckBoxHeight(float max, float min)
 
 	if (m_parentNode)
 		m_parentNode->CheckBoxHeight(max, min);
+#endif
 }
 
 void KX_ChunkNode::ReConstructBox()
 {
+#ifdef OPTIMIZED_CULLING_BOX
 	if (m_boxModified) {
 		m_boxModified = false;
 
@@ -338,6 +343,7 @@ void KX_ChunkNode::ReConstructBox()
 		for (unsigned int i = 4; i < 8; ++i)
 			m_box[i].z() = m_maxBoxHeight + 1.0;
 	}
+#endif
 }
 
 
