@@ -46,6 +46,8 @@
 
 #define DEBUGNOENDL(msg) std::cout << msg;
 
+#define OPTIMIZED_CULLING_BOX
+
 unsigned int KX_ChunkNode::m_activeNode = 0;
 
 KX_ChunkNode::KX_ChunkNode(KX_ChunkNode *parentNode,
@@ -87,14 +89,14 @@ KX_ChunkNode::KX_ChunkNode(KX_ChunkNode *parentNode,
 	 * recursive des noeuds. Celle ci sera redimensionner plus tard pour
 	 * une meilleur optimization
 	 */
-	m_box[0] = MT_Point3(realX - width, realY - width, minHeight - 1.0);
-	m_box[1] = MT_Point3(realX + width, realY - width, minHeight - 1.0);
-	m_box[2] = MT_Point3(realX + width, realY + width, minHeight - 1.0);
-	m_box[3] = MT_Point3(realX - width, realY + width, minHeight - 1.0);
-	m_box[4] = MT_Point3(realX - width, realY - width, maxHeight + 1.0);
-	m_box[5] = MT_Point3(realX + width, realY - width, maxHeight + 1.0);
-	m_box[6] = MT_Point3(realX + width, realY + width, maxHeight + 1.0);
-	m_box[7] = MT_Point3(realX - width, realY + width, maxHeight + 1.0);
+	m_box[0] = MT_Point3(realX - width, realY - width, minHeight);
+	m_box[1] = MT_Point3(realX + width, realY - width, minHeight);
+	m_box[2] = MT_Point3(realX + width, realY + width, minHeight);
+	m_box[3] = MT_Point3(realX - width, realY + width, minHeight);
+	m_box[4] = MT_Point3(realX - width, realY - width, maxHeight);
+	m_box[5] = MT_Point3(realX + width, realY - width, maxHeight);
+	m_box[6] = MT_Point3(realX + width, realY + width, maxHeight);
+	m_box[7] = MT_Point3(realX - width, realY + width, maxHeight);
 }
 
 KX_ChunkNode::~KX_ChunkNode()
@@ -271,15 +273,6 @@ void KX_ChunkNode::CalculateVisible(KX_Camera *culledcam, CListValue *objects)
 		DisableChunkVisibility();
 	}
 
-	/*MT_Vector3 color(1.0, 1.0, 1.0);
-	if (m_culledState == KX_Camera::OUTSIDE)
-		color = MT_Vector3(1.0, 0.0, 0.0);
-	else if (m_culledState == KX_Camera::INSIDE)
-		color = MT_Vector3(0.0, 1.0, 0.0);
-
-	const MT_Point3 realPos = MT_Point3(m_realPos.x(), m_realPos.y(), 0.);
-	KX_RasterizerDrawDebugLine(realPos + MT_Point3(0.0, 0.0, m_minBoxHeight),
-							   realPos + MT_Point3(0.0, 0.0, m_maxBoxHeight), color);*/
 	ResetBoxHeight();
 }
 
@@ -287,18 +280,30 @@ void KX_ChunkNode::DrawDebugInfo(DEBUG_DRAW_MODE mode)
 {
 	if (mode == DEBUG_BOX) {
 		glDisable(GL_CULL_FACE);
-		GPU_set_material_alpha_blend(GPU_BLEND_ALPHA);
+// 		GPU_set_material_alpha_blend(GPU_BLEND_ALPHA);
 
-		glColor4f(1.0, 0.0, 0.0, 0.5 / m_level);
-		glBegin(GL_QUADS);
+		glColor4f(1.0, 0.0, 0.0, 1.0);
+		glBegin(GL_LINE_LOOP);
 		for (unsigned int i = 0; i < 4; ++i)
-			glVertex3f(m_box[i].x(), m_box[i].y(), m_box[i].z() - 0.2 / m_level);
+			glVertex3f(m_box[i].x(), m_box[i].y(), m_box[i].z());
+		glEnd();
+		glBegin(GL_LINE_LOOP);
+			glVertex3f(m_box[0].x(), m_box[0].y(), m_box[0].z());
+			glVertex3f(m_box[2].x(), m_box[2].y(), m_box[2].z());
+			glVertex3f(m_box[1].x(), m_box[1].y(), m_box[1].z());
+			glVertex3f(m_box[3].x(), m_box[3].y(), m_box[3].z());
 		glEnd();
 
-		glColor4f(0.0, 1.0, 0.0, 0.5 / m_level);
-		glBegin(GL_QUADS);
+		glColor4f(0.0, 1.0, 0.0, 1.0);
+		glBegin(GL_LINE_LOOP);
 		for (unsigned int i = 4; i < 8; ++i)
-			glVertex3f(m_box[i].x(), m_box[i].y(), m_box[i].z() + 0.2 / m_level);
+			glVertex3f(m_box[i].x(), m_box[i].y(), m_box[i].z());
+		glEnd();
+		glBegin(GL_LINE_LOOP);
+			glVertex3f(m_box[4].x(), m_box[4].y(), m_box[4].z());
+			glVertex3f(m_box[6].x(), m_box[6].y(), m_box[6].z());
+			glVertex3f(m_box[5].x(), m_box[5].y(), m_box[5].z());
+			glVertex3f(m_box[7].x(), m_box[7].y(), m_box[7].z());
 		glEnd();
 	}
 
@@ -310,40 +315,37 @@ void KX_ChunkNode::DrawDebugInfo(DEBUG_DRAW_MODE mode)
 
 void KX_ChunkNode::ResetBoxHeight()
 {
-#ifdef OPTIMIZED_CULLING_BOX
 	m_maxBoxHeight = 0.0;
 	m_minBoxHeight = 0.0;
-#endif
 }
 
 void KX_ChunkNode::CheckBoxHeight(float max, float min)
 {
-#ifdef OPTIMIZED_CULLING_BOX
-	m_boxModified = true;
-
-	if (max > m_maxBoxHeight)
+	if (max > m_maxBoxHeight) {
 		m_maxBoxHeight = max;
-	if (min < m_minBoxHeight)
+		m_boxModified = true;
+	}
+	if (min < m_minBoxHeight) {
 		m_minBoxHeight = min;
+		m_boxModified = true;
+	}
 
 	if (m_parentNode)
 		m_parentNode->CheckBoxHeight(max, min);
-#endif
+
 }
 
 void KX_ChunkNode::ReConstructBox()
 {
-#ifdef OPTIMIZED_CULLING_BOX
 	if (m_boxModified) {
 		m_boxModified = false;
 
 		// redimensionnement de la boite
 		for (unsigned int i = 0; i < 4; ++i)
-			m_box[i].z() = m_minBoxHeight - 1.0;
+			m_box[i].z() = m_minBoxHeight;
 		for (unsigned int i = 4; i < 8; ++i)
-			m_box[i].z() = m_maxBoxHeight + 1.0;
+			m_box[i].z() = m_maxBoxHeight;
 	}
-#endif
 }
 
 
