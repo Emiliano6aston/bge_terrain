@@ -25,9 +25,37 @@
 #define ERROR(msg) std::cout << "Error (" << __func__ << ", " << this << ") : " << msg << std::endl;
 #define SUCCES(msg) COLORED_PRINT("Succes : " << msg, 32);
 
-//#define STATS
+#define STATS
 
 unsigned int KX_Chunk::m_chunkActive = 0;
+double KX_Chunk::chunkCreationTime = 0.0;
+double KX_Chunk::normalComputingTime = 0.0;
+double KX_Chunk::vertexAddingTime = 0.0;
+double KX_Chunk::vertexCreatingTime = 0.0;
+double KX_Chunk::polyAddingTime = 0.0;
+double KX_Chunk::physicsCreatingTime = 0.0;
+
+void KX_Chunk::ResetTime()
+{
+	chunkCreationTime = 0.0;
+	normalComputingTime = 0.0;
+	vertexAddingTime = 0.0;
+	vertexCreatingTime = 0.0;
+	polyAddingTime = 0.0;
+	physicsCreatingTime = 0.0;
+}
+
+void KX_Chunk::PrintTime()
+{
+	std::cout << "Time Stats : " << std::endl
+		<< "\t Chunk Creation Time : \t\t" << chunkCreationTime << std::endl
+		<< "\t Normal Computing Time : \t" << normalComputingTime << std::endl
+		<< "\t Vertex Adding Time : \t\t" << vertexAddingTime << std::endl
+		<< "\t Vertex Creating Time : \t" << vertexCreatingTime << std::endl
+		<< "\t Poly Adding Time : \t\t" << polyAddingTime << std::endl
+		<< "\t Physics Creating Time : \t" << physicsCreatingTime << std::endl
+		<< std::endl;
+}
 
 struct KX_Chunk::Vertex // vertex temporaire
 {
@@ -153,6 +181,11 @@ void KX_Chunk::DestructMesh()
 
 void KX_Chunk::ReconstructMesh()
 {
+#ifdef STATS
+	double starttime;
+	double endtime;
+#endif
+
 	DestructMesh();
 	ConstructMesh();
 
@@ -168,7 +201,16 @@ void KX_Chunk::ReconstructMesh()
 
 	m_meshObj->SchedulePolygons(0);
 
+#ifdef STATS
+	starttime = KX_GetActiveEngine()->GetRealTime();
+#endif
+
 	m_pPhysicsController->ReinstancePhysicsShape(NULL, m_meshObj, false);
+
+#ifdef STATS
+	endtime = KX_GetActiveEngine()->GetRealTime();
+	physicsCreatingTime += endtime - starttime;
+#endif
 }
 
 const MT_Point2 KX_Chunk::GetVertexPosition(short relx, short rely) const
@@ -313,12 +355,27 @@ const MT_Vector3 KX_Chunk::GetNormal(Vertex *vertexCenter, bool intern) const
 
 void KX_Chunk::AddMeshPolygonVertexes(Vertex *v1, Vertex *v2, Vertex *v3, bool reverse)
 {
+#ifdef STATS
+	double starttime;
+	double endtime;
+#endif
+
+#ifdef STATS
+	starttime = KX_GetActiveEngine()->GetRealTime();
+#endif
+
 	RAS_Polygon* poly = m_meshObj->AddPolygon(m_bucket, 3);
 	const MT_Point2& realPos = m_node->GetRealPos();
 
 	poly->SetVisible(true);
 	poly->SetCollider(true);
 	poly->SetTwoside(true);
+
+#ifdef STATS
+	endtime = KX_GetActiveEngine()->GetRealTime();
+	polyAddingTime += endtime - starttime;
+	starttime = KX_GetActiveEngine()->GetRealTime();
+#endif
 
 	MT_Point2 uvs_1[8];
 	MT_Point2 uvs_2[8];
@@ -342,10 +399,21 @@ void KX_Chunk::AddMeshPolygonVertexes(Vertex *v1, Vertex *v2, Vertex *v3, bool r
 		m_meshObj->AddVertex(poly, 1, v2->xyz, uvs_2, tangent, v2->rgba, v2->normal, false, v2->origIndex);
 		m_meshObj->AddVertex(poly, 2, v3->xyz, uvs_3, tangent, v3->rgba, v3->normal, false, v3->origIndex);
 	}
+
+#ifdef STATS
+	endtime = KX_GetActiveEngine()->GetRealTime();
+	vertexAddingTime += endtime - starttime;
+	starttime = KX_GetActiveEngine()->GetRealTime();
+#endif
 }
 
 void KX_Chunk::ConstructVertexes()
 {
+#ifdef STATS
+	double starttime;
+	double endtime;
+#endif
+
 	/* Schéma global de l'organisation des faces dans le chunk
 	 * Attention la colonne "BACK" est inversé avec la colonne "FRONT"
 	 * 
@@ -374,8 +442,7 @@ void KX_Chunk::ConstructVertexes()
 	 */
 
 #ifdef STATS
-	double starttime = KX_GetActiveEngine()->GetRealTime();
-	double starttimevertex = KX_GetActiveEngine()->GetRealTime();
+	starttime = KX_GetActiveEngine()->GetRealTime();
 #endif
 
 	/* On met à zero le numéro actuelle de vertices, à chaque fois que l'on ajoute un vertice
@@ -409,12 +476,6 @@ void KX_Chunk::ConstructVertexes()
 		}
 	}
 
-#ifdef STATS
-	double endtimevertex = KX_GetActiveEngine()->GetRealTime();
-	DEBUG("adding vertex spend " << endtimevertex - starttimevertex << " time");
-	double starttime = KX_GetActiveEngine()->GetRealTime();
-#endif
-
 	// construction des vertices externes de gauche et de droite
 	for (unsigned short vertexIndex = 0; vertexIndex < VERTEX_COUNT; ++vertexIndex) {
 		{ // colonne de gauche externe
@@ -445,6 +506,12 @@ void KX_Chunk::ConstructVertexes()
 		}
 	}
 
+#ifdef STATS
+	endtime = KX_GetActiveEngine()->GetRealTime();
+	vertexCreatingTime += endtime - starttime;
+	starttime = KX_GetActiveEngine()->GetRealTime();
+#endif
+
 	for (unsigned short columnIndex = COLUMN_LEFT; columnIndex <= COLUMN_RIGHT; ++columnIndex) {
 		for (unsigned short vertexIndex = 0; vertexIndex < VERTEX_COUNT; ++vertexIndex) {
 			Vertex *vertex = m_columns[columnIndex]->GetExternVertex(vertexIndex);
@@ -465,9 +532,10 @@ void KX_Chunk::ConstructVertexes()
 			vertex->normal = GetNormal(vertex, true);
 		}
 	}
+
 #ifdef STATS
-	double endtime = KX_GetActiveEngine()->GetRealTime();
-	DEBUG(__func__ << " spend " << endtime - starttime << " time");
+	endtime = KX_GetActiveEngine()->GetRealTime();
+	normalComputingTime += endtime - starttime;
 #endif
 }
 
