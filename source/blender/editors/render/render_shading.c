@@ -691,12 +691,11 @@ void TERRAIN_OT_zone_add(wmOperatorType *ot)
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO | OPTYPE_INTERNAL;
 }
 
-static int terrain_zone_remove_exec(bContext *C, wmOperator *op)
+static int terrain_zone_remove_exec(bContext *C, wmOperator *UNUSED(op))
 {
 	Terrain *terrain = CTX_data_pointer_get_type(C, "terrain", &RNA_Terrain).data;
-	int index = RNA_int_get(op->ptr, "index");
 
-	if (!BKE_terrain_zone_remove(terrain, index))
+	if (!BKE_terrain_zone_remove(terrain))
 		return OPERATOR_CANCELLED;
 
 	return OPERATOR_FINISHED;
@@ -714,18 +713,12 @@ void TERRAIN_OT_zone_remove(wmOperatorType *ot)
 
 	/* flags */
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO | OPTYPE_INTERNAL;
-
-	/* properties */
-	ot->prop = RNA_def_int(ot->srna, "index", 1, 1, INT_MAX, "Index", "", 1, INT_MAX);
 }
 
 static int terrain_zone_move_exec(bContext *C, wmOperator *op)
 {
 	Terrain *terrain = CTX_data_pointer_get_type(C, "terrain", &RNA_Terrain).data;
 	int dir = RNA_enum_get(op->ptr, "direction");
-
-	TerrainZone *zone;
-	TerrainZone *otherzone;
 
 	if (BLI_listbase_count(&terrain->zones) == 0)
 		return OPERATOR_CANCELLED;
