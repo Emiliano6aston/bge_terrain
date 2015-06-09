@@ -147,13 +147,15 @@ void BKE_terrain_make_local(Terrain *terrain)
 	}
 }
 
-bool BKE_terrain_zone_remove(Terrain *terrain, int index)
+bool BKE_terrain_zone_remove(Terrain *terrain)
 {
 	TerrainZone *zone;
-	if (0 < index || index < BLI_listbase_count(&terrain->zones) - 1)
+
+	// no zones
+	if (terrain->active_zoneindex == -1)
 		return false;
 
-	zone = BLI_findlink(&terrain->zones, index);
+	zone = BLI_findlink(&terrain->zones, terrain->active_zoneindex);
 
 	BLI_remlink(&terrain->zones, zone);
 	MEM_freeN(zone);
