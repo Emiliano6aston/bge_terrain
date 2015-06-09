@@ -1733,7 +1733,7 @@ bool CcdPhysicsController::ReinstancePhysicsShape(KX_GameObject *from_gameobj, R
 		from_gameobj = KX_GameObject::GetClientObject((KX_ClientObjectInfo*)GetNewClientInfo());
 
 	if (!share) {
-		
+		m_shapeInfo = new CcdShapeConstructionInfo(*m_shapeInfo);
 	}
 
 	/* updates the arrays used for making the new bullet mesh */
