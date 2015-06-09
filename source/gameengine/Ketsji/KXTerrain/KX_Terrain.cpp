@@ -134,7 +134,7 @@ void KX_Terrain::CalculateVisibleChunks(KX_Camera* culledcam)
 }
 void KX_Terrain::UpdateChunksMeshes()
 {
-	KX_Chunk::ResetTime();
+// 	KX_Chunk::ResetTime();
 	for (unsigned int i = 0; i < m_chunkList.size(); ++i) {
 		m_chunkList[i]->UpdateMesh();
 	}
@@ -142,7 +142,7 @@ void KX_Terrain::UpdateChunksMeshes()
 	for (unsigned int i = 0; i < m_chunkList.size(); ++i) {
 		m_chunkList[i]->EndUpdateMesh();
 	}
-	KX_Chunk::PrintTime();
+// 	KX_Chunk::PrintTime();
 }
 
 void KX_Terrain::RenderChunksMeshes(const MT_Transform& cameratrans, RAS_IRasterizer* rasty)
@@ -351,10 +351,8 @@ void KX_Terrain::AddTerrainZoneMesh(KX_TerrainZoneMesh *zoneMesh)
 	const float maxheight = zoneMesh->GetMaxHeight();
 	const float minheight = zoneMesh->GetMinHeight();
 
-	if (m_maxHeight < maxheight)
-		m_maxHeight = maxheight;
-	if (m_minHeight > minheight)
-		m_minHeight = minheight;
+	m_maxHeight += maxheight;
+	m_minHeight += minheight;
 
 	if (maxheight < minheight) {
 		std::cout << "Warning : min height greater than max height !" << std::endl;
