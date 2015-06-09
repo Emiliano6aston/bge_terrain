@@ -1507,27 +1507,11 @@ void RNA_def_main_worlds(BlenderRNA *brna, PropertyRNA *cprop)
 void RNA_def_main_terrain(BlenderRNA *brna, PropertyRNA *cprop)
 {
 	StructRNA *srna;
-	FunctionRNA *func;
-	PropertyRNA *parm;
 
 	RNA_def_property_srna(cprop, "BlendDataTerrains");
 	srna = RNA_def_struct(brna, "BlendDataTerrains", NULL);
 	RNA_def_struct_sdna(srna, "Main");
 	RNA_def_struct_ui_text(srna, "Main Terrains", "Collection of terrain");
-
-	/*func = RNA_def_function(srna, "new", "rna_Main_terrains_new");
-	RNA_def_function_ui_description(func, "Add a new terrain to the main database");
-	parm = RNA_def_string(func, "name", "Terrain", 0, "", "New name for the datablock");
-	RNA_def_property_flag(parm, PROP_REQUIRED);*/
-	/* return type */
-	/*parm = RNA_def_pointer(func, "terrain", "Terrain", "", "New terrain datablock");
-	RNA_def_function_return(func, parm);
-
-	func = RNA_def_function(srna, "remove", "rna_Main_terrains_remove");
-	RNA_def_function_flag(func, FUNC_USE_REPORTS);
-	RNA_def_function_ui_description(func, "Remove a terrain from the current blendfile");
-	parm = RNA_def_pointer(func, "terrain", "Terrain", "", "Terrain to remove");
-	RNA_def_property_flag(parm, PROP_REQUIRED | PROP_NEVER_NULL | PROP_RNAPTR);*/
 }
 
 void RNA_def_main_groups(BlenderRNA *brna, PropertyRNA *cprop)

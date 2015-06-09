@@ -145,9 +145,6 @@ static void rna_def_terrain_zone_collection(BlenderRNA *brna, PropertyRNA *cprop
 	StructRNA *srna;
 	PropertyRNA *prop;
 
-	FunctionRNA *func;
-	PropertyRNA *parm;
-
 	RNA_def_property_srna(cprop, "TerrainZoneCollection");
 	srna = RNA_def_struct(brna, "TerrainZoneCollection", NULL);
 	RNA_def_struct_sdna(srna, "Terrain");
