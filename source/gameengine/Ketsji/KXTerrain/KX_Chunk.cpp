@@ -333,6 +333,8 @@ const MT_Vector3 KX_Chunk::GetNormal(Vertex *vertexCenter, bool intern) const
 			vertexes[i]->xyz.getValue(quad[i]);
 	}
 	else {
+		// La camera active.
+		KX_Camera *cam = KX_GetActiveScene()->GetActiveCamera();
 		// la taille du quad servant a calculer la normale
 		float smothsize = 5.0;
 		// on calcule 4 positions autours du vertice
