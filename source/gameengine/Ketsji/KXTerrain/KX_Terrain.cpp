@@ -142,7 +142,7 @@ void KX_Terrain::UpdateChunksMeshes()
 	for (unsigned int i = 0; i < m_chunkList.size(); ++i) {
 		m_chunkList[i]->EndUpdateMesh();
 	}
-	KX_Chunk::PrintTime();
+// 	KX_Chunk::PrintTime();
 }
 
 void KX_Terrain::RenderChunksMeshes(const MT_Transform& cameratrans, RAS_IRasterizer* rasty)
