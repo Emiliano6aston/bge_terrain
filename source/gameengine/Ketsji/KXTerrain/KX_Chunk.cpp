@@ -333,10 +333,21 @@ const MT_Vector3 KX_Chunk::GetNormal(Vertex *vertexCenter, bool intern) const
 			vertexes[i]->xyz.getValue(quad[i]);
 	}
 	else {
+#if 0
 		// La camera active.
 		KX_Camera *cam = KX_GetActiveScene()->GetActiveCamera();
+		// La distance de ce point vers la camera.
+		const float distance = cam->NodeGetWorldPosition().distance(MT_Point3(x + pos.x(), y + pos.y(), 0.0f));
+		// Le rayon reel du terrain.
+		const float maxterrainwidth = terrain->GetChunkSize() * terrain->GetWidth();
+		// L'interval entre les vertices pour le plus petit des chunk.
+		const float mininterval = terrain->GetChunkSize() / POLY_COUNT;
+		// L'interval entre les vertices pour le plus grand des chunk, les plus grands des chunks sont le quart du terrain.
+		const float maxinterval = maxterrainwidth / POLY_COUNT / 2;
+#endif
 		// la taille du quad servant a calculer la normale
-		float smothsize = 5.0;
+		float smothsize = 5.0f;
+
 		// on calcule 4 positions autours du vertice
 		quad[0][0] = x + smothsize; 
 		quad[0][1] = y;

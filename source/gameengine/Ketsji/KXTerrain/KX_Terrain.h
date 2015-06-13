@@ -85,6 +85,11 @@ public:
 	{
 		return m_vertexSubdivision;
 	}
+	/// La largeur du terrain en echelle relative.
+	inline unsigned short GetWidth() const
+	{
+		return m_width;
+	}
 	/// La distance maximal pour avoir un niveau de subdivision superieur à 1
 	inline float GetMaxDistance2() const
 	{
