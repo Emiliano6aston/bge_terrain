@@ -150,7 +150,7 @@ static void buttons_main_area_draw(const bContext *C, ARegion *ar)
 	else if (sbuts->mainb == BCONTEXT_WORLD)
 		ED_region_panels(C, ar, "world", sbuts->mainb, vertical);
 	else if (sbuts->mainb == BCONTEXT_TERRAIN)
-		ED_region_panels(C, ar, "terrain", sbuts->mainb);
+		ED_region_panels(C, ar, "terrain", sbuts->mainb, vertical);
 	else if (sbuts->mainb == BCONTEXT_OBJECT)
 		ED_region_panels(C, ar, "object", sbuts->mainb, vertical);
 	else if (sbuts->mainb == BCONTEXT_DATA)
