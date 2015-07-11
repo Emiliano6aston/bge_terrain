@@ -200,6 +200,10 @@ void KX_TerrainZoneMesh::GetVertexInfo(const float x, const float y, VertexZoneI
 	float height = 0.0;
 	bool hit = false;
 
+	// set vertex 2d position
+	r_info->pos[0] = x;
+	r_info->pos[1] = y;
+
 	// on utilise un mesh comme zone
 	if (m_zoneInfo->flag & TERRAIN_ZONE_MESH && m_zoneInfo->mesh) {
 		// en premier on verifie que le point est bien compris dans les maximum et minimun du mesh
