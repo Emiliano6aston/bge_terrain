@@ -37,12 +37,27 @@ class DerivedMesh;
 class TerrainZone;
 class KX_Terrain;
 
-struct VertexZoneInfo
+class VertexZoneInfo
 {
+public:
 	/// Vertex height
 	float height;
+	/// Vertex 2d coord
+	float pos[2];
 	/// Vertex color
 	float color[3];
+	/// count of chunk vertexes which use it.
+	unsigned char refcount;
+
+	void AddRef()
+	{
+		refcount++;
+	}
+	void Release()
+	{
+		if ((refcount--) == 0)
+			delete this;
+	}
 };
 
 class KX_TerrainZoneMesh
