@@ -60,27 +60,26 @@ void KX_Chunk::PrintTime()
 		<< std::endl;
 }
 
-struct KX_Chunk::Vertex // vertex temporaire
+struct KX_Chunk::Vertex // vertex du chunk
 {
-	MT_Point3 xyz;
-	short relpos[2];
+	VertexZoneInfo *vertexInfo;
+	short relativePos[2];
 	unsigned int rgba;
-	unsigned int origIndex;
+	unsigned char origIndex;
 	bool valid;
-	MT_Vector3 normal;
+	float normal[3];
 
-	Vertex(short relx, short rely,
-		   const MT_Point3 &pos,
+	Vertex(VertexZoneInfo *info,
+		   short relx, short rely,
 		   unsigned int color,
 		   unsigned int origindex)
-		:rgba(color),
+		:vertexInfo(info),
+		rgba(color),
 		origIndex(origindex),
 		valid(true)
 	{
-		relpos[0] = relx;
-		relpos[1] = rely;
-		xyz = pos;
-		normal = MT_Vector3(0., 0., 1.);
+		relativePos[0] = relx;
+		relativePos[1] = rely;
 	}
 
 	void Invalidate() { valid = false; }
@@ -97,10 +96,6 @@ struct KX_Chunk::JointColumn
 	JointColumn(bool freeEndVertex)
 		:m_freeEndVertex(freeEndVertex)
 	{
-		for (unsigned short i = 0; i < VERTEX_COUNT; ++i)
-			m_columnExterne[i] = NULL;
-		for (unsigned short i = 0; i < VERTEX_COUNT_INTERN; ++i)
-			m_columnInterne[i] = NULL;
 	}
 
 	~JointColumn()
@@ -257,8 +252,7 @@ KX_Chunk::Vertex *KX_Chunk::NewVertex(short relx, short rely)
 
 	unsigned int color = rgb_to_cpack(info->color[0], info->color[1], info->color[2]);
 
-	Vertex *vertex = new Vertex(relx, rely, MT_Point3(vertpos.x(), vertpos.y(), vertz), color, m_originVertexIndex++);
-	delete info;
+	Vertex *vertex = new Vertex(info, relx, rely, color, m_originVertexIndex++);
 	return vertex;
 }
 
@@ -311,10 +305,10 @@ KX_Chunk::Vertex *KX_Chunk::GetVertex(short x, short y) const
 const MT_Vector3 KX_Chunk::GetNormal(Vertex *vertexCenter, bool intern) const
 {
 	// la position du vertice donc du centre du quad
-	const float x = vertexCenter->xyz.x();
-	const float y = vertexCenter->xyz.y();
-	const unsigned short relx = vertexCenter->relpos[0];
-	const unsigned short rely = vertexCenter->relpos[1];
+	const float x = vertexCenter->vertexInfo->pos[0];
+	const float y = vertexCenter->vertexInfo->pos[1];
+	const unsigned short relx = vertexCenter->relativePos[0];
+	const unsigned short rely = vertexCenter->relativePos[1];
 
 	KX_Terrain *terrain = m_node->GetTerrain();
 	// la position du noeud parent du chunk
@@ -323,14 +317,19 @@ const MT_Vector3 KX_Chunk::GetNormal(Vertex *vertexCenter, bool intern) const
 	float quad[4][3];
 
 	if (intern) {
+		// on trouve les 4 vertices adjacents
 		Vertex *vertexes[4] = {
 			GetVertex(relx + 1, rely),
 			GetVertex(relx, rely + 1),
 			GetVertex(relx - 1, rely),
 			GetVertex(relx, rely - 1)
 		};
-		for (unsigned short i = 0; i < 4; ++i)
-			vertexes[i]->xyz.getValue(quad[i]);
+		// Puis pour chaque vertice on copie sa position en 3d
+		for (unsigned short i = 0; i < 4; ++i) {
+			quad[i][0] = vertexes[i]->vertexInfo->pos[0];
+			quad[i][1] = vertexes[i]->vertexInfo->pos[1];
+			quad[i][2] = vertexes[i]->vertexInfo->height;
+		}
 	}
 	else {
 #if 0
@@ -365,7 +364,7 @@ const MT_Vector3 KX_Chunk::GetNormal(Vertex *vertexCenter, bool intern) const
 		}
 	}
 
-	float normal[3] = {0.0, 0.0, 0.0};
+	float normal[3];
 	normal_quad_v3(normal, quad[0], quad[1], quad[2], quad[3]);
 
 	const MT_Vector3 finalnormal = MT_Vector3(normal);
@@ -401,22 +400,28 @@ void KX_Chunk::AddMeshPolygonVertexes(Vertex *v1, Vertex *v2, Vertex *v3, bool r
 	MT_Point2 uvs_3[8];
 
 	for (unsigned short i = 0; i < 8; ++i) {
-		uvs_1[i] = MT_Point2(v1->xyz[0], v1->xyz[1]) + realPos;
-		uvs_2[i] = MT_Point2(v2->xyz[0], v2->xyz[1]) + realPos;
-		uvs_3[i] = MT_Point2(v3->xyz[0], v3->xyz[1]) + realPos;
+		uvs_1[i] = MT_Point2(v1->vertexInfo->pos) + realPos;
+		uvs_2[i] = MT_Point2(v2->vertexInfo->pos) + realPos;
+		uvs_3[i] = MT_Point2(v3->vertexInfo->pos) + realPos;
 	}
 
 	const MT_Vector4 tangent(0., 0., 0., 0.);
 
 	if (reverse) {
-		m_meshObj->AddVertex(poly, 0, v3->xyz, uvs_3, tangent, v3->rgba, v3->normal, false, v3->origIndex);
-		m_meshObj->AddVertex(poly, 1, v2->xyz, uvs_2, tangent, v2->rgba, v2->normal, false, v2->origIndex);
-		m_meshObj->AddVertex(poly, 2, v1->xyz, uvs_1, tangent, v1->rgba, v1->normal, false, v1->origIndex);
+		m_meshObj->AddVertex(poly, 0, MT_Point3(v3->vertexInfo->pos[0], v3->vertexInfo->pos[1], v3->vertexInfo->height),
+							 uvs_3, tangent, v3->rgba, v3->normal, false, v3->origIndex);
+		m_meshObj->AddVertex(poly, 1, MT_Point3(v2->vertexInfo->pos[0], v2->vertexInfo->pos[1], v2->vertexInfo->height),
+							 uvs_2, tangent, v2->rgba, v2->normal, false, v2->origIndex);
+		m_meshObj->AddVertex(poly, 2, MT_Point3(v1->vertexInfo->pos[0], v1->vertexInfo->pos[1], v1->vertexInfo->height),
+							 uvs_1, tangent, v1->rgba, v1->normal, false, v1->origIndex);
 	}
 	else {
-		m_meshObj->AddVertex(poly, 0, v1->xyz, uvs_1, tangent, v1->rgba, v1->normal, false, v1->origIndex);
-		m_meshObj->AddVertex(poly, 1, v2->xyz, uvs_2, tangent, v2->rgba, v2->normal, false, v2->origIndex);
-		m_meshObj->AddVertex(poly, 2, v3->xyz, uvs_3, tangent, v3->rgba, v3->normal, false, v3->origIndex);
+		m_meshObj->AddVertex(poly, 0, MT_Point3(v1->vertexInfo->pos[0], v1->vertexInfo->pos[1], v1->vertexInfo->height),
+							 uvs_1, tangent, v1->rgba, v1->normal, false, v1->origIndex);
+		m_meshObj->AddVertex(poly, 1, MT_Point3(v2->vertexInfo->pos[0], v2->vertexInfo->pos[1], v2->vertexInfo->height),
+							 uvs_2, tangent, v2->rgba, v2->normal, false, v2->origIndex);
+		m_meshObj->AddVertex(poly, 2, MT_Point3(v3->vertexInfo->pos[0], v3->vertexInfo->pos[1], v3->vertexInfo->height), 
+							 uvs_3, tangent, v3->rgba, v3->normal, false, v3->origIndex);
 	}
 
 #ifdef STATS
@@ -534,21 +539,21 @@ void KX_Chunk::ConstructVertexes()
 	for (unsigned short columnIndex = COLUMN_LEFT; columnIndex <= COLUMN_RIGHT; ++columnIndex) {
 		for (unsigned short vertexIndex = 0; vertexIndex < VERTEX_COUNT; ++vertexIndex) {
 			Vertex *vertex = m_columns[columnIndex]->GetExternVertex(vertexIndex);
-			vertex->normal = GetNormal(vertex, false);
+			GetNormal(vertex, false).getValue(vertex->normal);
 		}
 	}
 
 	for (unsigned short columnIndex = COLUMN_FRONT; columnIndex <= COLUMN_BACK; ++columnIndex) {
 		for (unsigned short vertexIndex = 1; vertexIndex < (VERTEX_COUNT - 1); ++vertexIndex) {
 			Vertex *vertex = m_columns[columnIndex]->GetExternVertex(vertexIndex);
-			vertex->normal = GetNormal(vertex, false);
+			GetNormal(vertex, false).getValue(vertex->normal);
 		}
 	}
 
 	for (unsigned short columnIndex = 1; columnIndex < (VERTEX_COUNT - 1); ++columnIndex) {
 		for (unsigned short vertexIndex = 1; vertexIndex < (VERTEX_COUNT - 1); ++vertexIndex) {
 			Vertex *vertex = m_center[columnIndex - 1][vertexIndex - 1];
-			vertex->normal = GetNormal(vertex, true);
+			GetNormal(vertex, true).getValue(vertex->normal);
 		}
 	}
 
