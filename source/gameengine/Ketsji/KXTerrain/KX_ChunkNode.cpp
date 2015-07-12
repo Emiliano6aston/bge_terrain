@@ -29,6 +29,8 @@
 
 #include "RAS_IRasterizer.h"
 
+#include "PHY_IPhysicsController.h"
+
 #include <stdio.h>
 
 #include "glew-mx.h"
@@ -66,18 +68,22 @@ KX_ChunkNode::KX_ChunkNode(KX_ChunkNode *parentNode,
 	m_terrain(terrain)
 {
 	++m_activeNode;
+
+	// Met a zero les hauteurs de la boite de culling.
+	ResetBoxHeight();
+
 	// la taille et sa moitié du chunk
 	const float size = m_terrain->GetChunkSize();
-	const float width = size / 2 * relativesize;
+	const float width = size / 2.0f * relativesize;
 
 	// la taille maximale et minimale en hauteur de la boite de frustum culling
 	const float maxHeight = m_terrain->GetMaxHeight();
 	const float minHeight = m_terrain->GetMinHeight();
 
 	// le rayon du chunk
-	m_radius2NoGap = (width * width * 2);
-	m_radius2Object = m_radius2NoGap + (width * width * 2);
-	float gap = size * relativesize * 2;
+	m_radius2NoGap = (width * width * 2.0f);
+	m_radius2Object = m_radius2NoGap + (width * width * 2.0f);
+	float gap = size * relativesize * 2.0f;
 	m_radius2Camera = m_radius2NoGap + (gap * gap);
 
 	// la coordonnée reel du chunk
@@ -153,7 +159,7 @@ void KX_ChunkNode::DisableChunkVisibility()
 	}
 }
 
-bool KX_ChunkNode::NeedCreateNodes(CListValue *objects, KX_Camera *cam) const
+bool KX_ChunkNode::NeedCreateNodes(CListValue *objects, KX_Camera *culledcam) const
 {
 	bool needcreatenode = false;
 
@@ -161,14 +167,27 @@ bool KX_ChunkNode::NeedCreateNodes(CListValue *objects, KX_Camera *cam) const
 		KX_GameObject *object = (KX_GameObject *)objects->GetValue(i);
 
 		bool iscamera = (object->GetGameObjectType() == SCA_IObject::OBJ_CAMERA);
-		if ((!object->GetVisible() || 
-			!object->GetPhysicsController()) && 
-			!iscamera)
+		/* Si l'objet n'est pas visible, n'utilise pas une forme physique, n'est pas
+		 * dynamique ou est en pause.
+		 */
+		if (!object->GetVisible() || 
+			!object->GetPhysicsController() ||
+			!object->GetPhysicsController()->IsDynamic() || 
+			object->GetPhysicsController()->IsSuspended())
 		{
-			continue;
+			// Si c'est une camera on test en plus si elle est active.
+			if (!iscamera)
+				continue;
+
+			KX_Camera *cam = (KX_Camera *)object;
+			if (cam != culledcam &&
+				!cam->GetViewport())
+			{
+				continue;
+			}
 		}
 
-		float distance2 = MT_Point3(m_realPos.x(), m_realPos.y(), 0.).distance2(object->NodeGetWorldPosition());
+		float distance2 = MT_Point3(m_realPos.x(), m_realPos.y(), 0.0f).distance2(object->NodeGetWorldPosition());
 		distance2 -= iscamera ? m_radius2Camera : m_radius2Object;
 
 		needcreatenode = (m_terrain->GetSubdivision(distance2, iscamera) > m_level);
@@ -186,14 +205,17 @@ bool KX_ChunkNode::InNode(CListValue *objects) const
 	for (unsigned int i = 0; i < objects->GetCount(); ++i) {
 		KX_GameObject *object = (KX_GameObject *)objects->GetValue(i);
 
-		if ((!object->GetVisible() ||
-			!object->GetPhysicsController()))
+		// Les même type de condition que dans NeedCreateNodes.
+		if (!object->GetVisible() ||
+			!object->GetPhysicsController() ||
+			!object->GetPhysicsController()->IsDynamic() || 
+			object->GetPhysicsController()->IsSuspended())
 		{
 			continue;
 		}
 
 		const float objdistance2 = MT_Point3(m_realPos.x(), m_realPos.y(), 0.).distance2(object->NodeGetWorldPosition()) - m_radius2NoGap;
-		innode = (objdistance2 < 0.0);
+		innode = (objdistance2 < 0.0f);
 		if (innode)
 			break;
 	}
@@ -315,8 +337,8 @@ void KX_ChunkNode::DrawDebugInfo(DEBUG_DRAW_MODE mode)
 
 void KX_ChunkNode::ResetBoxHeight()
 {
-	m_maxBoxHeight = 0.0;
-	m_minBoxHeight = 0.0;
+	m_maxBoxHeight = 0.0f;
+	m_minBoxHeight = 0.0f;
 }
 
 void KX_ChunkNode::CheckBoxHeight(float max, float min)
@@ -351,7 +373,7 @@ void KX_ChunkNode::ReConstructBox()
 
 KX_ChunkNode *KX_ChunkNode::GetNodeRelativePosition(const Point2D& pos)
 {
-	unsigned short relativewidth = m_relativeSize / 2;
+	const unsigned short relativewidth = m_relativeSize / 2;
 
 	if(m_culledState != KX_Camera::OUTSIDE &&
 	  (m_relativePos.x - relativewidth) < pos.x && pos.x < (m_relativePos.x + relativewidth) &&
