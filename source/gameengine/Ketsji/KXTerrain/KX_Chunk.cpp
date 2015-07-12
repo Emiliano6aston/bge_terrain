@@ -19,7 +19,7 @@
 
 #define DEBUG(msg) std::cout << "Debug (" << __func__ << ", " << this << ") : " << msg << std::endl;
 
-#define STATS
+// #define STATS
 
 unsigned int KX_Chunk::m_chunkActive = 0;
 unsigned int KX_Chunk::meshRecreation = 0;
@@ -395,25 +395,26 @@ void KX_Chunk::SetNormal(Vertex *vertexCenter, bool intern) const
 	}
 	// Sinon on créer des faux vertices autour.
 	else {
+		KX_Terrain *terrain = m_node->GetTerrain();
+		// la position du noeud parent du chunk
+		const MT_Point2& nodepos = m_node->GetRealPos();
 #if 0
 		// La camera active.
 		KX_Camera *cam = KX_GetActiveScene()->GetActiveCamera();
 		// La distance de ce point vers la camera.
-		const float distance = cam->NodeGetWorldPosition().distance(MT_Point3(x + pos.x(), y + pos.y(), 0.0f));
+		const float distance = cam->NodeGetWorldPosition().distance(MT_Point3(x + nodepos.x(), y + nodepos.y(), 0.0f));
+		// Le rayon d'un chunk.
+		const float chunkwidth = sqrt(terrain->GetChunkSize() * terrain->GetChunkSize());
 		// Le rayon reel du terrain.
-		const float maxterrainwidth = terrain->GetChunkSize() * terrain->GetWidth();
+		const float terrainwidth = chunkwidth * terrain->GetWidth();
 		// L'interval entre les vertices pour le plus petit des chunk.
 		const float mininterval = terrain->GetChunkSize() / POLY_COUNT;
 		// L'interval entre les vertices pour le plus grand des chunk, les plus grands des chunks sont le quart du terrain.
-		const float maxinterval = maxterrainwidth / POLY_COUNT / 2;
+		const float maxinterval = terrainwidth / POLY_COUNT / 2;
 #endif
 
-		KX_Terrain *terrain = m_node->GetTerrain();
-		// la position du noeud parent du chunk
-		const MT_Point2& nodepos = m_node->GetRealPos();
-
 		// la taille du quad servant a calculer la normale
-		const float smothsize = 5.0f;
+		const float smothsize = 5.0f; // distance / (terrainwidth - chunkwidth) * (maxinterval - mininterval) + mininterval / 2.0f;
 
 		// on calcule 4 positions autours du vertice
 		quad[0][0] = x + smothsize; 
