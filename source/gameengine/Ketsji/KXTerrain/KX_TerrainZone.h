@@ -49,13 +49,19 @@ public:
 	/// count of chunk vertexes which use it.
 	unsigned char refcount;
 
+	VertexZoneInfo()
+		:refcount(1)
+	{
+	}
+
 	void AddRef()
 	{
 		refcount++;
 	}
 	void Release()
 	{
-		if ((refcount--) == 0)
+		--refcount;
+		if (refcount == 0)
 			delete this;
 	}
 };

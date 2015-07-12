@@ -60,37 +60,78 @@ void KX_Chunk::PrintTime()
 		<< std::endl;
 }
 
-struct KX_Chunk::Vertex // vertex du chunk
+/** Vertex utilisé pour la construction du mesh du chunk
+ */
+struct KX_Chunk::Vertex
 {
-	VertexZoneInfo *vertexInfo;
-	short relativePos[2];
-	unsigned int rgba;
-	unsigned char origIndex;
-	bool valid;
-	float normal[3];
+	/** La couleur du vertice, sa hauteur ect…
+	 * Ces informations doivent être le plus partagées ente les
+	 * chunk lors d'une subdivision ou d'une regression.
+	 * \see VertexZoneInfo
+	 */
+	VertexZoneInfo *vertexInfo; // 1
+
+	/** La position relative du vertice dans le chunk,
+	 * a toujours la même echelle d'un chunk a l'autre.
+	 */
+	short relativePos[2]; // 2 * 2 = 4
+
+	/** La position absolue du vertice dans le mesh du chunk,
+	 * cette fois ci elle depend de la taile du chunk.
+	 */
+	float absolutePos[2]; // 4 * 3 = 12
+
+	/// L'indice de creation du vertice, utilisé lors de la construction du mesh.
+	unsigned char origIndex; // 1
+
+	/** Le vertice peut être utilisé dans le mesh ?
+	 * Très utile pour les jointures, lorsque le vertice est
+	 * invalide on passe au suivant et ainsi créant la jointure.
+	 */
+	bool valid; // 1
+
+	/// La normale du vertice.
+	float normal[3]; // 4 * 3 = 12
+	// 30 octets, on pourrais aligner sur 32 octets, a voir.
 
 	Vertex(VertexZoneInfo *info,
 		   short relx, short rely,
-		   unsigned int color,
+		   float absx, float absy,
 		   unsigned int origindex)
 		:vertexInfo(info),
-		rgba(color),
 		origIndex(origindex),
 		valid(true)
 	{
 		relativePos[0] = relx;
 		relativePos[1] = rely;
+
+		absolutePos[0] = absx;
+		absolutePos[1] = absy;
 	}
 
-	void Invalidate() { valid = false; }
-	void Validate() { valid = true; }
+	~Vertex()
+	{
+		vertexInfo->Release();
+	}
+
+	void Invalidate()
+	{
+		valid = false;
+	}
+
+	void Validate()
+	{
+		valid = true;
+	}
 };
 
 struct KX_Chunk::JointColumn
 {
+	/// Tous les vertices à l'exterieur du chunk.
 	Vertex *m_columnExterne[VERTEX_COUNT];
+	/// Tous les vertices une colonne avant l'exterieur.
 	Vertex *m_columnInterne[VERTEX_COUNT_INTERN];
-	// si vrai alors on supprime les vertices aux extrémité
+	/// Si vrai alors on supprime les vertices aux extrémité.
 	bool m_freeEndVertex;
 
 	JointColumn(bool freeEndVertex)
@@ -100,19 +141,36 @@ struct KX_Chunk::JointColumn
 
 	~JointColumn()
 	{
+		/** Si m_freeEndVertex et faux on itère que de 1 à POLY_COUNT
+		 * sinon de 0 a POLY_COUNT + 1.
+		 */
 		for (unsigned short i = (m_freeEndVertex ? 0 : 1);
 			 i < (POLY_COUNT + (m_freeEndVertex ? 1 : 0)); ++i) 
 		{
-			Vertex *vertex = m_columnExterne[i];
-			delete vertex;
+			delete m_columnExterne[i];
 		}
 	}
 
-	void SetExternVertex(unsigned short index, Vertex *vertex) { m_columnExterne[index] = vertex; }
-	void SetInternVertex(unsigned short index, Vertex *vertex) { m_columnInterne[index] = vertex; }
-	Vertex *GetInternVertex(unsigned short index) { return m_columnInterne[index]; }
-	Vertex *GetExternVertex(unsigned short index) { return m_columnExterne[index]; }
-	Vertex *GetExternVertexNext(unsigned short index)
+	void SetExternVertex(unsigned short index, Vertex *vertex)
+	{
+		m_columnExterne[index] = vertex;
+	}
+	void SetInternVertex(unsigned short index, Vertex *vertex)
+	{ 
+		m_columnInterne[index] = vertex;
+	}
+
+	Vertex *GetInternVertex(unsigned short index)
+	{
+		return m_columnInterne[index];
+	}
+	Vertex *GetExternVertex(unsigned short index)
+	{
+		return m_columnExterne[index];
+	}
+
+	/// Cherche le vertice suivant valide.
+	Vertex *GetNextValidExternVertex(unsigned short index)
 	{
 		for (++index; index < VERTEX_COUNT; ++index) {
 			Vertex *vertex = m_columnExterne[index];
@@ -135,9 +193,11 @@ KX_Chunk::KX_Chunk(void *sgReplicationInfo, SG_Callbacks callbacks, KX_ChunkNode
 	m_lastHasJoint[COLUMN_FRONT] = false;
 	m_lastHasJoint[COLUMN_BACK] = false;
 
+#if 0
 	char c[3];
 	sprintf(c, "%d", m_chunkActive);
 	SetName("KX_Chunk" + STR_String(c));
+#endif
 
 	m_chunkActive++;
 }
@@ -160,17 +220,23 @@ KX_Chunk::~KX_Chunk()
 	}
 }
 
+/// Creation du nouveau mesh.
 void KX_Chunk::ConstructMesh()
 {
 	m_meshObj = new RAS_MeshObject(NULL);
 	m_meshes.push_back(m_meshObj);
 }
 
+// Destruction du mesh.
 void KX_Chunk::DestructMesh()
 {
 	RemoveMeshes();
 
 	if (m_meshObj) {
+		/* Chaque mesh est unique or le BGE garde une copie pour pouvoir le
+		 * dupliquer plus tard, cette copie ce trouve dans meshmat->m_baseslot.
+		 * Donc on la supprime.
+		 */
 		RAS_MeshMaterial *meshmat = m_meshObj->GetMeshMaterial((unsigned int)0);
 		meshmat->m_bucket->RemoveMesh(meshmat->m_baseslot);
 		delete m_meshObj;
@@ -186,25 +252,31 @@ void KX_Chunk::ReconstructMesh()
 	meshRecreation++;
 #endif
 
+	// Recreation du mesh.
 	DestructMesh();
 	ConstructMesh();
 
+	// Si les vertices ne sont pas encore créés on les créés.
 	if (!m_hasVertexes) {
 		ConstructVertexes();
 		m_hasVertexes = true;
 	}
 
+	/* On valide ou invalide les vertices externe pour pouvoir
+	 * après créer le jointures
+	 */
 	InvalidateJointVertexes();
+	// Construction des polygones.
 	ConstructPolygones();
 
+	// Et enfin on créer un mesh de rendu pour cet objet.
 	AddMeshUser();
-
-	m_meshObj->SchedulePolygons(0);
 
 #ifdef STATS
 	starttime = KX_GetActiveEngine()->GetRealTime();
 #endif
 
+	// Si l'objet utilise une forme physique on essai de la recréer.
 	if (m_pPhysicsController)
 		m_pPhysicsController->ReinstancePhysicsShape(NULL, m_meshObj, false);
 
@@ -214,11 +286,14 @@ void KX_Chunk::ReconstructMesh()
 #endif
 }
 
-const MT_Point2 KX_Chunk::GetVertexPosition(short relx, short rely) const
+KX_Chunk::Vertex *KX_Chunk::NewVertex(unsigned short relx, unsigned short rely)
 {
 	KX_Terrain *terrain = m_node->GetTerrain();
+	// la position du noeud parent du chunk
+	const MT_Point2& nodepos = m_node->GetRealPos();
 	//La taille "réelle" du chunk
 	const float size = terrain->GetChunkSize();
+
 	const unsigned short relativesize = m_node->GetRelativeSize();
 	//Calcul de l'intervalle entre deux points
 	const float interval = size * relativesize / POLY_COUNT;
@@ -228,20 +303,8 @@ const MT_Point2 KX_Chunk::GetVertexPosition(short relx, short rely) const
 	const float vertx = relx * interval - width;
 	const float verty = rely * interval - width;
 
-	const MT_Point2 vertpos = MT_Point2(vertx, verty);
-	return vertpos;
-}
-
-KX_Chunk::Vertex *KX_Chunk::NewVertex(short relx, short rely)
-{
-	KX_Terrain *terrain = m_node->GetTerrain();
-	// la position du noeud parent du chunk
-	const MT_Point2& nodepos = m_node->GetRealPos();
-
-	MT_Point2 vertpos = GetVertexPosition(relx, rely);
-
 	// toutes les informations sur le vertice dut au zone : la hauteur, sa couleur
-	VertexZoneInfo *info = terrain->GetVertexInfo(nodepos.x() + vertpos.x(), nodepos.y() + vertpos.y());
+	VertexZoneInfo *info = terrain->GetVertexInfo(nodepos.x() + vertx, nodepos.y() + verty);
 	const float vertz = info->height;
 
 	if (vertz > m_maxVertexHeight)
@@ -250,9 +313,7 @@ KX_Chunk::Vertex *KX_Chunk::NewVertex(short relx, short rely)
 	if (vertz < m_minVertexHeight)
 		m_minVertexHeight = vertz;
 
-	unsigned int color = rgb_to_cpack(info->color[0], info->color[1], info->color[2]);
-
-	Vertex *vertex = new Vertex(info, relx, rely, color, m_originVertexIndex++);
+	Vertex *vertex = new Vertex(info, relx, rely, vertx, verty, m_originVertexIndex++);
 	return vertex;
 }
 
@@ -260,28 +321,25 @@ KX_Chunk::Vertex *KX_Chunk::NewVertex(short relx, short rely)
  * stockés dans un tableau à deux dimension pour les x et y.
  * C'est très utile pour le calcule des normales.
  */
-KX_Chunk::Vertex *KX_Chunk::GetVertex(short x, short y) const
+KX_Chunk::Vertex *KX_Chunk::GetVertex(unsigned short x, unsigned short y) const
 {
 	Vertex *vertex = NULL;
-	if (x != -1 && x != VERTEX_COUNT && y != -1 && y != VERTEX_COUNT) {
-		if ((0 < x && x < (VERTEX_COUNT - 1)) &&
-			(0 < y && y < (VERTEX_COUNT - 1)))
-		{
-			vertex = m_center[x - 1][y - 1];
-		}
-		else if (x == 0) {
-			vertex = m_columns[COLUMN_LEFT]->GetExternVertex(y);
-		}
-		else if (x == (VERTEX_COUNT - 1)) {
-			vertex = m_columns[COLUMN_RIGHT]->GetExternVertex(y);
-		}
-		else if (y == 0) {
-			vertex = m_columns[COLUMN_FRONT]->GetExternVertex(x);
-		}
-		else if (y == (VERTEX_COUNT - 1)) {
-			vertex = m_columns[COLUMN_BACK]->GetExternVertex(x);
-		}
+
+	// Pour un vertice interne.
+	if ((0 < x && x < (VERTEX_COUNT - 1)) &&
+		(0 < y && y < (VERTEX_COUNT - 1)))
+	{
+		vertex = m_center[x - 1][y - 1];
 	}
+	// Sinon pour les colonnes
+	else if (x == 0)
+		vertex = m_columns[COLUMN_LEFT]->GetExternVertex(y);
+	else if (x == (VERTEX_COUNT - 1))
+		vertex = m_columns[COLUMN_RIGHT]->GetExternVertex(y);
+	else if (y == 0)
+		vertex = m_columns[COLUMN_FRONT]->GetExternVertex(x);
+	else if (y == (VERTEX_COUNT - 1))
+		vertex = m_columns[COLUMN_BACK]->GetExternVertex(x);
 
 	return vertex;
 }
@@ -299,24 +357,25 @@ KX_Chunk::Vertex *KX_Chunk::GetVertex(short x, short y) const
  * C : centre du quadrilatère soit le vertice envoyé
  *
  * Ces quatre points peuvent être des vertices déjà existant, mais parfois non.
- * Dans ce cas la on calcule la position d'un vertice virtuelle, c'est pour cela
- * que la fonction GetVertexPosition est séparé de NewVertex.
+ * Dans ce cas la on calcule la position d'un vertice virtuelle.
  */
-const MT_Vector3 KX_Chunk::GetNormal(Vertex *vertexCenter, bool intern) const
+void KX_Chunk::SetNormal(Vertex *vertexCenter, bool intern) const
 {
 	// la position du vertice donc du centre du quad
-	const float x = vertexCenter->vertexInfo->pos[0];
-	const float y = vertexCenter->vertexInfo->pos[1];
-	const unsigned short relx = vertexCenter->relativePos[0];
-	const unsigned short rely = vertexCenter->relativePos[1];
+	const float x = vertexCenter->absolutePos[0];
+	const float y = vertexCenter->absolutePos[1];
 
-	KX_Terrain *terrain = m_node->GetTerrain();
-	// la position du noeud parent du chunk
-	const MT_Point2& pos = m_node->GetRealPos();
-
+	// le quadrilatère
 	float quad[4][3];
 
+	/* Si le vertice n'est pas un vertice adjacent il suffit de
+	 * recupérer les 4 vertice autour.
+	 */
 	if (intern) {
+		// la position relative du vertice
+		const unsigned short relx = vertexCenter->relativePos[0];
+		const unsigned short rely = vertexCenter->relativePos[1];
+
 		// on trouve les 4 vertices adjacents
 		Vertex *vertexes[4] = {
 			GetVertex(relx + 1, rely),
@@ -326,11 +385,12 @@ const MT_Vector3 KX_Chunk::GetNormal(Vertex *vertexCenter, bool intern) const
 		};
 		// Puis pour chaque vertice on copie sa position en 3d
 		for (unsigned short i = 0; i < 4; ++i) {
-			quad[i][0] = vertexes[i]->vertexInfo->pos[0];
-			quad[i][1] = vertexes[i]->vertexInfo->pos[1];
+			quad[i][0] = vertexes[i]->absolutePos[0];
+			quad[i][1] = vertexes[i]->absolutePos[1];
 			quad[i][2] = vertexes[i]->vertexInfo->height;
 		}
 	}
+	// Sinon on créer des faux vertices autour.
 	else {
 #if 0
 		// La camera active.
@@ -344,8 +404,13 @@ const MT_Vector3 KX_Chunk::GetNormal(Vertex *vertexCenter, bool intern) const
 		// L'interval entre les vertices pour le plus grand des chunk, les plus grands des chunks sont le quart du terrain.
 		const float maxinterval = maxterrainwidth / POLY_COUNT / 2;
 #endif
+
+		KX_Terrain *terrain = m_node->GetTerrain();
+		// la position du noeud parent du chunk
+		const MT_Point2& nodepos = m_node->GetRealPos();
+
 		// la taille du quad servant a calculer la normale
-		float smothsize = 5.0f;
+		const float smothsize = 5.0f;
 
 		// on calcule 4 positions autours du vertice
 		quad[0][0] = x + smothsize; 
@@ -358,17 +423,13 @@ const MT_Vector3 KX_Chunk::GetNormal(Vertex *vertexCenter, bool intern) const
 		quad[3][1] = y - smothsize;
 
 		for (unsigned short i = 0; i < 4; ++i) {
-			VertexZoneInfo *info = terrain->GetVertexInfo(quad[i][0] + pos.x(), quad[i][1] + pos.y());
+			VertexZoneInfo *info = terrain->GetVertexInfo(quad[i][0] + nodepos.x(), quad[i][1] + nodepos.y());
 			quad[i][2] = info->height;
-			delete info;
+			info->Release();
 		}
 	}
 
-	float normal[3];
-	normal_quad_v3(normal, quad[0], quad[1], quad[2], quad[3]);
-
-	const MT_Vector3 finalnormal = MT_Vector3(normal);
-	return finalnormal;
+	normal_quad_v3(vertexCenter->normal, quad[0], quad[1], quad[2], quad[3]);
 }
 
 void KX_Chunk::AddMeshPolygonVertexes(Vertex *v1, Vertex *v2, Vertex *v3, bool reverse)
@@ -400,28 +461,40 @@ void KX_Chunk::AddMeshPolygonVertexes(Vertex *v1, Vertex *v2, Vertex *v3, bool r
 	MT_Point2 uvs_3[8];
 
 	for (unsigned short i = 0; i < 8; ++i) {
-		uvs_1[i] = MT_Point2(v1->vertexInfo->pos) + realPos;
-		uvs_2[i] = MT_Point2(v2->vertexInfo->pos) + realPos;
-		uvs_3[i] = MT_Point2(v3->vertexInfo->pos) + realPos;
+		uvs_1[i] = MT_Point2(v1->absolutePos) + realPos;
+		uvs_2[i] = MT_Point2(v2->absolutePos) + realPos;
+		uvs_3[i] = MT_Point2(v3->absolutePos) + realPos;
 	}
 
-	const MT_Vector4 tangent(0., 0., 0., 0.);
+	const MT_Vector4 tangent(0.0f, 0.0f, 0.0f, 0.0f);
 
 	if (reverse) {
-		m_meshObj->AddVertex(poly, 0, MT_Point3(v3->vertexInfo->pos[0], v3->vertexInfo->pos[1], v3->vertexInfo->height),
-							 uvs_3, tangent, v3->rgba, v3->normal, false, v3->origIndex);
-		m_meshObj->AddVertex(poly, 1, MT_Point3(v2->vertexInfo->pos[0], v2->vertexInfo->pos[1], v2->vertexInfo->height),
-							 uvs_2, tangent, v2->rgba, v2->normal, false, v2->origIndex);
-		m_meshObj->AddVertex(poly, 2, MT_Point3(v1->vertexInfo->pos[0], v1->vertexInfo->pos[1], v1->vertexInfo->height),
-							 uvs_1, tangent, v1->rgba, v1->normal, false, v1->origIndex);
+		m_meshObj->AddVertex(poly, 0, MT_Point3(v3->absolutePos[0], v3->absolutePos[1], v3->vertexInfo->height),
+							 uvs_3, tangent, 
+							 rgb_to_cpack(v3->vertexInfo->color[0], v3->vertexInfo->color[1], v3->vertexInfo->color[2]),
+							 v3->normal, false, v3->origIndex);
+		m_meshObj->AddVertex(poly, 1, MT_Point3(v2->absolutePos[0], v2->absolutePos[1], v2->vertexInfo->height),
+							 uvs_2, tangent, 
+							 rgb_to_cpack(v2->vertexInfo->color[0], v2->vertexInfo->color[1], v2->vertexInfo->color[2]),
+							 v2->normal, false, v2->origIndex);
+		m_meshObj->AddVertex(poly, 2, MT_Point3(v1->absolutePos[0], v1->absolutePos[1], v1->vertexInfo->height),
+							 uvs_1, tangent,
+							 rgb_to_cpack(v1->vertexInfo->color[0], v1->vertexInfo->color[1], v1->vertexInfo->color[2]),
+							 v1->normal, false, v1->origIndex);
 	}
 	else {
-		m_meshObj->AddVertex(poly, 0, MT_Point3(v1->vertexInfo->pos[0], v1->vertexInfo->pos[1], v1->vertexInfo->height),
-							 uvs_1, tangent, v1->rgba, v1->normal, false, v1->origIndex);
-		m_meshObj->AddVertex(poly, 1, MT_Point3(v2->vertexInfo->pos[0], v2->vertexInfo->pos[1], v2->vertexInfo->height),
-							 uvs_2, tangent, v2->rgba, v2->normal, false, v2->origIndex);
-		m_meshObj->AddVertex(poly, 2, MT_Point3(v3->vertexInfo->pos[0], v3->vertexInfo->pos[1], v3->vertexInfo->height), 
-							 uvs_3, tangent, v3->rgba, v3->normal, false, v3->origIndex);
+		m_meshObj->AddVertex(poly, 0, MT_Point3(v1->absolutePos[0], v1->absolutePos[1], v1->vertexInfo->height),
+							 uvs_1, tangent,
+							 rgb_to_cpack(v1->vertexInfo->color[0], v1->vertexInfo->color[1], v1->vertexInfo->color[2]),
+							 v1->normal, false, v1->origIndex);
+		m_meshObj->AddVertex(poly, 1, MT_Point3(v2->absolutePos[0], v2->absolutePos[1], v2->vertexInfo->height),
+							 uvs_2, tangent,
+							 rgb_to_cpack(v2->vertexInfo->color[0], v2->vertexInfo->color[1], v2->vertexInfo->color[2]),
+							 v2->normal, false, v2->origIndex);
+		m_meshObj->AddVertex(poly, 2, MT_Point3(v3->absolutePos[0], v3->absolutePos[1], v3->vertexInfo->height), 
+							 uvs_3, tangent,
+							 rgb_to_cpack(v3->vertexInfo->color[0], v3->vertexInfo->color[1], v3->vertexInfo->color[2]),
+							 v3->normal, false, v3->origIndex);
 	}
 
 #ifdef STATS
@@ -475,8 +548,8 @@ void KX_Chunk::ConstructVertexes()
 	 */
 	m_originVertexIndex = 0;
 
-	m_maxVertexHeight = 0.0;
-	m_minVertexHeight = 0.0;
+	m_maxVertexHeight = 0.0f;
+	m_minVertexHeight = 0.0f;
 
 	for (unsigned short i = 0; i < 4; ++i)
 		m_columns[i] = new JointColumn((i < 2));
@@ -537,24 +610,18 @@ void KX_Chunk::ConstructVertexes()
 #endif
 
 	for (unsigned short columnIndex = COLUMN_LEFT; columnIndex <= COLUMN_RIGHT; ++columnIndex) {
-		for (unsigned short vertexIndex = 0; vertexIndex < VERTEX_COUNT; ++vertexIndex) {
-			Vertex *vertex = m_columns[columnIndex]->GetExternVertex(vertexIndex);
-			GetNormal(vertex, false).getValue(vertex->normal);
-		}
+		for (unsigned short vertexIndex = 0; vertexIndex < VERTEX_COUNT; ++vertexIndex)
+			SetNormal(m_columns[columnIndex]->GetExternVertex(vertexIndex), false);
 	}
 
 	for (unsigned short columnIndex = COLUMN_FRONT; columnIndex <= COLUMN_BACK; ++columnIndex) {
-		for (unsigned short vertexIndex = 1; vertexIndex < (VERTEX_COUNT - 1); ++vertexIndex) {
-			Vertex *vertex = m_columns[columnIndex]->GetExternVertex(vertexIndex);
-			GetNormal(vertex, false).getValue(vertex->normal);
-		}
+		for (unsigned short vertexIndex = 1; vertexIndex < (VERTEX_COUNT - 1); ++vertexIndex)
+			SetNormal(m_columns[columnIndex]->GetExternVertex(vertexIndex), false);
 	}
 
 	for (unsigned short columnIndex = 1; columnIndex < (VERTEX_COUNT - 1); ++columnIndex) {
-		for (unsigned short vertexIndex = 1; vertexIndex < (VERTEX_COUNT - 1); ++vertexIndex) {
-			Vertex *vertex = m_center[columnIndex - 1][vertexIndex - 1];
-			GetNormal(vertex, true).getValue(vertex->normal);
-		}
+		for (unsigned short vertexIndex = 1; vertexIndex < (VERTEX_COUNT - 1); ++vertexIndex)
+			SetNormal(m_center[columnIndex - 1][vertexIndex - 1], true);
 	}
 
 #ifdef STATS
@@ -588,7 +655,10 @@ void KX_Chunk::InvalidateJointVertexes()
 
 void KX_Chunk::ConstructPolygones()
 {
+	// on redimensione la liste des vertice partagés
 	m_meshObj->m_sharedvertex_map.resize(m_originVertexIndex);
+
+	// puis on construit les polygones pour le centre et les jointures
 	ConstructCenterColumnPolygones();
 
 	ConstructJointColumnPolygones(m_columns[COLUMN_LEFT], false);
@@ -635,30 +705,33 @@ void KX_Chunk::ConstructJointColumnPolygones(JointColumn *column, bool reverse)
 		firstVertex = column->GetExternVertex(vertexIndex);
 		fourthVertex = column->GetExternVertex(vertexIndex + 1);
 
-		if (!fourthVertex->valid) {
-			fourthVertex = column->GetExternVertexNext(vertexIndex);
-			if (!fourthVertex) {
-				std::cout << "Error fourth vertex NULL ! , index : " << vertexIndex << std::endl;
-			}
-		}
+		// Si le 4 ème vertice est invalide on passe au suivant.
+		if (!fourthVertex->valid)
+			fourthVertex = column->GetNextValidExternVertex(vertexIndex);
 
-		// debut de la colonne cas 1
+		/* Dans le cas d'un début de colonne (cas 1) on ne construit
+		 * que le premier triangle et on déplace les vertices 2 et 3.
+		 */
 		if (vertexIndex == 0) {
 			secondVertex = column->GetInternVertex(0);
 			thirdVertex = fourthVertex;
 			secondTriangle = false;
 		}
-		// fin de la colonne cas 2
+		/* Dans le cas contraire d'une fin de colonne (cas 2) on ne
+		 * construit que le premier triangle si il n'y a pas de jointure.
+		 */
 		else if (vertexIndex == (POLY_COUNT - 1)) {
-			// si il y aun joit on ne fait rien
-			if (!firstVertex->valid) {
+			// si il y a un joint on ne fait rien
+			if (!firstVertex->valid)
 				firstTriangle = false;
-			}
+
 			secondVertex = column->GetInternVertex(vertexIndex - 1);
 			thirdVertex = column->GetExternVertex(POLY_COUNT);
 			secondTriangle = false;
 		}
-		// milieu de la colonne cas 3
+		/* Et enfine dans le cas normale d'un milieu de colonne (cas 3)
+		 * on desactive le deuxième triangle que si il y a une jointure.
+		 */
 		else {
 			secondVertex = column->GetInternVertex(vertexIndex - 1);
 			thirdVertex = column->GetInternVertex(vertexIndex);
@@ -668,47 +741,47 @@ void KX_Chunk::ConstructJointColumnPolygones(JointColumn *column, bool reverse)
 			}
 		}
 
-		if (firstTriangle) {
-			// création du premier triangle
+		// création du premier triangle
+		if (firstTriangle)
 			AddMeshPolygonVertexes(firstVertex, secondVertex, thirdVertex, reverse);
-		}
-		if (secondTriangle) {
-			// création du deuxieme triangle
+
+		// création du deuxieme triangle
+		if (secondTriangle)
 			AddMeshPolygonVertexes(firstVertex, thirdVertex, fourthVertex, reverse);
-		}
 	}
 }
 
+/** Cette fonction trouve les niveaux de jointures et demande la reconstruction du mesh
+ * si besoin.
+ */
 void KX_Chunk::UpdateMesh()
 {
 	KX_Terrain* terrain = m_node->GetTerrain();
 
-	const KX_ChunkNode::Point2D& pos = m_node->GetRelativePos();
-	unsigned short relativewidth = m_node->GetRelativeSize() / 2 + 1;
+	const KX_ChunkNode::Point2D& nodepos = m_node->GetRelativePos();
+	// La largeur du noeud parent + 1 pour être sûre de tomber sur le noeud adjacent et pas lui même.
+	const unsigned short relativewidth = m_node->GetRelativeSize() / 2 + 1;
 
-	m_lastChunkNode[COLUMN_LEFT] = terrain->GetNodeRelativePosition(KX_ChunkNode::Point2D(pos.x - relativewidth, pos.y));
-	m_lastChunkNode[COLUMN_RIGHT] = terrain->GetNodeRelativePosition(KX_ChunkNode::Point2D(pos.x + relativewidth, pos.y));
-	m_lastChunkNode[COLUMN_FRONT] = terrain->GetNodeRelativePosition(KX_ChunkNode::Point2D(pos.x, pos.y - relativewidth));
-	m_lastChunkNode[COLUMN_BACK] = terrain->GetNodeRelativePosition(KX_ChunkNode::Point2D(pos.x, pos.y + relativewidth));
+	// Les 4 noeuds autour du chunk.
+	KX_ChunkNode *m_chunkNodeLeft = terrain->GetNodeRelativePosition(KX_ChunkNode::Point2D(nodepos.x - relativewidth, nodepos.y));
+	KX_ChunkNode *m_chunkNodeRight = terrain->GetNodeRelativePosition(KX_ChunkNode::Point2D(nodepos.x + relativewidth, nodepos.y));
+	KX_ChunkNode *m_chunkNodeFront = terrain->GetNodeRelativePosition(KX_ChunkNode::Point2D(nodepos.x, nodepos.y - relativewidth));
+	KX_ChunkNode *m_chunkNodeBack = terrain->GetNodeRelativePosition(KX_ChunkNode::Point2D(nodepos.x, nodepos.y + relativewidth));
 
-	// ensemble de 4 variables verifiant si il y aura besoin d'une jointure
-	const unsigned short hasJointLeft = m_lastChunkNode[COLUMN_LEFT] ? (m_node->GetLevel() - m_lastChunkNode[COLUMN_LEFT]->GetLevel()) : 0;
-	const unsigned short hasJointRight = m_lastChunkNode[COLUMN_RIGHT] ? (m_node->GetLevel() - m_lastChunkNode[COLUMN_RIGHT]->GetLevel()) : 0;
-	const unsigned short hasJointFront = m_lastChunkNode[COLUMN_FRONT] ? (m_node->GetLevel() - m_lastChunkNode[COLUMN_FRONT]->GetLevel()) : 0;
-	const unsigned short hasJointBack = m_lastChunkNode[COLUMN_BACK] ? (m_node->GetLevel() - m_lastChunkNode[COLUMN_BACK]->GetLevel()) : 0;
+	/* Ces 4 variables nous indique si il y a besion d'une jointure et le niveau de la 
+	 * jointure : 0 = pas de jointure, 1 = jointure un vertice sur 2, 2 = jointure
+	 * de tous les vertices externes.
+	 */
+	const unsigned short hasJointLeft = m_chunkNodeLeft ? (m_node->GetLevel() - m_chunkNodeLeft->GetLevel()) : 0;
+	const unsigned short hasJointRight = m_chunkNodeRight ? (m_node->GetLevel() - m_chunkNodeRight->GetLevel()) : 0;
+	const unsigned short hasJointFront = m_chunkNodeFront ? (m_node->GetLevel() - m_chunkNodeFront->GetLevel()) : 0;
+	const unsigned short hasJointBack = m_chunkNodeBack ? (m_node->GetLevel() - m_chunkNodeBack->GetLevel()) : 0;
 
-	if (!m_meshObj) {
-		m_lastHasJoint[COLUMN_LEFT] = hasJointLeft;
-		m_lastHasJoint[COLUMN_RIGHT] = hasJointRight;
-		m_lastHasJoint[COLUMN_FRONT] = hasJointFront;
-		m_lastHasJoint[COLUMN_BACK] = hasJointBack;
-
-		ReconstructMesh();
-	}
-	else if (m_lastHasJoint[COLUMN_LEFT] != hasJointLeft ||
+	if (m_lastHasJoint[COLUMN_LEFT] != hasJointLeft ||
 		m_lastHasJoint[COLUMN_RIGHT] != hasJointRight ||
 		m_lastHasJoint[COLUMN_FRONT] != hasJointFront ||
-		m_lastHasJoint[COLUMN_BACK] != hasJointBack)
+		m_lastHasJoint[COLUMN_BACK] != hasJointBack ||
+		!m_meshObj)
 	{
 		m_lastHasJoint[COLUMN_LEFT] = hasJointLeft;
 		m_lastHasJoint[COLUMN_RIGHT] = hasJointRight;
