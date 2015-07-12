@@ -43,14 +43,17 @@ void KX_Chunk::ResetTime()
 
 void KX_Chunk::PrintTime()
 {
+	double totalTime = chunkCreationTime + normalComputingTime + 
+			vertexAddingTime + vertexCreatingTime + polyAddingTime + physicsCreatingTime;
+
 	std::cout << "Time Stats : " << std::endl
 		<< "\t Mesh Recreation Per Frame : \t" << meshRecreation << std::endl
-		<< "\t Chunk Creation Time : \t\t\t" << chunkCreationTime << std::endl
-		<< "\t Normal Computing Time : \t\t" << normalComputingTime << std::endl
-		<< "\t Vertex Adding Time : \t\t\t" << vertexAddingTime << std::endl
-		<< "\t Vertex Creating Time : \t\t" << vertexCreatingTime << std::endl
-		<< "\t Poly Adding Time : \t\t\t" << polyAddingTime << std::endl
-		<< "\t Physics Creating Time : \t\t" << physicsCreatingTime << std::endl
+		<< "\t Chunk Creation Time : \t\t\t" << chunkCreationTime / totalTime * 100.0f << "%" << std::endl
+		<< "\t Normal Computing Time : \t\t" << normalComputingTime / totalTime * 100.0f << "%" << std::endl
+		<< "\t Vertex Adding Time : \t\t\t" << vertexAddingTime / totalTime * 100.0f << "%" << std::endl
+		<< "\t Vertex Creating Time : \t\t" << vertexCreatingTime / totalTime * 100.0f << "%" << std::endl
+		<< "\t Poly Adding Time : \t\t\t" << polyAddingTime / totalTime * 100.0f << "%" << std::endl
+		<< "\t Physics Creating Time : \t\t" << physicsCreatingTime / totalTime * 100.0f << "%" << std::endl
 		<< std::endl;
 }
 
@@ -212,6 +215,7 @@ KX_Chunk::~KX_Chunk()
 		delete m_columns[2];
 		delete m_columns[3];
 	}
+	m_chunkActive--;
 }
 
 /// Creation du nouveau mesh.

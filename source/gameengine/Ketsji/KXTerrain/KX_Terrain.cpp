@@ -60,9 +60,10 @@ KX_Terrain::KX_Terrain(RAS_MaterialBucket *bucket,
 	m_maxDistance2(maxDistance * maxDistance),
 	m_physicsMaxDistance2(physicsMaxDistance * physicsMaxDistance),
 	m_chunkSize(chunkSize),
-	m_maxHeight(0.0),
-	m_minHeight(0.0),
-	m_construct(false)
+	m_maxHeight(0.0f),
+	m_minHeight(0.0f),
+	m_construct(false),
+	m_frame(0)
 {
 	unsigned int realmaxlevel = 1;
 	for (unsigned int i = 1; i < m_width; i *= 2) {
@@ -102,6 +103,8 @@ void KX_Terrain::Destruct()
 	delete m_nodeTree[2];
 	delete m_nodeTree[3];
 
+	free(m_nodeTree);
+
 	ScheduleEuthanasyChunks();
 }
 
@@ -123,7 +126,7 @@ void KX_Terrain::CalculateVisibleChunks(KX_Camera* culledcam)
 }
 void KX_Terrain::UpdateChunksMeshes()
 {
-	KX_Chunk::ResetTime();
+	++m_frame;
 	for (unsigned int i = 0; i < m_chunkList.size(); ++i) {
 		m_chunkList[i]->UpdateMesh();
 	}
@@ -131,7 +134,11 @@ void KX_Terrain::UpdateChunksMeshes()
 	for (unsigned int i = 0; i < m_chunkList.size(); ++i) {
 		m_chunkList[i]->EndUpdateMesh();
 	}
-// 	KX_Chunk::PrintTime();
+	if (m_frame > 60) {
+		KX_Chunk::PrintTime();
+		KX_Chunk::ResetTime();
+		m_frame = 0;
+	}
 }
 
 void KX_Terrain::RenderChunksMeshes(const MT_Transform& cameratrans, RAS_IRasterizer* rasty)
@@ -182,7 +189,6 @@ KX_ChunkNode *KX_Terrain::GetNodeRelativePosition(const KX_ChunkNode::Point2D& p
 VertexZoneInfo *KX_Terrain::GetVertexInfo(float x, float y) const
 {
 	VertexZoneInfo *info = new VertexZoneInfo();
-	info->height = 0.0;
 
 	for (unsigned short i = 0; i < m_zoneMeshList.size(); ++i)
 		m_zoneMeshList[i]->GetVertexInfo(x, y, info);

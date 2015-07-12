@@ -50,6 +50,7 @@ private:
 	float				m_minHeight;
 
 	bool					m_construct;
+	unsigned short m_frame;
 	KX_ChunkNode		  **m_nodeTree;
 	std::vector<KX_Chunk *>	m_chunkList;
 	std::vector<KX_Chunk *>	m_euthanasyChunkList;
