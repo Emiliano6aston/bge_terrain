@@ -126,7 +126,6 @@ void KX_Terrain::CalculateVisibleChunks(KX_Camera* culledcam)
 }
 void KX_Terrain::UpdateChunksMeshes()
 {
-	++m_frame;
 	for (unsigned int i = 0; i < m_chunkList.size(); ++i) {
 		m_chunkList[i]->UpdateMesh();
 	}
@@ -134,11 +133,16 @@ void KX_Terrain::UpdateChunksMeshes()
 	for (unsigned int i = 0; i < m_chunkList.size(); ++i) {
 		m_chunkList[i]->EndUpdateMesh();
 	}
+
+#ifdef STATS
+	++m_frame;
+
 	if (m_frame > 60) {
 		KX_Chunk::PrintTime();
 		KX_Chunk::ResetTime();
 		m_frame = 0;
 	}
+#endif
 }
 
 void KX_Terrain::RenderChunksMeshes(const MT_Transform& cameratrans, RAS_IRasterizer* rasty)
