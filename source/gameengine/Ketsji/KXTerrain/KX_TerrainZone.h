@@ -50,7 +50,8 @@ public:
 	unsigned char refcount;
 
 	VertexZoneInfo()
-		:refcount(1)
+		:height(0.0f),
+		refcount(1)
 	{
 	}
 
