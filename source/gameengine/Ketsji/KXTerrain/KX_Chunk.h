@@ -50,14 +50,14 @@ public:
 	};
 
 private:
+	/// Le neoud parent.
 	KX_ChunkNode *m_node;
 
+	/// Le materiaux utilisé par le mesh, on le passe a la construction du mesh.
 	RAS_MaterialBucket *m_bucket;
 	RAS_MeshObject *m_meshObj;
 
-	/** on stocke les colonnes pour un reconstruction plus rapide et un accés 
-	 * aux vertices pour les chunks autour
-	 */
+	/// on stocke les colonnes pour un reconstruction plus rapide
 	JointColumn *m_columns[4];
 	Vertex *m_center[VERTEX_COUNT_INTERN][VERTEX_COUNT_INTERN];
 	bool m_hasVertexes;
@@ -65,26 +65,21 @@ private:
 	float m_maxVertexHeight;
 	float m_minVertexHeight;
 
-	// les dernières jointures
+	/// Les dernières jointures.
 	unsigned short m_lastHasJoint[4];
 
-	/* variables temporaire utilisé par UpdateMesh et EndUpdateMesh, 
-	 * cela evite de rearcourir tous l'arbre
+	/** Indice utilisé lors de la construction des vertices pour avoir un indice
+	 * unique de vertice.
 	 */
-	KX_ChunkNode *m_lastChunkNode[4];
-
 	unsigned int m_originVertexIndex;
-
-	unsigned short m_life;
 
 	/// construction du mesh
 	void ConstructMesh();
 	void DestructMesh();
 
 	void ConstructVertexes();
-	const MT_Point2 GetVertexPosition(short relx, short rely) const;
-	Vertex *NewVertex(short relx, short rely);
-	Vertex *GetVertex(short x, short y) const;
+	Vertex *NewVertex(unsigned short relx, unsigned short rely);
+	Vertex *GetVertex(unsigned short x, unsigned short y) const;
 
 	void InvalidateJointVertexes();
 
@@ -93,7 +88,7 @@ private:
 	void ConstructJointColumnPolygones(JointColumn *column, bool reverse);
 	void AddMeshPolygonVertexes(Vertex *v1, Vertex *v2, Vertex *v3, bool reverse);
 
-	const MT_Vector3 GetNormal(Vertex *vertexCenter, bool intern) const;
+	void SetNormal(Vertex *vertexCenter, bool intern) const;
 
 public:
 	KX_Chunk(void *sgReplicationInfo, SG_Callbacks callbacks, KX_ChunkNode *node, RAS_MaterialBucket *m_bucket);
