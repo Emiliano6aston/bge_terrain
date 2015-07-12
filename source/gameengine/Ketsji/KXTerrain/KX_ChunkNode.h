@@ -95,7 +95,7 @@ private:
 	/// Le terrain utilisé comme usine à chunks
 	KX_Terrain *m_terrain;
 
-	bool NeedCreateNodes(CListValue *objects, KX_Camera *cam) const;
+	bool NeedCreateNodes(CListValue *objects, KX_Camera *culledcam) const;
 	bool InNode(CListValue *objects) const;
 	void DestructNodes();
 	void ConstructNodes();
