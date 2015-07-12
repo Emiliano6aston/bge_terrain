@@ -37,18 +37,7 @@
 #include "GPU_draw.h"
 #include "GPU_material.h"
 
-#define COLORED_PRINT(msg, color) std::cout << /*"\033[" << color << "m" <<*/ msg << /*"\033[30m" <<*/ std::endl;
-
 #define DEBUG(msg) std::cout << "Debug (" << __func__ << ", " << this << ") : " << msg << std::endl
-#define WARNING(msg) COLORED_PRINT("Warning : " << msg, 33);
-#define INFO(msg) COLORED_PRINT("Info : " << msg, 37);
-#define ERROR(msg) COLORED_PRINT("Error : " << msg, 31);
-#define SUCCES(msg) COLORED_PRINT("Succes : " << msg, 32);
-#define DEBUG_VAR(var) std::cout << #var << " : " << var << std::endl;
-
-#define DEBUGNOENDL(msg) std::cout << msg;
-
-#define OPTIMIZED_CULLING_BOX
 
 unsigned int KX_ChunkNode::m_activeNode = 0;
 
