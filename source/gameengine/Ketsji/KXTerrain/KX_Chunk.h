@@ -104,7 +104,7 @@ private:
 	Vertex *NewVertex(unsigned short relx, unsigned short rely);
 	Vertex *GetVertex(unsigned short x, unsigned short y) const;
 
-	void InvalidateJointVertexes();
+	void InvalidateJointVertexesAndIndexes();
 
 	void ConstructPolygones();
 	void ConstructCenterColumnPolygones();

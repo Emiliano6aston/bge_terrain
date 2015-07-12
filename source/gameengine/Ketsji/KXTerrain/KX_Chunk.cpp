@@ -81,6 +81,9 @@ struct KX_Chunk::Vertex
 	/// L'indice de creation du vertice, utilisé lors de la construction du mesh.
 	unsigned char origIndex; // 1
 
+	/// L'indice du vertex dans le mesh
+	short vertIndex; // 2
+
 	/** Le vertice peut être utilisé dans le mesh ?
 	 * Très utile pour les jointures, lorsque le vertice est
 	 * invalide on passe au suivant et ainsi créant la jointure.
@@ -89,7 +92,7 @@ struct KX_Chunk::Vertex
 
 	/// La normale du vertice.
 	float normal[3]; // 4 * 3 = 12
-	// 30 octets, on pourrais aligner sur 32 octets, a voir.
+	// 32 octets
 
 	Vertex(VertexZoneInfo *info,
 		   short relx, short rely,
@@ -97,6 +100,7 @@ struct KX_Chunk::Vertex
 		   unsigned int origindex)
 		:vertexInfo(info),
 		origIndex(origindex),
+		vertIndex(-1),
 		valid(true)
 	{
 		relativePos[0] = relx;
@@ -260,10 +264,11 @@ void KX_Chunk::ReconstructMesh()
 		m_hasVertexes = true;
 	}
 
-	/* On valide ou invalide les vertices externe pour pouvoir
-	 * après créer le jointures
+	/* On valide ou invalide les vertices externes pour pouvoir
+	 * après créer les jointures.
+	 * On remet aussi à default les indices des vertices.
 	 */
-	InvalidateJointVertexes();
+	InvalidateJointVertexesAndIndexes();
 	// Construction des polygones.
 	ConstructPolygones();
 
@@ -466,33 +471,31 @@ void KX_Chunk::AddMeshPolygonVertexes(Vertex *v1, Vertex *v2, Vertex *v3, bool r
 
 	const MT_Vector4 tangent(0.0f, 0.0f, 0.0f, 0.0f);
 
+	if (v1->vertIndex == -1) {
+		v1->vertIndex = m_meshObj->AddVertex(m_bucket, MT_Point3(v1->absolutePos[0], v1->absolutePos[1], v1->vertexInfo->height),
+				uvs_1, tangent, rgb_to_cpack(v1->vertexInfo->color[0], v1->vertexInfo->color[1], v1->vertexInfo->color[2]),
+				v1->normal, false, v1->origIndex, 3);
+	}
+	if (v2->vertIndex == -1) {
+		v2->vertIndex = m_meshObj->AddVertex(m_bucket, MT_Point3(v2->absolutePos[0], v2->absolutePos[1], v2->vertexInfo->height),
+				uvs_2, tangent, rgb_to_cpack(v2->vertexInfo->color[0], v2->vertexInfo->color[1], v2->vertexInfo->color[2]),
+				v2->normal, false, v2->origIndex, 3);
+	}
+	if (v3->vertIndex == -1) {
+		v3->vertIndex = m_meshObj->AddVertex(m_bucket, MT_Point3(v3->absolutePos[0], v3->absolutePos[1], v3->vertexInfo->height), 
+				uvs_3, tangent, rgb_to_cpack(v3->vertexInfo->color[0], v3->vertexInfo->color[1], v3->vertexInfo->color[2]),
+				v3->normal, false, v3->origIndex, 3);
+	}
+
 	if (reverse) {
-		m_meshObj->AddVertex(poly, 0, MT_Point3(v3->absolutePos[0], v3->absolutePos[1], v3->vertexInfo->height),
-							 uvs_3, tangent, 
-							 rgb_to_cpack(v3->vertexInfo->color[0], v3->vertexInfo->color[1], v3->vertexInfo->color[2]),
-							 v3->normal, false, v3->origIndex);
-		m_meshObj->AddVertex(poly, 1, MT_Point3(v2->absolutePos[0], v2->absolutePos[1], v2->vertexInfo->height),
-							 uvs_2, tangent, 
-							 rgb_to_cpack(v2->vertexInfo->color[0], v2->vertexInfo->color[1], v2->vertexInfo->color[2]),
-							 v2->normal, false, v2->origIndex);
-		m_meshObj->AddVertex(poly, 2, MT_Point3(v1->absolutePos[0], v1->absolutePos[1], v1->vertexInfo->height),
-							 uvs_1, tangent,
-							 rgb_to_cpack(v1->vertexInfo->color[0], v1->vertexInfo->color[1], v1->vertexInfo->color[2]),
-							 v1->normal, false, v1->origIndex);
+		m_meshObj->AddPolygonVertex(poly, 0, v3->vertIndex);
+		m_meshObj->AddPolygonVertex(poly, 1, v2->vertIndex);
+		m_meshObj->AddPolygonVertex(poly, 2, v1->vertIndex);
 	}
 	else {
-		m_meshObj->AddVertex(poly, 0, MT_Point3(v1->absolutePos[0], v1->absolutePos[1], v1->vertexInfo->height),
-							 uvs_1, tangent,
-							 rgb_to_cpack(v1->vertexInfo->color[0], v1->vertexInfo->color[1], v1->vertexInfo->color[2]),
-							 v1->normal, false, v1->origIndex);
-		m_meshObj->AddVertex(poly, 1, MT_Point3(v2->absolutePos[0], v2->absolutePos[1], v2->vertexInfo->height),
-							 uvs_2, tangent,
-							 rgb_to_cpack(v2->vertexInfo->color[0], v2->vertexInfo->color[1], v2->vertexInfo->color[2]),
-							 v2->normal, false, v2->origIndex);
-		m_meshObj->AddVertex(poly, 2, MT_Point3(v3->absolutePos[0], v3->absolutePos[1], v3->vertexInfo->height), 
-							 uvs_3, tangent,
-							 rgb_to_cpack(v3->vertexInfo->color[0], v3->vertexInfo->color[1], v3->vertexInfo->color[2]),
-							 v3->normal, false, v3->origIndex);
+		m_meshObj->AddPolygonVertex(poly, 0, v1->vertIndex);
+		m_meshObj->AddPolygonVertex(poly, 1, v2->vertIndex);
+		m_meshObj->AddPolygonVertex(poly, 2, v3->vertIndex);
 	}
 
 #ifdef STATS
@@ -628,7 +631,7 @@ void KX_Chunk::ConstructVertexes()
 #endif
 }
 
-void KX_Chunk::InvalidateJointVertexes()
+void KX_Chunk::InvalidateJointVertexesAndIndexes()
 {
 	for (unsigned short vertexIndex = 0; vertexIndex < VERTEX_COUNT; ++vertexIndex) {
 		for (unsigned short columnIndex = COLUMN_LEFT; columnIndex <= COLUMN_RIGHT; ++columnIndex) {
@@ -637,6 +640,7 @@ void KX_Chunk::InvalidateJointVertexes()
 				vertex->Invalidate();
 			else
 				vertex->Validate();
+			vertex->vertIndex = -1;
 		}
 	}
 
@@ -647,6 +651,14 @@ void KX_Chunk::InvalidateJointVertexes()
 				vertex->Invalidate();
 			else
 				vertex->Validate();
+			vertex->vertIndex = -1;
+		}
+	}
+
+	for(unsigned short columnIndex = 0; columnIndex < VERTEX_COUNT_INTERN; ++columnIndex) {
+		for(unsigned short vertexIndex = 0; vertexIndex < VERTEX_COUNT_INTERN; ++vertexIndex) {
+			Vertex *vertex = m_center[columnIndex][vertexIndex];
+			vertex->vertIndex = -1;
 		}
 	}
 }

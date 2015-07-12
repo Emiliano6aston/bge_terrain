@@ -118,6 +118,25 @@ public:
 							bool flat,
 							int origindex);
 
+	/* An other way to add polygons and vertexes, it assume that there is no equal vertex.
+	 * We get the vertex index by adding it via the function AddVertex and we set it index in
+	 * the poly via AddPolygonVertex.
+	 */
+
+	// Add vertex without polygone.
+	unsigned int AddVertex(RAS_MaterialBucket *bucket,
+						   const MT_Point3& xyz,
+						   const MT_Point2 uvs[RAS_TexVert::MAX_UNIT],
+						   const MT_Vector4& tangent,
+						   const unsigned int rgbacolor,
+						   const MT_Vector3& normal,
+						   bool flat,
+						   int origindex,
+						   int arraytype);
+
+	// Set the vertex index
+	void AddPolygonVertex(RAS_Polygon *poly, unsigned short polyvertind, unsigned int vertind);
+
 	void					SchedulePolygons(int drawingmode);
 
 	/* vertex and polygon acces */

@@ -362,6 +362,47 @@ void RAS_MeshObject::AddVertex(RAS_Polygon *poly, int i,
 	}
 }
 
+unsigned int RAS_MeshObject::AddVertex(RAS_MaterialBucket *bucket,
+									   const MT_Point3 &xyz,
+									   const MT_Point2 uvs[RAS_TexVert::MAX_UNIT],
+									   const MT_Vector4 &tangent,
+									   const unsigned int rgba,
+									   const MT_Vector3 &normal,
+									   bool flat,
+									   int origindex,
+									   int arraytype)
+{
+	RAS_TexVert texvert(xyz, uvs, tangent, rgba, normal, flat, origindex);
+
+	RAS_MeshMaterial *mmat = GetMeshMaterial(bucket->GetPolyMaterial());
+	RAS_MeshSlot *slot = mmat->m_baseslot;
+
+	// Set the proper vertex array type.
+	slot->SetDisplayArray(arraytype);
+	RAS_DisplayArray *darray = slot->CurrentDisplayArray();
+
+	int offset = slot->AddVertex(texvert);
+
+	{ /* Shared Vertex! */
+		SharedVertex shared;
+		shared.m_darray = darray;
+		shared.m_offset = offset;
+		m_sharedvertex_map[origindex].push_back(shared);
+	}
+
+	return offset;
+}
+
+void RAS_MeshObject::AddPolygonVertex(RAS_Polygon *poly, unsigned short polyvertind, unsigned int vertind)
+{
+	RAS_MeshMaterial *mmat = GetMeshMaterial(poly->GetMaterial()->GetPolyMaterial());
+	RAS_MeshSlot *slot = mmat->m_baseslot;
+
+	if (poly->IsVisible())
+		slot->AddPolygonVertex(vertind);
+	poly->SetVertexOffset(polyvertind, vertind);
+}
+
 int RAS_MeshObject::NumVertices(RAS_IPolyMaterial* mat)
 {
 	RAS_MeshMaterial *mmat;
