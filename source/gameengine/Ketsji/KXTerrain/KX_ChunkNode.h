@@ -61,7 +61,9 @@ private:
 	/// Le noeud parent
 	KX_ChunkNode *m_parentNode;
 
-	/// La position relative du noeud, à multiplier par la largeur d'un chunk pour retrouver la position réelle
+	/** La position relative du noeud, à multiplier par la largeur d'un 
+	 * chunk pour retrouver la position réelle
+	 */
 	const Point2D m_relativePos;
 	/// La taille relative du noeud la plus petite taille est 1
 	const unsigned short m_relativeSize;
@@ -70,18 +72,20 @@ private:
 	/// Plus ce nombre est grand plus ce noeud est loin dans le QuadTree
 	const unsigned short m_level;
 
-	/// Le rayon du noeud
+	/// Le rayon du noeud pour les cameras.
 	float m_radius2Camera;
+	/// Le rayon du noeud pour les objets.
 	float m_radius2Object;
+	/// Le rayon du noeud sans marge.
 	float m_radius2NoGap;
 
 	/// La boite englobant le noeud pour le frustum culling
 	MT_Point3 m_box[8];
-	/// 
+	/// Si vrai la boite de culling est modifiée.
 	bool m_boxModified;
-	/// la hauteur maximal de la boite
+	/// La hauteur maximal de la boite
 	float m_maxBoxHeight;
-	/// la hauteur minimal de la boite
+	/// La hauteur minimal de la boite
 	float m_minBoxHeight;
 
 	/// Le noeud est il visible ?
@@ -103,7 +107,7 @@ private:
 	void ConstructChunk();
 	void DisableChunkVisibility();
 
-	void MarkCulled(KX_Camera* culldecam);
+	void MarkCulled(KX_Camera *culldecam);
 
 public:
 	KX_ChunkNode(KX_ChunkNode *parentNode,
@@ -120,16 +124,18 @@ public:
 
 	/// On remet à 0 les variables m_maxBoxHeight et m_minBoxHeight
 	void ResetBoxHeight();
+
 	/* On verifie que les arguments max et min ne sont pas plus grand/petit 
 	 * que m_maxBoxHeight et m_minBoxHeight
 	 */
 	void CheckBoxHeight(float max, float min);
+
 	/// Reconstruction de la boite
 	void ReConstructBox();
 
-	KX_ChunkNode* GetNodeRelativePosition(const Point2D& pos);
+	KX_ChunkNode *GetNodeRelativePosition(const Point2D& pos);
 
-	inline KX_Terrain* GetTerrain() const
+	inline KX_Terrain *GetTerrain() const
 	{
 		return m_terrain;
 	}
@@ -137,15 +143,15 @@ public:
 	{
 		return m_relativeSize;
 	}
-	inline const MT_Point2& GetRealPos() const
+	inline const MT_Point2 &GetRealPos() const
 	{
 		return m_realPos;
 	}
-	inline const Point2D& GetRelativePos() const
+	inline const Point2D &GetRelativePos() const
 	{
 		return m_relativePos;
 	}
-	inline MT_Point3* GetBox()
+	inline MT_Point3 *GetBox()
 	{ 
 		return m_box;
 	}
@@ -155,7 +161,7 @@ public:
 	{
 		return m_culledState;
 	}
-	inline KX_Chunk* GetChunk() const
+	inline KX_Chunk *GetChunk() const
 	{
 		return m_chunk; 
 	}
