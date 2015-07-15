@@ -19,8 +19,6 @@
 
 #define DEBUG(msg) std::cout << "Debug (" << __func__ << ", " << this << ") : " << msg << std::endl;
 
-// #define STATS
-
 unsigned int KX_Chunk::m_chunkActive = 0;
 unsigned int KX_Chunk::meshRecreation = 0;
 double KX_Chunk::chunkCreationTime = 0.0;
@@ -48,12 +46,17 @@ void KX_Chunk::PrintTime()
 
 	std::cout << "Time Stats : " << std::endl
 		<< "\t Mesh Recreation Per Frame : \t" << meshRecreation << std::endl
-		<< "\t Chunk Creation Time : \t\t\t" << chunkCreationTime / totalTime * 100.0f << "%" << std::endl
-		<< "\t Normal Computing Time : \t\t" << normalComputingTime / totalTime * 100.0f << "%" << std::endl
-		<< "\t Vertex Adding Time : \t\t\t" << vertexAddingTime / totalTime * 100.0f << "%" << std::endl
-		<< "\t Vertex Creating Time : \t\t" << vertexCreatingTime / totalTime * 100.0f << "%" << std::endl
-		<< "\t Poly Adding Time : \t\t\t" << polyAddingTime / totalTime * 100.0f << "%" << std::endl
-		<< "\t Physics Creating Time : \t\t" << physicsCreatingTime / totalTime * 100.0f << "%" << std::endl
+		<< "\t Total Compute Time : \t\t" << totalTime << std::endl
+		<< "\t Chunk Creation Time : \t\t" << chunkCreationTime / totalTime * 100.0f << "%" << std::endl
+		<< "\t Normal Computing Time : \t" << normalComputingTime / totalTime * 100.0f << "%" << std::endl
+		<< "\t Vertex Adding Time : \t\t" << vertexAddingTime / totalTime * 100.0f << "%" << std::endl
+		<< "\t Vertex Creating Time : \t" << vertexCreatingTime / totalTime * 100.0f << "%" << std::endl
+		<< "\t Poly Adding Time : \t\t" << polyAddingTime / totalTime * 100.0f << "%" << std::endl
+		<< "\t Physics Creating Time : \t" << physicsCreatingTime / totalTime * 100.0f << "%" << std::endl
+		<< std::endl;
+	std::cout << "Memory Stats : " << std::endl
+		<< "\t Active Chunks Count : \t" << m_chunkActive << std::endl
+		<< "\t Active Nodes Count : \t" << KX_ChunkNode::m_activeNode << std::endl
 		<< std::endl;
 }
 
@@ -208,8 +211,8 @@ KX_Chunk::~KX_Chunk()
 	DestructMesh();
 
 	if (m_hasVertexes) {
-		for (unsigned short i = 0; i < (POLY_COUNT - 1); ++i) {
-			for (unsigned short j = 0; j < (POLY_COUNT - 1); ++j) {
+		for (unsigned short i = 0; i < VERTEX_COUNT_INTERN; ++i) {
+			for (unsigned short j = 0; j < VERTEX_COUNT_INTERN; ++j) {
 				delete m_center[i][j];
 			}
 		}

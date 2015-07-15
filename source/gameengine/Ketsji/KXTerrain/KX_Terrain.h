@@ -25,6 +25,7 @@
 #define __KX_TERRAIN_H__
 
 #include <map>
+#include <list>
 #include <vector>
 #include "MT_Transform.h"
 #include "KX_ChunkNode.h" // for Point2D
@@ -38,24 +39,64 @@ class KX_GameObject;
 class KX_Terrain
 {
 private:
+	/// Le materiaux utilisé pour tous les meshs de chunks.
 	RAS_MaterialBucket *m_bucket;
-	KX_GameObject	   *m_templateObject;
-	unsigned short		m_maxChunkLevel;
-	unsigned short		m_vertexSubdivision;
-	unsigned short		m_width;
-	float				m_maxDistance2;
-	float				m_physicsMaxDistance2;
-	float				m_chunkSize;
-	float				m_maxHeight;
-	float				m_minHeight;
 
-	bool					m_construct;
+	/** On utilise un objet comme refèrence pour pouvior le copier
+	 * pour créer de nouveaux chunks.
+	 */
+	KX_GameObject *m_templateObject;
+
+	/** Le nombre maximal de subdivision de noeud ou de niveaux dans 
+	 * le quad tree.
+	 */
+	unsigned short m_maxChunkLevel;
+
+	/** En theorie le nombre de vertices en largeur dans un chunk.
+	 * Non implementé.
+	 */
+	unsigned short m_vertexSubdivision;
+
+	/// Le nombre de chunks en largeur dans le terrain.
+	unsigned short m_width;
+
+	/** Tous les noeuds dans cette distance peuvent avoir un niveau
+	 * plus petit que 2 (soit le minimum).
+	 */
+	float m_maxDistance2;
+
+	/// La même chose que m_maxDistance2 mais pour les objets physique.
+	float m_physicsMaxDistance2;
+
+	/// La largeur du mesh d'un chunk.
+	float m_chunkSize;
+
+	/// La hauteur maximale theorique du mesh d'un chunk.
+	float m_maxHeight;
+
+	/// La hauteur minimal theorique du mesh d'un chunk.
+	float m_minHeight;
+
+	/// Si vrai le terrain et déjà construit et les noeud principaux aussi.
+	bool m_construct;
+
+	/** Un petit compteur de frame utilisé pour eviter d'afficher
+	 * le messages de debug a chaque frame.
+	 */
 	unsigned short m_frame;
-	KX_ChunkNode		  **m_nodeTree;
-	std::vector<KX_Chunk *>	m_chunkList;
-	std::vector<KX_Chunk *>	m_euthanasyChunkList;
 
-	std::vector<KX_TerrainZoneMesh *>	m_zoneMeshList;
+	/// Les 4 noeuds principaux du terrain.
+	KX_ChunkNode **m_nodeTree;
+
+	typedef std::list<KX_Chunk *> KX_ChunkList;
+
+	/// La liste de tous les chunks actifs.
+	KX_ChunkList m_chunkList;
+
+	/// La liste de tous les chunks à supprimer à la fin de la frame.
+	KX_ChunkList m_euthanasyChunkList;
+
+	std::vector<KX_TerrainZoneMesh *> m_zoneMeshList;
 
 public:
 	KX_Terrain(RAS_MaterialBucket *bucket,
@@ -116,7 +157,10 @@ public:
 		return m_minHeight;
 	}
 
-	// le nombre de subdivision par rapport à une distance
+	/** le nombre de subdivision par rapport à une distance
+	 * et en fonction du type de l'objet : camera ou objet utilisant
+	 * un controller physique actif.
+	 */
 	unsigned short GetSubdivision(float distance, bool iscamera) const;
 	KX_ChunkNode *GetNodeRelativePosition(const KX_ChunkNode::Point2D &pos);
 
