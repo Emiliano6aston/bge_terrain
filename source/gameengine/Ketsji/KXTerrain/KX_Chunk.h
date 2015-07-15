@@ -30,6 +30,8 @@
 #define POLY_COUNT (VERTEX_COUNT - 1)
 #define POLY_COUNT_INTERN (VERTEX_COUNT_INTERN - 1)
 
+#define STATS // Active les informations de debug de temps et de memoire.
+
 #include "KX_GameObject.h"
 #include <BLI_noise.h>
 

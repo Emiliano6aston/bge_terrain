@@ -65,15 +65,15 @@ KX_Terrain::KX_Terrain(RAS_MaterialBucket *bucket,
 	m_construct(false),
 	m_frame(0)
 {
-	unsigned int realmaxlevel = 1;
+	unsigned int realmaxlevel = 0;
 	for (unsigned int i = 1; i < m_width; i *= 2) {
 		++realmaxlevel;
 	}
-	--realmaxlevel;
-	std::cout << "max level : " << realmaxlevel << std::endl;
 
-	if (m_maxChunkLevel > realmaxlevel)
+	if (m_maxChunkLevel > realmaxlevel) {
+		std::cout << "Warning: wrong max chunk level, it should be : " << realmaxlevel << std::endl;
 		m_maxChunkLevel = realmaxlevel;
+	}
 }
 
 KX_Terrain::~KX_Terrain()
@@ -91,7 +91,6 @@ void KX_Terrain::Construct()
 
 	m_nodeTree = NewNodeList(NULL, 0, 0, 2);
 	m_construct = true;
-	std::cout << "max height : " << m_maxHeight << ", min height : " << m_minHeight << std::endl;
 }
 
 void KX_Terrain::Destruct()
@@ -126,12 +125,12 @@ void KX_Terrain::CalculateVisibleChunks(KX_Camera* culledcam)
 }
 void KX_Terrain::UpdateChunksMeshes()
 {
-	for (unsigned int i = 0; i < m_chunkList.size(); ++i) {
-		m_chunkList[i]->UpdateMesh();
+	for (KX_ChunkList::iterator it = m_chunkList.begin(); it != m_chunkList.end(); ++it) {
+		(*it)->UpdateMesh();
 	}
 
-	for (unsigned int i = 0; i < m_chunkList.size(); ++i) {
-		m_chunkList[i]->EndUpdateMesh();
+	for (KX_ChunkList::iterator it = m_chunkList.begin(); it != m_chunkList.end(); ++it) {
+		(*it)->EndUpdateMesh();
 	}
 
 #ifdef STATS
@@ -149,8 +148,8 @@ void KX_Terrain::RenderChunksMeshes(const MT_Transform& cameratrans, RAS_IRaster
 {
 	KX_Camera* cam = KX_GetActiveScene()->FindCamera(camname);
 	// rendu du mesh
-	for (unsigned int i = 0; i < m_chunkList.size(); ++i) {
-		KX_Chunk* chunk = m_chunkList[i];
+	for (KX_ChunkList::iterator it = m_chunkList.begin(); it != m_chunkList.end(); ++it) {
+		KX_Chunk* chunk = *it;
 		chunk->RenderMesh(rasty, cam);
 // 		chunk->SetCulled(false); // toujours faux
 		chunk->UpdateBuckets(false);
@@ -170,9 +169,8 @@ unsigned short KX_Terrain::GetSubdivision(float distance, bool iscamera) const
 {
 	unsigned int ret = 1;
 	// les objets non pas besoin d'une aussi grande subdivision que la camera
-	float maxdistance = iscamera ? m_maxDistance2 : m_physicsMaxDistance2;
-	for (float i = m_maxChunkLevel; i > 0.; --i)
-	{
+	const float maxdistance = iscamera ? m_maxDistance2 : m_physicsMaxDistance2;
+	for (float i = m_maxChunkLevel; i > 0.; --i) {
 		if (distance > (i / m_maxChunkLevel * maxdistance) || ret == m_maxChunkLevel)
 			break;
 		++ret;
@@ -205,9 +203,9 @@ KX_ChunkNode** KX_Terrain::NewNodeList(KX_ChunkNode *parentNode, int x, int y, u
 	KX_ChunkNode** nodeList = (KX_ChunkNode**)malloc(4 * sizeof(KX_ChunkNode*));
 
 	// la taille relative d'un chunk, = 2 si le noeud et final
-	unsigned short relativesize = m_width / pow(2, level);
+	const unsigned short relativesize = m_width / pow(2, level);
 	// la largeur du chunk 
-	unsigned short width = relativesize / 2;
+	const unsigned short width = relativesize / 2;
 
 	nodeList[0] = new KX_ChunkNode(parentNode, x - width, y - width, relativesize, level + 1, this);
 	nodeList[1] = new KX_ChunkNode(parentNode, x + width, y - width, relativesize, level + 1, this);
@@ -246,22 +244,19 @@ KX_Chunk* KX_Terrain::AddChunk(KX_ChunkNode* node)
 	rootnode->RemoveAllControllers();
 	SGControllerList::iterator cit;
 	
-	for (cit = scenegraphcontrollers.begin();!(cit==scenegraphcontrollers.end());++cit)
-	{
+	for (cit = scenegraphcontrollers.begin(); cit != scenegraphcontrollers.end(); ++cit) {
 		// controller replication is quite complicated
 		// only replicate ipo controller for now
 
 		SG_Controller* replicacontroller = (*cit)->GetReplica((SG_Node*)rootnode);
-		if (replicacontroller)
-		{
+		if (replicacontroller) {
 			replicacontroller->SetObject(rootnode);
 			rootnode->AddSGController(replicacontroller);
 		}
 	}
 
 	// replicate graphic controller
-	if (orgobj->GetGraphicController())
-	{
+	if (orgobj->GetGraphicController()) {
 		PHY_IMotionState* motionstate = new KX_MotionState(chunk->GetSGNode());
 		PHY_IGraphicController* newctrl = orgobj->GetGraphicController()->GetReplica(motionstate);
 		newctrl->SetNewClientInfo(chunk->getClientInfo());
@@ -269,8 +264,7 @@ KX_Chunk* KX_Terrain::AddChunk(KX_ChunkNode* node)
 	}
 
 	// replicate physics controller
-	if (orgobj->GetPhysicsController())
-	{
+	if (orgobj->GetPhysicsController()) {
 		PHY_IMotionState* motionstate = new KX_MotionState(chunk->GetSGNode());
 		PHY_IPhysicsController* newctrl = orgobj->GetPhysicsController()->GetReplica();
 
@@ -282,7 +276,7 @@ KX_Chunk* KX_Terrain::AddChunk(KX_ChunkNode* node)
 		newctrl->PostProcessReplica(motionstate, parentctrl);
 	}
 
-	Object* blenderobject = orgobj->GetBlenderObject();
+	Object *blenderobject = orgobj->GetBlenderObject();
 	chunk->SetUserCollisionGroup(blenderobject->col_group);
 	chunk->SetUserCollisionMask(blenderobject->col_mask);
 
@@ -319,23 +313,21 @@ KX_Chunk* KX_Terrain::AddChunk(KX_ChunkNode* node)
 	return chunk;
 }
 
+/** Supprime le chunk de la liste des chunks actifs et l'ajoute dans une 
+ * liste temporaire pour sa suppression.
+ */
 void KX_Terrain::RemoveChunk(KX_Chunk *chunk)
 {
-	for (unsigned int i = 0; i < m_chunkList.size(); ++i) {
-		if (m_chunkList[i] == chunk) {
-			m_chunkList.erase(m_chunkList.begin() + i);
-			chunk->Release();
-			break;
-		}
-	}
+	m_chunkList.remove(chunk);
+	chunk->Release();
 
 	m_euthanasyChunkList.push_back((KX_Chunk*)chunk->AddRef());
 }
 
 void KX_Terrain::ScheduleEuthanasyChunks()
 {
-	for (unsigned int i = 0; i < m_euthanasyChunkList.size(); ++i) {
-		KX_Chunk *chunk = m_euthanasyChunkList[i];
+	for (KX_ChunkList::iterator it = m_euthanasyChunkList.begin(); it != m_euthanasyChunkList.end(); ++it) {
+		KX_Chunk *chunk = *it;
 		chunk->Release();
 		if(KX_GetActiveScene()->GetRootParentList()->RemoveValue(chunk))
 			chunk->Release();
