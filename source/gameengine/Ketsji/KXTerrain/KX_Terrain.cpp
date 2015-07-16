@@ -40,8 +40,6 @@
 
 #define DEBUG(msg) // std::cout << "Debug (" << __func__ << ", " << this << ") : " << msg << std::endl;
 
-typedef std::map<KX_ChunkNode::Point2D, KX_Chunk*>::iterator chunkit;
-
 static STR_String camname = "Camera";
 
 KX_Terrain::KX_Terrain(RAS_MaterialBucket *bucket,
@@ -328,8 +326,15 @@ void KX_Terrain::ScheduleEuthanasyChunks()
 {
 	for (KX_ChunkList::iterator it = m_euthanasyChunkList.begin(); it != m_euthanasyChunkList.end(); ++it) {
 		KX_Chunk *chunk = *it;
+		KX_Scene *scene = KX_GetActiveScene();
+
 		chunk->Release();
-		if(KX_GetActiveScene()->GetRootParentList()->RemoveValue(chunk))
+
+		scene->RemoveObject(chunk);
+		scene->RemoveObjectDebugProperties(chunk);
+		chunk->InvalidateProxy();
+
+		if(scene->GetRootParentList()->RemoveValue(chunk))
 			chunk->Release();
 	}
 	m_euthanasyChunkList.clear();
