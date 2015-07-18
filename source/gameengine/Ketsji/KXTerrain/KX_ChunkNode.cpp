@@ -125,10 +125,9 @@ void KX_ChunkNode::ConstructChunk()
 {
 	if (!m_chunk) {
 		m_chunk = m_terrain->AddChunk(this);
-		m_chunk->AddRef();
 	}
 	else {
-		m_chunk->SetVisible(true, false);
+		m_chunk->SetVisible(true);
 	}
 }
 
@@ -136,7 +135,6 @@ void KX_ChunkNode::DestructChunk()
 {
 	if (m_chunk) {
 		m_terrain->RemoveChunk(m_chunk);
-		m_chunk->Release();
 		m_chunk = NULL;
 	}
 }
@@ -144,7 +142,7 @@ void KX_ChunkNode::DestructChunk()
 void KX_ChunkNode::DisableChunkVisibility()
 {
 	if (m_chunk) {
-		m_chunk->SetVisible(false, false);
+		m_chunk->SetVisible(false);
 	}
 }
 
