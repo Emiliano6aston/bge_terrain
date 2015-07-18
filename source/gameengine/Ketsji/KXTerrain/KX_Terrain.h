@@ -30,13 +30,13 @@
 #include "MT_Transform.h"
 #include "KX_ChunkNode.h" // for Point2D
 #include "KX_TerrainZone.h"
+#include "KX_GameObject.h"
 
 class RAS_IRasterizer;
 class RAS_MaterialBucket;
 class CListValue;
-class KX_GameObject;
 
-class KX_Terrain
+class KX_Terrain : public KX_GameObject
 {
 private:
 	/// Le materiaux utilisé pour tous les meshs de chunks.
@@ -99,7 +99,9 @@ private:
 	std::vector<KX_TerrainZoneMesh *> m_zoneMeshList;
 
 public:
-	KX_Terrain(RAS_MaterialBucket *bucket,
+	KX_Terrain(void *sgReplicationInfo,
+			   SG_Callbacks callbacks,
+			   RAS_MaterialBucket *bucket,
 			   KX_GameObject *templateObject,
 			   unsigned short maxLevel,
 			   unsigned short vertexSubdivision,

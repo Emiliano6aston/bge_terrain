@@ -32,15 +32,15 @@
 
 #define STATS // Active les informations de debug de temps et de memoire.
 
-#include "KX_GameObject.h"
 #include <BLI_noise.h>
 
 class KX_ChunkNode;
 class RAS_MeshObject;
 class RAS_MaterialBucket;
 class RAS_IRasterizer;
+class PHY_IPhysicsController;
 
-class KX_Chunk : public KX_GameObject
+class KX_Chunk
 {
 public:
 	/// Variables utilisées pour faire des statistiques.
@@ -59,6 +59,8 @@ public:
 	static double polyAddingTime;
 	/// Le temps dépensé pour créer le mesh physique.
 	static double physicsCreatingTime;
+	/// Le nombre de chunks actifs.
+	static unsigned int m_chunkActive;
 
 	static void ResetTime();
 	static void PrintTime();
@@ -75,12 +77,23 @@ public:
 	};
 
 private:
-	/// Le neoud parent.
+	/// Le noeud parent.
 	KX_ChunkNode *m_node;
 
 	/// Le materiaux utilisé par le mesh, on le passe a la construction du mesh.
 	RAS_MaterialBucket *m_bucket;
+	/// Le mesh de construction.
 	RAS_MeshObject *m_meshObj;
+	/// Le mesh slot
+	SG_QList m_meshSlots;
+	/// La matrice de transformation du mesh.
+	double m_meshMatrix[16];
+
+	/// Le controlleur physique.
+	PHY_IPhysicsController *m_physicsController;
+
+	/// Le chunk est visible ?
+	bool m_visible;
 
 	/// on stocke les colonnes pour un reconstruction plus rapide
 	JointColumn *m_columns[4];
@@ -98,7 +111,6 @@ private:
 	 */
 	unsigned int m_originVertexIndex;
 
-	/// construction du mesh
 	void ConstructMesh();
 	void DestructMesh();
 
@@ -116,7 +128,7 @@ private:
 	void SetNormal(Vertex *vertexCenter, bool intern) const;
 
 public:
-	KX_Chunk(void *sgReplicationInfo, SG_Callbacks callbacks, KX_ChunkNode *node, RAS_MaterialBucket *m_bucket);
+	KX_Chunk(KX_ChunkNode *node, RAS_MaterialBucket *m_bucket, PHY_IPhysicsController *phyCtrl);
 	virtual ~KX_Chunk();
 
 	/// creation du mesh avec joint des vertices du chunk avec ceux d'à cotés si neccesaire
@@ -130,7 +142,15 @@ public:
 		return m_node;
 	}
 
-	static unsigned int m_chunkActive;
+	inline bool GetVisible() const
+	{
+		return m_visible;
+	}
+
+	inline void SetVisible(bool visible)
+	{
+		m_visible = visible;
+	}
 };
 
 #endif // __KX_CHUNK_H__

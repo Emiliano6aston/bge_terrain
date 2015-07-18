@@ -1,0 +1,5 @@
+Ajouter les bloques de license. # fait
+Ajout de vertices optimisé. # fait
+Faire le smooth des joints. # ratée
+Corriger les fuites de memoires.
+Enlever la dépendance à un objet déjà existant.
