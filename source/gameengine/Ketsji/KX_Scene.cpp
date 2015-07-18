@@ -259,7 +259,7 @@ KX_Scene::~KX_Scene()
 	RemoveAllDebugProperties();
 
 	if (m_terrain)
-		delete m_terrain;
+		m_terrain->Release();
 
 	while (GetRootParentList()->GetCount() > 0) 
 	{
@@ -1850,7 +1850,7 @@ void KX_Scene::UpdateObjectActivity(void)
 
 void KX_Scene::SetTerrain(KX_Terrain *terrain)
 {
-	m_terrain = terrain;
+	m_terrain = (KX_Terrain *)terrain->AddRef();
 }
 
 KX_Terrain *KX_Scene::GetTerrain() const

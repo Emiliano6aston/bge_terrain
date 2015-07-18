@@ -23,6 +23,7 @@
  
 #include "KX_Terrain.h"
 #include "KX_Chunk.h"
+#include "KX_ChunkMotionState.h"
 
 #include "KX_Camera.h"
 #include "KX_PythonInit.h"
@@ -42,7 +43,9 @@
 
 static STR_String camname = "Camera";
 
-KX_Terrain::KX_Terrain(RAS_MaterialBucket *bucket,
+KX_Terrain::KX_Terrain(void *sgReplicationInfo,
+					   SG_Callbacks callbacks,
+					   RAS_MaterialBucket *bucket,
 					   KX_GameObject *templateObject,
 					   unsigned short maxLevel,
 					   unsigned short vertexSubdivision,
@@ -50,7 +53,8 @@ KX_Terrain::KX_Terrain(RAS_MaterialBucket *bucket,
 					   float maxDistance,
 					   float physicsMaxDistance,
 					   float chunkSize)
-	:m_bucket(bucket),
+	:KX_GameObject(sgReplicationInfo, callbacks),
+	m_bucket(bucket),
 	m_templateObject(templateObject),
 	m_maxChunkLevel(maxLevel),
 	m_vertexSubdivision(vertexSubdivision),
@@ -147,12 +151,11 @@ void KX_Terrain::RenderChunksMeshes(const MT_Transform& cameratrans, RAS_IRaster
 	KX_Camera* cam = KX_GetActiveScene()->FindCamera(camname);
 	// rendu du mesh
 	for (KX_ChunkList::iterator it = m_chunkList.begin(); it != m_chunkList.end(); ++it) {
-		KX_Chunk* chunk = *it;
+		KX_Chunk *chunk = *it;
 		chunk->RenderMesh(rasty, cam);
 // 		chunk->SetCulled(false); // toujours faux
-		chunk->UpdateBuckets(false);
+// 		chunk->UpdateBuckets(false);
 	}
-
 }
 
 void KX_Terrain::DrawDebugNode()
@@ -225,83 +228,23 @@ KX_Chunk* KX_Terrain::AddChunk(KX_ChunkNode* node)
 #endif
 
 	KX_Scene* scene = KX_GetActiveScene();
-	KX_GameObject* orgobj = (KX_GameObject*)KX_GetActiveScene()->GetInactiveList()->FindValue("Cube");
-	SG_Node* orgnode = orgobj->GetSGNode();
-	KX_Chunk* chunk = new KX_Chunk(scene, KX_Scene::m_callbacks, node, m_bucket);
-	SG_Node* rootnode = new SG_Node(chunk, scene, KX_Scene::m_callbacks);
+	KX_GameObject* orgobj = (KX_GameObject*)scene->GetInactiveList()->FindValue("Cube");
 
-	// define the relationship between this node and it's parent.
-	KX_NormalParentRelation * parent_relation = 
-		KX_NormalParentRelation::New();
-	rootnode->SetParentRelation(parent_relation);
-
-	// set node
-	chunk->SetSGNode(rootnode);
-
-	SGControllerList scenegraphcontrollers = orgnode->GetSGControllerList();
-	rootnode->RemoveAllControllers();
-	SGControllerList::iterator cit;
-	
-	for (cit = scenegraphcontrollers.begin(); cit != scenegraphcontrollers.end(); ++cit) {
-		// controller replication is quite complicated
-		// only replicate ipo controller for now
-
-		SG_Controller* replicacontroller = (*cit)->GetReplica((SG_Node*)rootnode);
-		if (replicacontroller) {
-			replicacontroller->SetObject(rootnode);
-			rootnode->AddSGController(replicacontroller);
-		}
-	}
-
-	// replicate graphic controller
-	if (orgobj->GetGraphicController()) {
-		PHY_IMotionState* motionstate = new KX_MotionState(chunk->GetSGNode());
-		PHY_IGraphicController* newctrl = orgobj->GetGraphicController()->GetReplica(motionstate);
-		newctrl->SetNewClientInfo(chunk->getClientInfo());
-		chunk->SetGraphicController(newctrl);
-	}
+	PHY_IPhysicsController *phyCtrl = NULL;
 
 	// replicate physics controller
 	if (orgobj->GetPhysicsController()) {
-		PHY_IMotionState* motionstate = new KX_MotionState(chunk->GetSGNode());
-		PHY_IPhysicsController* newctrl = orgobj->GetPhysicsController()->GetReplica();
+		PHY_IMotionState *motionstate = new KX_ChunkMotionState(node);
+		phyCtrl = orgobj->GetPhysicsController()->GetReplica();
 
-		KX_GameObject *parent = chunk->GetParent();
-		PHY_IPhysicsController* parentctrl = (parent) ? parent->GetPhysicsController() : NULL;
-
-		newctrl->SetNewClientInfo(chunk->getClientInfo());
-		chunk->SetPhysicsController(newctrl, chunk->IsDynamic());
-		newctrl->PostProcessReplica(motionstate, parentctrl);
+		phyCtrl->SetNewClientInfo(m_pClient_info);
+		phyCtrl->PostProcessReplica(motionstate, NULL);
 	}
 
-	Object *blenderobject = orgobj->GetBlenderObject();
-	chunk->SetUserCollisionGroup(blenderobject->col_group);
-	chunk->SetUserCollisionMask(blenderobject->col_mask);
+	KX_Chunk *chunk = new KX_Chunk(node, m_bucket, phyCtrl);
 
-	rootnode->SetLocalScale(MT_Vector3(1., 1., 1.));
-	MT_Point2 pos2d = node->GetRealPos();
-
-	rootnode->SetLocalPosition(MT_Point3(pos2d.x(), pos2d.y(), 0.));
-	rootnode->SetLocalOrientation(MT_Matrix3x3(1., 0., 0.,
-											   0., 1., 0.,
-											   0., 0., 1.));
-
-	rootnode->UpdateWorldData(0);
-	rootnode->SetBBox(orgnode->BBox());
-	rootnode->SetRadius(orgnode->Radius());
-	chunk->NodeUpdateGS(0.0);
-
-	chunk->ActivateGraphicController(true);
 	////////////////////////// AJOUT DANS LA LISTE ///////////////////////////
-	m_chunkList.push_back((KX_Chunk *)chunk->AddRef());
-
-	scene->GetRootParentList()->Add(chunk->AddRef());
-	chunk->Release();
-
-	chunk->RemoveMeshes();
-
-	chunk->SetCulled(false);
-	chunk->UpdateBuckets(false);
+	m_chunkList.push_back(chunk);
 
 #ifdef STATS
 	endtime = KX_GetActiveEngine()->GetRealTime();
@@ -317,25 +260,15 @@ KX_Chunk* KX_Terrain::AddChunk(KX_ChunkNode* node)
 void KX_Terrain::RemoveChunk(KX_Chunk *chunk)
 {
 	m_chunkList.remove(chunk);
-	chunk->Release();
-
-	m_euthanasyChunkList.push_back((KX_Chunk*)chunk->AddRef());
+	m_euthanasyChunkList.push_back(chunk);
 }
 
 void KX_Terrain::ScheduleEuthanasyChunks()
 {
 	for (KX_ChunkList::iterator it = m_euthanasyChunkList.begin(); it != m_euthanasyChunkList.end(); ++it) {
 		KX_Chunk *chunk = *it;
-		KX_Scene *scene = KX_GetActiveScene();
 
-		chunk->Release();
-
-		scene->RemoveObject(chunk);
-		scene->RemoveObjectDebugProperties(chunk);
-		chunk->InvalidateProxy();
-
-		if(scene->GetRootParentList()->RemoveValue(chunk))
-			chunk->Release();
+		delete chunk;
 	}
 	m_euthanasyChunkList.clear();
 }

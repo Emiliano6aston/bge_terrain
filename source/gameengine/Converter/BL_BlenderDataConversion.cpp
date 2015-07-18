@@ -1778,7 +1778,10 @@ static KX_Terrain *convert_terrain(Terrain *terrain, KX_Scene* scene, KX_Blender
 
 	RAS_MaterialBucket *bucket = material_from_mesh(terrain->material, NULL, NULL, NULL, NULL, 0, rgb, uvs, NULL, scene, converter, true);
 
-	KX_Terrain *kxterrain = new KX_Terrain(bucket,
+	// Creation du terrain.
+	KX_Terrain *kxterrain = new KX_Terrain(scene,
+										   KX_Scene::m_callbacks,
+										   bucket,
 										   NULL,
 										   terrain->maxlevel,
 										   terrain->vertexsubdivision,
@@ -1787,6 +1790,10 @@ static KX_Terrain *convert_terrain(Terrain *terrain, KX_Scene* scene, KX_Blender
 										   terrain->physicsdistance,
 										   terrain->chunksize);
 
+	kxterrain->SetUserCollisionMask(0xffff);
+	kxterrain->SetUserCollisionGroup(0xffff);
+
+	// Conversion de toutes les zones et ajout des zones dans le terrain.
 	for (TerrainZone *zone = (TerrainZone *)terrain->zones.first; zone; zone = (TerrainZone *)zone->next) {
 		KX_TerrainZoneMesh *zoneMesh = new KX_TerrainZoneMesh(kxterrain, zone, zone->mesh);
 		kxterrain->AddTerrainZoneMesh(zoneMesh);
@@ -2396,6 +2403,7 @@ void BL_ConvertBlenderObjects(struct Main* maggie,
 	if (blenderscene->terrain) {
 		KX_Terrain *terrain = convert_terrain(blenderscene->terrain, kxscene, converter);
 		kxscene->SetTerrain(terrain);
+		terrain->Release();
 	}
 
 	//create object representations for obstacle simulation
