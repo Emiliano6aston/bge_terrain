@@ -10,6 +10,8 @@
 #include "RAS_Polygon.h"
 #include "RAS_IPolygonMaterial.h"
 
+#include "PHY_IPhysicsController.h"
+
 #include "BLI_math.h"
 #include "MT_assert.h"
 
@@ -185,11 +187,12 @@ struct KX_Chunk::JointColumn
 	}
 };
 
-KX_Chunk::KX_Chunk(void *sgReplicationInfo, SG_Callbacks callbacks, KX_ChunkNode *node, RAS_MaterialBucket *bucket)
-	:KX_GameObject(sgReplicationInfo, callbacks),
-	m_node(node),
+KX_Chunk::KX_Chunk(KX_ChunkNode *node, RAS_MaterialBucket *bucket, PHY_IPhysicsController *phyCtrl)
+	:m_node(node),
 	m_bucket(bucket),
 	m_meshObj(NULL),
+	m_physicsController(phyCtrl),
+	m_visible(true),
 	m_hasVertexes(false)
 {
 	m_lastHasJoint[COLUMN_LEFT] = false;
@@ -204,6 +207,13 @@ KX_Chunk::KX_Chunk(void *sgReplicationInfo, SG_Callbacks callbacks, KX_ChunkNode
 #endif
 
 	m_chunkActive++;
+
+	const MT_Point2 &nodepos = m_node->GetRealPos();
+
+	m_meshMatrix[0] = 1.0f; m_meshMatrix[4] = 0.0f; m_meshMatrix[8] = 0.0f; m_meshMatrix[12] = nodepos.x();
+	m_meshMatrix[1] = 0.0f; m_meshMatrix[5] = 1.0f; m_meshMatrix[9] = 0.0f; m_meshMatrix[13] = nodepos.y();
+	m_meshMatrix[2] = 0.0f; m_meshMatrix[6] = 0.0f; m_meshMatrix[10] = 1.0f; m_meshMatrix[14] = 0.0f;
+	m_meshMatrix[3] = 0.0f; m_meshMatrix[7] = 0.0f; m_meshMatrix[11] = 0.0f; m_meshMatrix[15] = 1.0f;
 }
 
 KX_Chunk::~KX_Chunk()
@@ -222,6 +232,10 @@ KX_Chunk::~KX_Chunk()
 		delete m_columns[2];
 		delete m_columns[3];
 	}
+
+	if (m_physicsController)
+		delete m_physicsController;
+
 	m_chunkActive--;
 }
 
@@ -229,15 +243,13 @@ KX_Chunk::~KX_Chunk()
 void KX_Chunk::ConstructMesh()
 {
 	m_meshObj = new RAS_MeshObject(NULL);
-	m_meshes.push_back(m_meshObj);
 }
 
 // Destruction du mesh.
 void KX_Chunk::DestructMesh()
 {
-	RemoveMeshes();
-
 	if (m_meshObj) {
+		m_meshObj->RemoveFromBuckets(this);
 		/* Chaque mesh est unique or le BGE garde une copie pour pouvoir le
 		 * dupliquer plus tard, cette copie ce trouve dans meshmat->m_baseslot.
 		 * Donc on la supprime.
@@ -276,15 +288,27 @@ void KX_Chunk::ReconstructMesh()
 	ConstructPolygones();
 
 	// Et enfin on créer un mesh de rendu pour cet objet.
-	AddMeshUser();
+	m_meshObj->AddMeshUser(this, &m_meshSlots, NULL);
+	m_meshObj->SchedulePolygons(0);
+
+	SG_QList::iterator<RAS_MeshSlot> mit(m_meshSlots);
+	for (mit.begin(); !mit.end(); ++mit) {
+		RAS_MeshSlot *ms = *mit;
+		ms->m_bObjectColor = false;
+		ms->m_RGBAcolor = MT_Vector4(1.0f, 1.0f, 1.0f, 1.0f);
+		ms->m_bVisible = true;
+		ms->m_bCulled = false;
+		ms->m_OpenGLMatrix = m_meshMatrix;
+		ms->m_bucket->ActivateMesh(ms);
+	}
 
 #ifdef STATS
 	starttime = KX_GetActiveEngine()->GetRealTime();
 #endif
 
 	// Si l'objet utilise une forme physique on essai de la recréer.
-	if (m_pPhysicsController)
-		m_pPhysicsController->ReinstancePhysicsShape(NULL, m_meshObj, false);
+	if (m_physicsController)
+		m_physicsController->ReinstancePhysicsShape(NULL, m_meshObj, false);
 
 #ifdef STATS
 	endtime = KX_GetActiveEngine()->GetRealTime();
@@ -451,7 +475,7 @@ void KX_Chunk::AddMeshPolygonVertexes(Vertex *v1, Vertex *v2, Vertex *v3, bool r
 #endif
 
 	RAS_Polygon* poly = m_meshObj->AddPolygon(m_bucket, 3);
-	const MT_Point2& realPos = m_node->GetRealPos();
+	const MT_Point2& nodepos = m_node->GetRealPos();
 
 	poly->SetVisible(true);
 	poly->SetCollider(true);
@@ -468,9 +492,9 @@ void KX_Chunk::AddMeshPolygonVertexes(Vertex *v1, Vertex *v2, Vertex *v3, bool r
 	MT_Point2 uvs_3[8];
 
 	for (unsigned short i = 0; i < 8; ++i) {
-		uvs_1[i] = MT_Point2(v1->absolutePos) + realPos;
-		uvs_2[i] = MT_Point2(v2->absolutePos) + realPos;
-		uvs_3[i] = MT_Point2(v3->absolutePos) + realPos;
+		uvs_1[i] = MT_Point2(v1->absolutePos) + nodepos;
+		uvs_2[i] = MT_Point2(v2->absolutePos) + nodepos;
+		uvs_3[i] = MT_Point2(v3->absolutePos) + nodepos;
 	}
 
 	const MT_Vector4 tangent(0.0f, 0.0f, 0.0f, 0.0f);
@@ -819,4 +843,15 @@ void KX_Chunk::RenderMesh(RAS_IRasterizer *rasty, KX_Camera *cam)
 
 	/*KX_RasterizerDrawDebugLine(realPos + MT_Point3(0.0, 0.0, m_minVertexHeight + 1.0),
 							   realPos + MT_Point3(0.0, 0.0, m_maxVertexHeight - 1.0), MT_Vector3(1., 0., 0.));*/
+
+	if (!m_visible)
+		return;
+
+	SG_QList::iterator<RAS_MeshSlot> mit(m_meshSlots);
+	for (mit.begin(); !mit.end(); ++mit) {
+		RAS_MeshSlot *ms = *mit;
+		ms->m_bVisible = true;
+		ms->m_bCulled = false;
+		ms->m_bucket->ActivateMesh(ms);
+	}
 }
