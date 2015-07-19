@@ -1,5 +1,6 @@
 #include "KX_Terrain.h"
 #include "KX_Chunk.h"
+#include "KX_ChunkMotionState.h"
 
 #include "KX_Camera.h"
 #include "KX_PythonInit.h"
@@ -11,11 +12,17 @@
 #include "RAS_IPolygonMaterial.h"
 
 #include "PHY_IPhysicsController.h"
+#ifdef WITH_BULLET
+#include "CcdPhysicsEnvironment.h"
+#include "CcdPhysicsController.h"
+#include "CcdGraphicController.h"
+// #include "BulletCollision/CollisionShapes/btScaledBvhTriangleMeshShape.h"
+#endif
 
 #include "BLI_math.h"
 #include "MT_assert.h"
 
-#include "PHY_IPhysicsController.h"
+#include "DNA_material_types.h"
 
 #include <stdio.h>
 
@@ -187,11 +194,11 @@ struct KX_Chunk::JointColumn
 	}
 };
 
-KX_Chunk::KX_Chunk(KX_ChunkNode *node, RAS_MaterialBucket *bucket, PHY_IPhysicsController *phyCtrl)
+KX_Chunk::KX_Chunk(KX_ChunkNode *node, RAS_MaterialBucket *bucket)
 	:m_node(node),
 	m_bucket(bucket),
 	m_meshObj(NULL),
-	m_physicsController(phyCtrl),
+	m_physicsController(NULL),
 	m_visible(true),
 	m_hasVertexes(false)
 {
@@ -306,13 +313,64 @@ void KX_Chunk::ReconstructMesh()
 	starttime = KX_GetActiveEngine()->GetRealTime();
 #endif
 
-	// Si l'objet utilise une forme physique on essai de la recréer.
-	if (m_physicsController)
-		m_physicsController->ReinstancePhysicsShape(NULL, m_meshObj, false);
+	// On créer la forme physique du chunk.
+	ConstructPhysicsController();
 
 #ifdef STATS
 	endtime = KX_GetActiveEngine()->GetRealTime();
 	physicsCreatingTime += endtime - starttime;
+#endif
+}
+
+void KX_Chunk::ConstructPhysicsController()
+{
+#ifdef WITH_BULLET
+	KX_Terrain *terrain = m_node->GetTerrain();
+	Material *material = terrain->GetBlenderMaterial();
+
+	CcdPhysicsController *phyCtrl = (CcdPhysicsController *)m_physicsController;
+	CcdPhysicsEnvironment *phyEnv = (CcdPhysicsEnvironment *)terrain->GetScene()->GetPhysicsEnvironment();
+
+	CcdShapeConstructionInfo *shapeInfo = phyCtrl ? 
+				phyCtrl->GetShapeInfo() : new CcdShapeConstructionInfo();
+
+	shapeInfo->m_shapeType = PHY_SHAPE_MESH;
+	// On met a jour le mesh de la forme physique.
+	shapeInfo->UpdateMesh(NULL, m_meshObj);
+
+	// Puis on créer la forme physique.
+	btCollisionShape *shape = shapeInfo->CreateBulletShape(0.0f);
+
+	// Si le controlleur physique n'existe pas alors on le créer.
+	if (!phyCtrl) {
+		CcdConstructionInfo ci;
+
+		ci.m_collisionShape = shape;
+		ci.m_shapeInfo = shapeInfo;
+		ci.m_MotionState = new KX_ChunkMotionState(m_node);
+		ci.m_physicsEnv = phyEnv;
+		ci.m_fh_damping = material->xyfrict;
+		ci.m_fh_distance = material->fhdist;
+		ci.m_fh_spring = material->fh;
+		ci.m_friction = material->friction;
+		ci.m_restitution = material->reflect;
+		ci.m_collisionFilterMask = CcdConstructionInfo::AllFilter ^ CcdConstructionInfo::StaticFilter;
+		ci.m_collisionFilterGroup = CcdConstructionInfo::StaticFilter;
+
+		phyCtrl = new CcdPhysicsController(ci);
+		phyCtrl->SetNewClientInfo(terrain->getClientInfo());
+
+		// Puis on l'ajoute dans l'environnement physique.
+		phyEnv->AddCcdPhysicsController(phyCtrl);
+	}
+	else {
+		/* Sinon si le controlleur physique existe déjà on remplace juste
+		 * la forme physique.
+		 */
+		phyCtrl->ReplaceControllerShape(shape);
+	}
+
+	m_physicsController = phyCtrl;
 #endif
 }
 

@@ -58,4 +58,14 @@ set(SRC
 	KX_ChunkMotionState.h
 )
 
+if(WITH_BULLET)
+	list(APPEND INC
+		../../Physics/Bullet
+	)
+	list(APPEND INC_SYS
+		${BULLET_INCLUDE_DIRS}
+	)
+	add_definitions(-DWITH_BULLET)
+endif()
+
 blender_add_lib(ge_logic_terrain "${SRC}" "${INC}" "${INC_SYS}")
