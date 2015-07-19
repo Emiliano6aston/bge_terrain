@@ -114,6 +114,8 @@ private:
 	void ConstructMesh();
 	void DestructMesh();
 
+	void ConstructPhysicsController();
+
 	void ConstructVertexes();
 	Vertex *NewVertex(unsigned short relx, unsigned short rely);
 	Vertex *GetVertex(unsigned short x, unsigned short y) const;
@@ -128,7 +130,7 @@ private:
 	void SetNormal(Vertex *vertexCenter, bool intern) const;
 
 public:
-	KX_Chunk(KX_ChunkNode *node, RAS_MaterialBucket *m_bucket, PHY_IPhysicsController *phyCtrl);
+	KX_Chunk(KX_ChunkNode *node, RAS_MaterialBucket *m_bucket);
 	virtual ~KX_Chunk();
 
 	/// creation du mesh avec joint des vertices du chunk avec ceux d'à cotés si neccesaire
