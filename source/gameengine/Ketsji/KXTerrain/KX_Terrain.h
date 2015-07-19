@@ -35,6 +35,7 @@
 class RAS_IRasterizer;
 class RAS_MaterialBucket;
 class CListValue;
+class Material;
 
 class KX_Terrain : public KX_GameObject
 {
@@ -42,10 +43,10 @@ private:
 	/// Le materiaux utilisé pour tous les meshs de chunks.
 	RAS_MaterialBucket *m_bucket;
 
-	/** On utilise un objet comme refèrence pour pouvior le copier
-	 * pour créer de nouveaux chunks.
+	/** Le materiaux blender utilisé pour la costruction des 
+	 * controlleurs physiques.
 	 */
-	KX_GameObject *m_templateObject;
+	Material *m_material;
 
 	/** Le nombre maximal de subdivision de noeud ou de niveaux dans 
 	 * le quad tree.
@@ -102,7 +103,7 @@ public:
 	KX_Terrain(void *sgReplicationInfo,
 			   SG_Callbacks callbacks,
 			   RAS_MaterialBucket *bucket,
-			   KX_GameObject *templateObject,
+			   Material *material,
 			   unsigned short maxLevel,
 			   unsigned short vertexSubdivision,
 			   unsigned short width,
@@ -157,6 +158,11 @@ public:
 	inline float GetMinHeight() const
 	{
 		return m_minHeight;
+	}
+	/// Le materiaux blender.
+	inline Material *GetBlenderMaterial() const
+	{
+		return m_material;
 	}
 
 	/** le nombre de subdivision par rapport à une distance

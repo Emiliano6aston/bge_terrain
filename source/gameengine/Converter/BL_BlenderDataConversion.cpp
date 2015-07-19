@@ -169,6 +169,7 @@ extern Material defmaterial;	/* material.c */
 
 #ifdef WITH_BULLET
 #include "CcdPhysicsEnvironment.h"
+#include "CcdPhysicsController.h"
 #include "CcdGraphicController.h"
 #endif
 
@@ -1766,14 +1767,15 @@ static KX_Terrain *convert_terrain(Terrain *terrain, KX_Scene* scene, KX_Blender
 {
 	unsigned int rgb[3] = {0, 0, 0};
 	MT_Point2 uvs[4][RAS_TexVert::MAX_UNIT];
-
-	RAS_MaterialBucket *bucket = material_from_mesh(terrain->material, NULL, NULL, NULL, NULL, 0, rgb, uvs, NULL, scene, converter, true);
+	// On recupère le materiau.
+	RAS_MaterialBucket *bucket = material_from_mesh(terrain->material, NULL, NULL, NULL, NULL, 
+													0, rgb, uvs, NULL, scene, converter, true);
 
 	// Creation du terrain.
 	KX_Terrain *kxterrain = new KX_Terrain(scene,
 										   KX_Scene::m_callbacks,
 										   bucket,
-										   NULL,
+										   terrain->material,
 										   terrain->maxlevel,
 										   terrain->vertexsubdivision,
 										   terrain->width, 
@@ -1781,10 +1783,11 @@ static KX_Terrain *convert_terrain(Terrain *terrain, KX_Scene* scene, KX_Blender
 										   terrain->physicsdistance,
 										   terrain->chunksize);
 
+	// Si on n'initialise pas les masques et groupes de collisions, les collisions peuvent être aléatoire.
 	kxterrain->SetUserCollisionMask(0xffff);
 	kxterrain->SetUserCollisionGroup(0xffff);
 
-	// Conversion de toutes les zones et ajout des zones dans le terrain.
+	// Conversion de toutes les zones et ajout des ces zones dans le terrain.
 	for (TerrainZone *zone = (TerrainZone *)terrain->zones.first; zone; zone = (TerrainZone *)zone->next) {
 		KX_TerrainZoneMesh *zoneMesh = new KX_TerrainZoneMesh(kxterrain, zone, zone->mesh);
 		kxterrain->AddTerrainZoneMesh(zoneMesh);
