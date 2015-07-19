@@ -23,21 +23,12 @@
  
 #include "KX_Terrain.h"
 #include "KX_Chunk.h"
-#include "KX_ChunkMotionState.h"
 
 #include "KX_Camera.h"
 #include "KX_PythonInit.h"
 #include "KX_Scene.h"
-#include "KX_SG_NodeRelationships.h"
-#include "SG_Controller.h"
-#include "RAS_MeshObject.h"
-#include "RAS_MaterialBucket.h"
-#include "PHY_IPhysicsEnvironment.h"
-#include "PHY_IGraphicController.h"
-#include "PHY_IPhysicsController.h"
-#include "KX_MotionState.h"
-#include "ListValue.h"
 #include "DNA_terrain_types.h"
+#include "DNA_material_types.h"
 
 #define DEBUG(msg) // std::cout << "Debug (" << __func__ << ", " << this << ") : " << msg << std::endl;
 
@@ -46,7 +37,7 @@ static STR_String camname = "Camera";
 KX_Terrain::KX_Terrain(void *sgReplicationInfo,
 					   SG_Callbacks callbacks,
 					   RAS_MaterialBucket *bucket,
-					   KX_GameObject *templateObject,
+					   Material *material,
 					   unsigned short maxLevel,
 					   unsigned short vertexSubdivision,
 					   unsigned short width,
@@ -55,7 +46,7 @@ KX_Terrain::KX_Terrain(void *sgReplicationInfo,
 					   float chunkSize)
 	:KX_GameObject(sgReplicationInfo, callbacks),
 	m_bucket(bucket),
-	m_templateObject(templateObject),
+	m_material(material),
 	m_maxChunkLevel(maxLevel),
 	m_vertexSubdivision(vertexSubdivision),
 	m_width(width),
@@ -82,9 +73,8 @@ KX_Terrain::~KX_Terrain()
 {
 	Destruct();
 
-	for (unsigned short i = 0; i < m_zoneMeshList.size(); ++i) {
+	for (unsigned short i = 0; i < m_zoneMeshList.size(); ++i)
 		delete m_zoneMeshList[i];
-	}
 }
 
 void KX_Terrain::Construct()
@@ -121,10 +111,8 @@ void KX_Terrain::CalculateVisibleChunks(KX_Camera* culledcam)
 	m_nodeTree[3]->CalculateVisible(culledcam, objects);
 
 	ScheduleEuthanasyChunks();
-
-// 	std::cout << KX_ChunkNode::m_activeNode << " nodes" << std::endl;
-// 	std::cout << m_chunkList.size() << " chunk" << std::endl;
 }
+
 void KX_Terrain::UpdateChunksMeshes()
 {
 	for (KX_ChunkList::iterator it = m_chunkList.begin(); it != m_chunkList.end(); ++it) {
@@ -153,8 +141,6 @@ void KX_Terrain::RenderChunksMeshes(const MT_Transform& cameratrans, RAS_IRaster
 	for (KX_ChunkList::iterator it = m_chunkList.begin(); it != m_chunkList.end(); ++it) {
 		KX_Chunk *chunk = *it;
 		chunk->RenderMesh(rasty, cam);
-// 		chunk->SetCulled(false); // toujours faux
-// 		chunk->UpdateBuckets(false);
 	}
 }
 
@@ -199,9 +185,9 @@ VertexZoneInfo *KX_Terrain::GetVertexInfo(float x, float y) const
 	return info;
 }
 
-KX_ChunkNode** KX_Terrain::NewNodeList(KX_ChunkNode *parentNode, int x, int y, unsigned short level)
+KX_ChunkNode **KX_Terrain::NewNodeList(KX_ChunkNode *parentNode, int x, int y, unsigned short level)
 {
-	KX_ChunkNode** nodeList = (KX_ChunkNode**)malloc(4 * sizeof(KX_ChunkNode*));
+	KX_ChunkNode **nodeList = (KX_ChunkNode **)malloc(4 * sizeof(KX_ChunkNode *));
 
 	// la taille relative d'un chunk, = 2 si le noeud et final
 	const unsigned short relativesize = m_width / pow(2, level);
@@ -227,21 +213,7 @@ KX_Chunk* KX_Terrain::AddChunk(KX_ChunkNode* node)
 	starttime = KX_GetActiveEngine()->GetRealTime();
 #endif
 
-	KX_Scene* scene = KX_GetActiveScene();
-	KX_GameObject* orgobj = (KX_GameObject*)scene->GetInactiveList()->FindValue("Cube");
-
-	PHY_IPhysicsController *phyCtrl = NULL;
-
-	// replicate physics controller
-	if (orgobj->GetPhysicsController()) {
-		PHY_IMotionState *motionstate = new KX_ChunkMotionState(node);
-		phyCtrl = orgobj->GetPhysicsController()->GetReplica();
-
-		phyCtrl->SetNewClientInfo(m_pClient_info);
-		phyCtrl->PostProcessReplica(motionstate, NULL);
-	}
-
-	KX_Chunk *chunk = new KX_Chunk(node, m_bucket, phyCtrl);
+	KX_Chunk *chunk = new KX_Chunk(node, m_bucket);
 
 	////////////////////////// AJOUT DANS LA LISTE ///////////////////////////
 	m_chunkList.push_back(chunk);
