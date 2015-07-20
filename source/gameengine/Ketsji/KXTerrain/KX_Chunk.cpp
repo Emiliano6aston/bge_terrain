@@ -306,7 +306,12 @@ void KX_Chunk::ReconstructMesh()
 		ms->m_bVisible = true;
 		ms->m_bCulled = false;
 		ms->m_OpenGLMatrix = m_meshMatrix;
-		ms->m_bucket->ActivateMesh(ms);
+		/* Vraiment provisoire, si le client et a NULL alors
+		 * on ne fait pas de cast vers un KX_Gameobject et
+		 * ainsi on bloque certaine fonctionalités comme les
+		 * billboards, la taille négative...
+		 */
+		ms->m_clientObj = NULL;
 	}
 
 #ifdef STATS
@@ -908,8 +913,6 @@ void KX_Chunk::RenderMesh(RAS_IRasterizer *rasty, KX_Camera *cam)
 	SG_QList::iterator<RAS_MeshSlot> mit(m_meshSlots);
 	for (mit.begin(); !mit.end(); ++mit) {
 		RAS_MeshSlot *ms = *mit;
-		ms->m_bVisible = true;
-		ms->m_bCulled = false;
 		ms->m_bucket->ActivateMesh(ms);
 	}
 }
