@@ -105,10 +105,9 @@ void KX_Terrain::CalculateVisibleChunks(KX_Camera* culledcam)
 		Construct();
 
 	CListValue *objects = KX_GetActiveScene()->GetObjectList();
-	m_nodeTree[0]->CalculateVisible(culledcam, objects);
-	m_nodeTree[1]->CalculateVisible(culledcam, objects);
-	m_nodeTree[2]->CalculateVisible(culledcam, objects);
-	m_nodeTree[3]->CalculateVisible(culledcam, objects);
+
+	for (unsigned short i = 0; i < 4; ++i)
+		m_nodeTree[i]->CalculateVisible(culledcam, objects);
 
 	ScheduleEuthanasyChunks();
 }

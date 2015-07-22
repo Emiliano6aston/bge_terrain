@@ -111,10 +111,8 @@ void KX_ChunkNode::ConstructNodes()
 void KX_ChunkNode::DestructNodes()
 {
 	if (m_nodeList) {
-		delete m_nodeList[0];
-		delete m_nodeList[1];
-		delete m_nodeList[2];
-		delete m_nodeList[3];
+		for (unsigned short i = 0; i < 4; ++i)
+			delete m_nodeList[i];
 
 		free(m_nodeList);
 		m_nodeList = NULL;
@@ -240,10 +238,8 @@ void KX_ChunkNode::CalculateVisible(KX_Camera *culledcam, CListValue *objects)
 			DestructChunk();
 
 			// puis on fais la même chose avec nos nouveaux noeuds
-			m_nodeList[0]->CalculateVisible(culledcam, objects);
-			m_nodeList[1]->CalculateVisible(culledcam, objects);
-			m_nodeList[2]->CalculateVisible(culledcam, objects);
-			m_nodeList[3]->CalculateVisible(culledcam, objects);
+			for (unsigned short i = 0; i < 4; ++i)
+				m_nodeList[i]->CalculateVisible(culledcam, objects);
 		}
 		// sinon si aucun des objets n'est assez près
 		else {
@@ -264,10 +260,8 @@ void KX_ChunkNode::CalculateVisible(KX_Camera *culledcam, CListValue *objects)
 				DestructChunk();
 
 				// puis on fais la même chose avec nos nouveau noeuds
-				m_nodeList[0]->CalculateVisible(culledcam, objects);
-				m_nodeList[1]->CalculateVisible(culledcam, objects);
-				m_nodeList[2]->CalculateVisible(culledcam, objects);
-				m_nodeList[3]->CalculateVisible(culledcam, objects);
+				for (unsigned short i = 0; i < 4; ++i)
+					m_nodeList[i]->CalculateVisible(culledcam, objects);
 			}
 			else {
 				ConstructChunk();
