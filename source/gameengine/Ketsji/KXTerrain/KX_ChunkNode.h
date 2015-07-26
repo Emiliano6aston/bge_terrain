@@ -157,7 +157,7 @@ public:
 	}
 
 	/// Utilisé pour savoir si un noeud est visible
-	inline bool GetCulledState() const
+	inline short GetCulledState() const
 	{
 		return m_culledState;
 	}
