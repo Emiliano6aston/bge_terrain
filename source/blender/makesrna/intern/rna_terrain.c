@@ -138,6 +138,17 @@ static void rna_def_terrain_zone(BlenderRNA *brna)
 	RNA_def_property_array(prop, 3);
 	RNA_def_property_range(prop, 0.0, 1.0);
 	RNA_def_property_ui_text(prop, "Vertex Color", "");
+
+	prop = RNA_def_property(srna, "image", PROP_POINTER, PROP_NONE);
+	RNA_def_property_pointer_sdna(prop, NULL, "image");
+	RNA_def_property_struct_type(prop, "Image");
+	RNA_def_property_flag(prop, PROP_EDITABLE);
+	RNA_def_property_ui_text(prop, "Image", "");
+
+	prop = RNA_def_property(srna, "image_height", PROP_FLOAT, PROP_NONE);
+	RNA_def_property_float_sdna(prop, NULL, "imaheight");
+	RNA_def_property_range(prop, -FLT_MAX, FLT_MAX);
+	RNA_def_property_ui_text(prop, "Image Height", "");
 }
 
 static void rna_def_terrain_zone_collection(BlenderRNA *brna, PropertyRNA *cprop)

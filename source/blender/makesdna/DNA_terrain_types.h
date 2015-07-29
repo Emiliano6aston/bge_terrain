@@ -50,9 +50,10 @@ typedef struct TerrainZone {
 
 	float vertexcolor[3];
 
-	int flag;
+	struct Image *image;
+	float imaheight;
 
-	int pad1;
+	int flag;
 } TerrainZone;
 
 typedef struct Terrain {
