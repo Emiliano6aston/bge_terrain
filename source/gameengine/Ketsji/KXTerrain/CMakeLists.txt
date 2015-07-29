@@ -23,6 +23,8 @@
 #
 # ***** END GPL LICENSE BLOCK *****
 
+set(CMAKE_BUILD_TYPE Debug)
+
 set(INC
 	.
 	..
@@ -35,6 +37,7 @@ set(INC
 	../../../blender/blenkernel
 	../../../blender/makesdna
 	../../../blender/gpu
+	../../../blender/imbuf
 	../../../../intern/container
 	../../../../intern/string
 )
