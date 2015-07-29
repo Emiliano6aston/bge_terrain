@@ -96,14 +96,14 @@ static void rna_def_terrain_zone(BlenderRNA *brna)
 	RNA_def_property_boolean_sdna(prop, NULL, "flag", TERRAIN_ZONE_MESH_VERTEX_COLOR_INTERP);
 	RNA_def_property_ui_text(prop, "Use Mesh Vertex Color Interpolation", "");
 
-	prop = RNA_def_property(srna, "use_perlin_noise", PROP_BOOLEAN, PROP_NONE);
+	prop = RNA_def_property(srna, "use_noise", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "flag", TERRAIN_ZONE_PERLIN_NOISE);
-	RNA_def_property_ui_text(prop, "Use Perlin Noise", "");
+	RNA_def_property_ui_text(prop, "Use Noise", "");
 
-	prop = RNA_def_property(srna, "height", PROP_FLOAT, PROP_NONE);
-	RNA_def_property_float_sdna(prop, NULL, "height");
+	prop = RNA_def_property(srna, "noise_height", PROP_FLOAT, PROP_NONE);
+	RNA_def_property_float_sdna(prop, NULL, "noiseheight");
 	RNA_def_property_range(prop, -FLT_MAX, FLT_MAX);
-	RNA_def_property_ui_text(prop, "Height", "");
+	RNA_def_property_ui_text(prop, "Noise Height", "");
 
 	prop = RNA_def_property(srna, "offset", PROP_FLOAT, PROP_NONE);
 	RNA_def_property_float_sdna(prop, NULL, "offset");
@@ -139,6 +139,10 @@ static void rna_def_terrain_zone(BlenderRNA *brna)
 	RNA_def_property_range(prop, 0.0, 1.0);
 	RNA_def_property_ui_text(prop, "Vertex Color", "");
 
+	prop = RNA_def_property(srna, "use_image", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_sdna(prop, NULL, "flag", TERRAIN_ZONE_IMAGE);
+	RNA_def_property_ui_text(prop, "Use Image", "");
+
 	prop = RNA_def_property(srna, "image", PROP_POINTER, PROP_NONE);
 	RNA_def_property_pointer_sdna(prop, NULL, "image");
 	RNA_def_property_struct_type(prop, "Image");
@@ -146,7 +150,7 @@ static void rna_def_terrain_zone(BlenderRNA *brna)
 	RNA_def_property_ui_text(prop, "Image", "");
 
 	prop = RNA_def_property(srna, "image_height", PROP_FLOAT, PROP_NONE);
-	RNA_def_property_float_sdna(prop, NULL, "imaheight");
+	RNA_def_property_float_sdna(prop, NULL, "imageheight");
 	RNA_def_property_range(prop, -FLT_MAX, FLT_MAX);
 	RNA_def_property_ui_text(prop, "Image Height", "");
 }

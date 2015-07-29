@@ -41,8 +41,9 @@ typedef struct TerrainZone {
 
 	struct Mesh *mesh;
 
-	float height;
 	float offset;
+
+	float noiseheight;
 	float resolution;
 
 	float clampstart;
@@ -51,7 +52,7 @@ typedef struct TerrainZone {
 	float vertexcolor[3];
 
 	struct Image *image;
-	float imaheight;
+	float imageheight;
 
 	int flag;
 } TerrainZone;
@@ -74,10 +75,11 @@ typedef struct Terrain {
 
 #define TERRAIN_ZONE_MESH						(1 << 0)
 #define TERRAIN_ZONE_PERLIN_NOISE				(1 << 1)
-#define TERRAIN_ZONE_CLAMP						(1 << 2)
-#define TERRAIN_ZONE_CLAMP_MESH					(1 << 3)
-#define TERRAIN_ZONE_MESH_VERTEX_COLOR_INTERP	(1 << 4)
-#define TERRAIN_ZONE_VERTEX_COLOR				(1 << 5)
+#define TERRAIN_ZONE_IMAGE						(1 << 2)
+#define TERRAIN_ZONE_CLAMP						(1 << 3)
+#define TERRAIN_ZONE_CLAMP_MESH					(1 << 4)
+#define TERRAIN_ZONE_MESH_VERTEX_COLOR_INTERP	(1 << 5)
+#define TERRAIN_ZONE_VERTEX_COLOR				(1 << 6)
 
 #endif /*__DNA_TERRAIN_TYPES_H__*/
 
