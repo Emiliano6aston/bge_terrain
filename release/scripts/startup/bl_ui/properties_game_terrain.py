@@ -155,22 +155,25 @@ class TERRAIN_PT_game_terrain_zones_heights(TerrainButtonsPanel, Panel):
 
         scene = context.scene
         terrain = scene.terrain
-        split = layout.split()
 
         if terrain:
             zone = terrain.zones.active_zone
             
             if zone:
-                col = split.column()
-                sub = col.column()
-                sub.prop(zone, "use_perlin_noise")
-                sub.prop(zone, "offset")
-            
-                col = split.column()
-                sub = col.column()
-                sub.active = zone.use_perlin_noise
-                sub.prop(zone, "resolution")
-                sub.prop(zone, "height")
+                row = layout.row()
+                row.column().prop(zone, "offset")
+
+                row = layout.row()
+                row.column().prop(zone, "use_perlin_noise")
+
+                row = layout.row()
+                row.active = zone.use_perlin_noise
+                row.column().prop(zone, "resolution")
+                row.column().prop(zone, "height")
+
+                row = layout.row()
+                row.column().prop(zone, "image")
+                row.column().prop(zone, "image_height")
 
 class TERRAIN_PT_game_terrain_zones_clamp(TerrainButtonsPanel, Panel):
     bl_label = "Zone Clamp"
