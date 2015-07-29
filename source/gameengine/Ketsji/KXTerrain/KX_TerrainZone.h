@@ -36,6 +36,7 @@ class Mesh;
 class DerivedMesh;
 class TerrainZone;
 class KX_Terrain;
+struct ImBuf;
 
 class VertexZoneInfo
 {
@@ -78,6 +79,8 @@ private:
 	float m_box[4];
 	/// The mesh.
 	DerivedMesh *m_derivedMesh;
+	/// L'image utilisé pour les hauteur (optionelle)
+	ImBuf *m_buf;
 
 public:
 	KX_TerrainZoneMesh(KX_Terrain *terrain,
@@ -112,7 +115,8 @@ public:
 	 * \return The interpolation on this position.
 	 */
 	float GetMeshColorInterp(const float *point, const unsigned int faceindex, const MVert &v1, const MVert &v2, const MVert &v3) const;
-	float GetHeight(const float x, const float y, const float interp) const;
+	float GetNoiseHeight(const float x, const float y) const;
+	float GetImageHeight(const float x, const float y) const;
 
 	/** Compute all vertex infos : height and color.
 	 * \param x The position on x.

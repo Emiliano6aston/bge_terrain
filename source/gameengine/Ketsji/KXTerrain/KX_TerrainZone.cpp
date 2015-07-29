@@ -28,6 +28,12 @@
 #include <iostream>
 #include "BLI_math.h"
 #include "BLI_noise.h"
+#include "BKE_image.h"
+#include "IMB_imbuf_types.h"
+
+extern "C" {
+	#include "IMB_imbuf.h"
+}
 
 KX_TerrainZoneMesh::KX_TerrainZoneMesh(KX_Terrain *terrain, TerrainZone *zoneInfo, Mesh *mesh)
 	:m_terrain(terrain),
@@ -60,12 +66,16 @@ KX_TerrainZoneMesh::KX_TerrainZoneMesh(KX_Terrain *terrain, TerrainZone *zoneInf
 	}
 	else
 		m_derivedMesh = NULL;
+
+	m_buf = m_zoneInfo->image ? BKE_image_acquire_ibuf(m_zoneInfo->image, NULL, NULL) : NULL;
 }
 
 KX_TerrainZoneMesh::~KX_TerrainZoneMesh()
 {
 	if (m_derivedMesh)
 		m_derivedMesh->release(m_derivedMesh);
+	if (m_buf)
+		BKE_image_release_ibuf(m_zoneInfo->image, m_buf, NULL);
 }
 
 float KX_TerrainZoneMesh::GetMaxHeight() const
@@ -84,8 +94,13 @@ float KX_TerrainZoneMesh::GetMaxHeight() const
 
 	// bruit de perlin
 	if (m_zoneInfo->flag & TERRAIN_ZONE_PERLIN_NOISE) {
-		if (m_zoneInfo->height > 0.0) {
-			maxheight += m_zoneInfo->height;
+		if (m_zoneInfo->noiseheight > 0.0) {
+			maxheight += m_zoneInfo->noiseheight;
+		}
+	}
+	if (m_zoneInfo->flag & TERRAIN_ZONE_IMAGE) {
+		if (m_zoneInfo->imageheight > 0.0f) {
+			maxheight += m_zoneInfo->imageheight;
 		}
 	}
 
@@ -108,8 +123,13 @@ float KX_TerrainZoneMesh::GetMinHeight() const
 
 	// bruit de perlin
 	if (m_zoneInfo->flag & TERRAIN_ZONE_PERLIN_NOISE) {
-		if (m_zoneInfo->height < 0.0) {
-			minheight += m_zoneInfo->height;
+		if (m_zoneInfo->noiseheight < 0.0) {
+			minheight += m_zoneInfo->noiseheight;
+		}
+	}
+	if (m_zoneInfo->flag & TERRAIN_ZONE_IMAGE) {
+		if (m_zoneInfo->imageheight < 0.0f) {
+			minheight += m_zoneInfo->imageheight;
 		}
 	}
 
@@ -180,18 +200,32 @@ float KX_TerrainZoneMesh::GetMeshColorInterp(const float *point, const unsigned 
 	return interp;
 }
 
-float KX_TerrainZoneMesh::GetHeight(const float x, const float y, const float interp) const
+float KX_TerrainZoneMesh::GetNoiseHeight(const float x, const float y) const
 {
 	float height = 0.0;
 
 	if (m_zoneInfo->flag & TERRAIN_ZONE_PERLIN_NOISE) {
-		height = (BLI_hnoise(m_zoneInfo->resolution, x, y, 0.0) * m_zoneInfo->height) + m_zoneInfo->offset;
-	}
-	else {
-		height = m_zoneInfo->offset;
+		height = (BLI_hnoise(m_zoneInfo->resolution, x, y, 0.0) * m_zoneInfo->noiseheight);
 	}
 
-	return height * interp;
+	return height;
+}
+
+float KX_TerrainZoneMesh::GetImageHeight(const float x, const float y) const
+{
+	float height = 0.0;
+
+	if (m_zoneInfo->flag & TERRAIN_ZONE_IMAGE && m_buf) {
+		const float terrainsize = m_terrain->GetWidth() * m_terrain->GetChunkSize();
+		const float haflterrainsize = terrainsize / 2.0f;
+		unsigned char color[4] = {0, 0, 0, 0};
+		bilinear_interpolation_color_wrap(m_buf, color, NULL, 
+				(haflterrainsize + x) / terrainsize * m_buf->x, 
+				(haflterrainsize + y) / terrainsize * m_buf->y);
+		height = rgb_to_grayscale_byte(color) / 255.0f * m_zoneInfo->imageheight;
+	}
+
+	return height;
 }
 
 // Si ledit point est en contact, on renvoie la modif asociée à sa hauteur
@@ -219,14 +253,20 @@ void KX_TerrainZoneMesh::GetVertexInfo(const float x, const float y, VertexZoneI
 				const MVert &v2 = mvert[mface[i].v2];
 				const MVert &v3 = mvert[mface[i].v3];
 
-				int result = isect_point_tri_v2(point, v1.co, v2.co, v3.co);
+				const int result = isect_point_tri_v2(point, v1.co, v2.co, v3.co);
 				// Si le point est bien dans un des triangles
 				if (result == 1) {
 					const float interp = GetMeshColorInterp(point, i, v1, v2, v3);
 					hit = true;
-					// on accéde à la hauteur précedente avec peut être une modification
-					height += GetClampedHeight(r_info->height, 1.0 - interp, x, y, v1.co, v2.co, v3.co);
-					height += GetHeight(x, y, interp);
+					// La hauteur par default.
+					height += m_zoneInfo->offset;
+					// La hauteur calculé avec un bruit de perlin.
+					height += GetNoiseHeight(x, y);
+					// La hauteur dedui par une image.
+					height += GetImageHeight(x, y);
+					// on fais l'interpolation de cette diference de hauteur.
+					height *= interp;
+// TODO					height += GetClampedHeight(r_info->height, 1.0 - interp, x, y, v1.co, v2.co, v3.co);
 
 					break;
 				}
@@ -234,12 +274,15 @@ void KX_TerrainZoneMesh::GetVertexInfo(const float x, const float y, VertexZoneI
 		}
 		// si on ne touche rien il faut tout de même garder la valeur précedente
 		if (!hit) {
-			height += GetClampedHeight(r_info->height, 1.0, x, y, NULL, NULL, NULL);
+			height = r_info->height;
+// 			height += GetClampedHeight(r_info->height, 1.0, x, y, NULL, NULL, NULL);
 		}
 	}
 	else {
-		height += GetClampedHeight(r_info->height, 1.0, x, y, NULL, NULL, NULL);
-		height += GetHeight(x, y, 1.0);
+// 		height += GetClampedHeight(r_info->height, 1.0, x, y, NULL, NULL, NULL);
+		height += m_zoneInfo->offset;
+		height += GetNoiseHeight(x, y);
+		height += GetImageHeight(x, y);
 	}
 
 	r_info->height = height;
