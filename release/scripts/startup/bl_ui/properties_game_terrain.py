@@ -164,14 +164,18 @@ class TERRAIN_PT_game_terrain_zones_heights(TerrainButtonsPanel, Panel):
                 row.column().prop(zone, "offset")
 
                 row = layout.row()
-                row.column().prop(zone, "use_perlin_noise")
+                row.column().prop(zone, "use_noise")
 
                 row = layout.row()
-                row.active = zone.use_perlin_noise
+                row.active = zone.use_noise
                 row.column().prop(zone, "resolution")
-                row.column().prop(zone, "height")
+                row.column().prop(zone, "noise_height")
 
                 row = layout.row()
+                row.column().prop(zone, "use_image")
+
+                row = layout.row()
+                row.active = zone.use_image
                 row.column().prop(zone, "image")
                 row.column().prop(zone, "image_height")
 
