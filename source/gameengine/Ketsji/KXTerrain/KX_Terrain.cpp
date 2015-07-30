@@ -81,7 +81,7 @@ void KX_Terrain::Construct()
 {
 	DEBUG("Construct terrain");
 
-	m_nodeTree = NewNodeList(NULL, 0, 0, 2);
+	m_nodeTree = NewNodeList(NULL, 0, 0, 1);
 	m_construct = true;
 }
 
