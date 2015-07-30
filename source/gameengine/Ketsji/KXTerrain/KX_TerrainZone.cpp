@@ -28,6 +28,7 @@
 #include <iostream>
 #include "BLI_math.h"
 #include "BLI_noise.h"
+#include "BLI_utildefines.h"
 #include "BKE_image.h"
 #include "IMB_imbuf_types.h"
 
@@ -217,11 +218,15 @@ float KX_TerrainZoneMesh::GetImageHeight(const float x, const float y) const
 
 	if (m_zoneInfo->flag & TERRAIN_ZONE_IMAGE && m_buf) {
 		const float terrainsize = m_terrain->GetWidth() * m_terrain->GetChunkSize();
-		const float haflterrainsize = terrainsize / 2.0f;
-		unsigned char color[4] = {0, 0, 0, 0};
-		bilinear_interpolation_color_wrap(m_buf, color, NULL, 
-				(haflterrainsize + x) / terrainsize * m_buf->x, 
-				(haflterrainsize + y) / terrainsize * m_buf->y);
+		const float halfterrainsize = terrainsize / 2.0f;
+
+		unsigned char color[4];
+		float u = (halfterrainsize + x) / terrainsize * m_buf->x;
+		float v = (halfterrainsize + y) / terrainsize * m_buf->y;
+		const float epsilon = 0.00001f;
+		CLAMP(u, epsilon, m_buf->x - epsilon);
+		CLAMP(v, epsilon, m_buf->y - epsilon);
+		bilinear_interpolation_color_wrap(m_buf, color, NULL, u, v);
 		height = rgb_to_grayscale_byte(color) / 255.0f * m_zoneInfo->imageheight;
 	}
 
