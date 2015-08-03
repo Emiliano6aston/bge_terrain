@@ -133,7 +133,7 @@ public:
 	/// Reconstruction de la boite
 	void ReConstructBox();
 
-	KX_ChunkNode *GetNodeRelativePosition(const Point2D& pos);
+	KX_ChunkNode *GetNodeRelativePosition(float x, float y);
 
 	inline KX_Terrain *GetTerrain() const
 	{
@@ -175,5 +175,6 @@ public:
 };
 
 bool operator<(const KX_ChunkNode::Point2D& pos1, const KX_ChunkNode::Point2D& pos2);
+std::ostream &operator<< (std::ostream &stream, const KX_ChunkNode::Point2D &pos);
 
 #endif // __KX_CHUNK_NODE_H__

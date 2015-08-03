@@ -122,6 +122,13 @@ void KX_Terrain::UpdateChunksMeshes()
 		(*it)->EndUpdateMesh();
 	}
 
+
+	/*for (KX_ChunkList::iterator it = m_chunkList.begin(); it != m_chunkList.end(); ++it) {
+		(*it)->UpdateColumnVertexesNormal(KX_Chunk::COLUMN_LEFT);
+		(*it)->UpdateColumnVertexesNormal(KX_Chunk::COLUMN_RIGHT);
+		(*it)->UpdateColumnVertexesNormal(KX_Chunk::COLUMN_FRONT);
+		(*it)->UpdateColumnVertexesNormal(KX_Chunk::COLUMN_BACK);
+	}*/
 #ifdef STATS
 	++m_frame;
 
@@ -164,10 +171,10 @@ unsigned short KX_Terrain::GetSubdivision(float distance, bool iscamera) const
 	return ret;
 }
 
-KX_ChunkNode *KX_Terrain::GetNodeRelativePosition(const KX_ChunkNode::Point2D& pos)
+KX_ChunkNode *KX_Terrain::GetNodeRelativePosition(float x, float y)
 {
 	for (unsigned int i = 0; i < 4; ++i) {
-		KX_ChunkNode *node = m_nodeTree[i]->GetNodeRelativePosition(pos);
+		KX_ChunkNode *node = m_nodeTree[i]->GetNodeRelativePosition(x, y);
 		if (node)
 			return node;
 	}
