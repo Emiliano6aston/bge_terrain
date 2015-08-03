@@ -95,14 +95,22 @@ private:
 
 	/// on stocke les colonnes pour un reconstruction plus rapide
 	JointColumn *m_columns[4];
+	/// L'etat des normales des colonnes : calculé on non.
+	bool m_normalColumnState[4];
 	Vertex *m_center[VERTEX_COUNT_INTERN][VERTEX_COUNT_INTERN];
 	bool m_hasVertexes;
+	bool m_onConstruct;
 
 	float m_maxVertexHeight;
 	float m_minVertexHeight;
 
 	/// Les dernières jointures.
-	unsigned short m_lastHasJoint[4];
+	unsigned short m_lastHasJoint[4]; // TODO renommer et utiliser 1 comme valeur par default
+	/* Tous les noeuds autour, jusqu'a 6 par côté dont 2 adjacents par un point, soit 16 noeuds.
+	 * pour les colonnes de gauche et droite les chunks sont de haut en bas
+	 * et de gauche a droite pour le colonnes de haut et bas.
+	 */
+	KX_ChunkNode *m_jointNode[4][6];
 
 	/** Indice utilisé lors de la construction des vertices pour avoir un indice
 	 * unique de vertice.
@@ -115,8 +123,11 @@ private:
 	void ConstructPhysicsController();
 
 	void ConstructVertexes();
-	Vertex *NewVertex(unsigned short relx, unsigned short rely);
+	void ComputeJointVertexesNormal();
+	void ComputeColumnJointVertexNormal(COLUMN_TYPE columnType, bool reverse);
 	Vertex *GetVertex(unsigned short x, unsigned short y) const;
+	Vertex *GetExternChunkVertex(unsigned short origVertIndex, COLUMN_TYPE columnType, KX_ChunkNode *jointNode, Vertex **coVertex);
+	Vertex *NewVertex(unsigned short relx, unsigned short rely);
 
 	void InvalidateJointVertexesAndIndexes();
 
@@ -131,10 +142,11 @@ public:
 	KX_Chunk(KX_ChunkNode *node, RAS_MaterialBucket *m_bucket);
 	virtual ~KX_Chunk();
 
+	void UpdateColumnVertexesNormal(COLUMN_TYPE columnType);
+
 	/// creation du mesh avec joint des vertices du chunk avec ceux d'à cotés si neccesaire
 	void UpdateMesh();
 	void EndUpdateMesh();
-	void ReconstructMesh();
 	void RenderMesh(RAS_IRasterizer *rasty, KX_Camera *cam);
 
 	inline KX_ChunkNode* GetNode() const
@@ -150,6 +162,11 @@ public:
 	inline void SetVisible(bool visible)
 	{
 		m_visible = visible;
+	}
+
+	inline unsigned short GetJointLevel(COLUMN_TYPE columnType) const
+	{
+		return m_lastHasJoint[columnType];
 	}
 };
 

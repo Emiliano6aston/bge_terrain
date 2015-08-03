@@ -352,17 +352,17 @@ void KX_ChunkNode::ReConstructBox()
 }
 
 
-KX_ChunkNode *KX_ChunkNode::GetNodeRelativePosition(const Point2D& pos)
+KX_ChunkNode *KX_ChunkNode::GetNodeRelativePosition(float x, float y)
 {
 	const unsigned short relativewidth = m_relativeSize / 2;
 
 	if(m_culledState != KX_Camera::OUTSIDE &&
-	  (m_relativePos.x - relativewidth) < pos.x && pos.x < (m_relativePos.x + relativewidth) &&
-	  (m_relativePos.y - relativewidth) < pos.y && pos.y < (m_relativePos.y + relativewidth))
+	  (m_relativePos.x - relativewidth) < x && x < (m_relativePos.x + relativewidth) &&
+	  (m_relativePos.y - relativewidth) < y && y < (m_relativePos.y + relativewidth))
 	{
 		if (m_nodeList) {
 			for (unsigned short i = 0; i < 4; ++i) {
-				KX_ChunkNode *ret = m_nodeList[i]->GetNodeRelativePosition(pos);
+				KX_ChunkNode *ret = m_nodeList[i]->GetNodeRelativePosition(x, y);
 				if (ret)
 					return ret;
 			}
@@ -377,3 +377,10 @@ bool operator<(const KX_ChunkNode::Point2D& pos1, const KX_ChunkNode::Point2D& p
 {
 	return pos1.x < pos2.x || (!(pos2.x < pos1.x) && pos1.y < pos2.y);
 }
+
+std::ostream &operator<< (std::ostream &stream, const KX_ChunkNode::Point2D &pos)
+{
+	stream << "(x : " << pos.x << ", y : " << pos.y << ")";
+	return stream;
+}
+
