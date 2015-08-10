@@ -780,28 +780,19 @@ static short round(short value, short align, bool up)
 /* On accede au vertice dans le chunk voisin le plus proche et alignée
  * au vertice referent.
  */
-KX_Chunk::Vertex *KX_Chunk::GetExternChunkVertex(unsigned short origVertIndex, COLUMN_TYPE columnType, KX_ChunkNode *jointNode, Vertex **coVertex)
+void KX_Chunk::GetCoorespondingVertexesFromChunk(KX_ChunkNode *jointNode, unsigned short origVertIndex, COLUMN_TYPE columnType, 
+												 short deltagap, Vertex **coExternVertex, Vertex **coInternVertex)
 {
-	/* Le protocole est le suivant : 
-	 * - trouve les sommet des chunks
-	 * - test si le chunk voisin et plus petit
-	 * - trouve la difference de taille et donc l'echelle
-	 * - calcul le decalage grace a l'echelle
-	 * - choisi le bon algortihme pour trouver le vertice
-	 * - trouve le vertice coorespondant dans le chunk voisin
-	 * - trouve le vertice décalé vers le centre du chunk
-	 */
-
-	// La taille du chunk parent.
+	// La taille du noeud parent.
 	const unsigned short selfNodeSize = m_node->GetRelativeSize();
-	// La taille du chunk de jointure.
+	// La taille du noeud de jointure.
 	const unsigned short jointNodeSize = jointNode->GetRelativeSize();
-	// La position du chunk parent.
+	// La position du noeud parent.
 	const KX_ChunkNode::Point2D &selfNodePos = m_node->GetRelativePos();
-	// La position du chunk de jointure.
+	// La position du noeud de jointure.
 	const KX_ChunkNode::Point2D &jointNodePos = jointNode->GetRelativePos();
 
-	/* on calcule les sommet de chunk grace a pos + size / 2.
+	/* on calcule les sommet des noeud grace a pos + size / 2.
 	 * Mais il nous faut l'axe de la colonne, 0 = alignée sur x
 	 * 1 = alignée sur y.
 	 */
@@ -811,7 +802,7 @@ KX_Chunk::Vertex *KX_Chunk::GetExternChunkVertex(unsigned short origVertIndex, C
 	// Le sommet du noeud voisin.
 	const short jointNodeBottom = ((columnAxis == 0) ? jointNodePos.x : jointNodePos.y) - jointNodeSize / 2;
 
-	/* Si le chunk de jointure est plus petit on utilise l'algorithme :
+	/* Si le noeud de jointure est plus petit on utilise l'algorithme :
 	 * (indice - decalage * nbpolys / taille) * taille
 	 * Sinon :
 	 * (indice + nbpolys) / taille * decalage;
@@ -820,7 +811,6 @@ KX_Chunk::Vertex *KX_Chunk::GetExternChunkVertex(unsigned short origVertIndex, C
 	unsigned short vertexIndex;
 
 	const bool origOnEdge = (origVertIndex == 0 || origVertIndex == (VERTEX_COUNT - 1));
-// 	bool diffScale = false;
 
 	if (selfNodeSize == jointNodeSize)
 		vertexIndex = origVertIndex;
@@ -836,8 +826,10 @@ KX_Chunk::Vertex *KX_Chunk::GetExternChunkVertex(unsigned short origVertIndex, C
 		*/
 
 		const float scale = ((float)selfNodeSize) / ((float)jointNodeSize);
-		// Le décalage entre les 2 chunks en nombre de vertice du plus grand chunk.
-		const short gap = (selfNodeBottom - jointNodeBottom) / (((float)selfNodeSize) / (VERTEX_COUNT - 1));
+		// Le décalage entre les 2 chunks en nombre de vertices.
+		const short gap = (selfNodeBottom - jointNodeBottom) / (((float)selfNodeSize) / (VERTEX_COUNT - 1)) + deltagap;
+		if (deltagap != 0)
+			DEBUG("original gap : " << (gap - deltagap) << ", new gap : " << gap << ", delta gap : " << deltagap);
 		// L'indice du vertice coorespondant dans le chunk voisin.
 		vertexIndex = (origVertIndex + gap) * scale;
 
@@ -850,10 +842,6 @@ KX_Chunk::Vertex *KX_Chunk::GetExternChunkVertex(unsigned short origVertIndex, C
 	KX_Chunk *jointChunk = jointNode->GetChunk();
 	// La colonne opposée ou en face.
 	const COLUMN_TYPE opposedColumn = OppositeColumn(columnType);
-	// la colonne adjacent au bas de la colonne opposée.
-	const COLUMN_TYPE backColumn = BackColumn(opposedColumn);
-	// la colonne adjacent au bas de la colonne opposée.
-	const COLUMN_TYPE frontColumn = FrontColumn(opposedColumn);
 
 	short x;
 	short y;
@@ -862,37 +850,36 @@ KX_Chunk::Vertex *KX_Chunk::GetExternChunkVertex(unsigned short origVertIndex, C
 
 	if (vertexIndex > (VERTEX_COUNT -1)) {
 		std::cout << "wrong vertex index : " << vertexIndex << std::endl;
-		return NULL;
+		return;
 	}
 
 	/** Ce vertice est a la même position que celui entrain de calculer la normal.
 	 * Donc pour optimizer on copiera la normal.
 	 */
-	if (coVertex) {
-		(*coVertex) = jointChunk->GetVertex(x, y);
-// 		std::cout << "set coVertex : " << coVertex << ", value : " << *coVertex << std::endl;
-// 		std::cout << (*coVertex)->valid << std::endl;
+	if (coExternVertex)
+		(*coExternVertex) = jointChunk->GetVertex(x, y);
+
+	if (coInternVertex) {
+		// la colonne adjacent au bas de la colonne opposée.
+		const COLUMN_TYPE backColumn = BackColumn(opposedColumn);
+		// la colonne adjacent au bas de la colonne opposée.
+		const COLUMN_TYPE frontColumn = FrontColumn(opposedColumn);
+
+		const unsigned short frontColumnJointLevel = jointChunk->GetJointLevel(frontColumn);
+		const unsigned short frontColumnVertexRatio = (frontColumnJointLevel > 0) ? frontColumnJointLevel * 2 : 1;
+		const unsigned short backColumnJointLevel = jointChunk->GetJointLevel(backColumn);
+		const unsigned short backColumnVertexRatio = (backColumnJointLevel > 0) ? backColumnJointLevel * 2 : 1;
+
+		const bool onFront = (vertexIndex == 0);
+		const bool onBack = (vertexIndex == (VERTEX_COUNT - 1));
+		const bool onEdge = (onFront || onBack);
+
+		const unsigned short vertexRatio = onFront ? frontColumnVertexRatio : (onBack ? backColumnVertexRatio : 1);
+
+		// Puis on decale cette position vers l'interieur.
+		MoveVectorToCenterColumn(opposedColumn, x, y, vertexRatio);
+		(*coInternVertex) = jointChunk->GetVertex(x, y);
 	}
-
-	const unsigned short opposedColumnJointLevel = jointChunk->GetJointLevel(opposedColumn);
-	const unsigned short opposedColumnVertexRatio = (opposedColumnJointLevel > 0) ? opposedColumnJointLevel * 2 : 1;
-	const unsigned short frontColumnJointLevel = jointChunk->GetJointLevel(frontColumn);
-	const unsigned short frontColumnVertexRatio = (frontColumnJointLevel > 0) ? frontColumnJointLevel * 2 : 1;
-	const unsigned short backColumnJointLevel = jointChunk->GetJointLevel(backColumn);
-	const unsigned short backColumnVertexRatio = (backColumnJointLevel > 0) ? backColumnJointLevel * 2 : 1;
-
-	const bool onFront = (vertexIndex == 0);
-	const bool onBack = (vertexIndex == (VERTEX_COUNT - 1));
-	const bool onEdge = (onFront || onBack);
-
-	const unsigned short vertexRatio = onFront ? frontColumnVertexRatio : (onBack ? backColumnVertexRatio : 1);
-
-	// Puis on decale cette position vers l'interieur.
-	MoveVectorToCenterColumn(opposedColumn, x, y, vertexRatio);
-// 	if (diffScale)
-// 		DEBUG("find extern vertex, x : " << x << ", y : " << y << ", on edge : " << onEdge << ", vertex ratio : " << opposedColumnVertexRatio);
-
-	return jointChunk->GetVertex(x, y);
 }
 
 #if 1
@@ -906,7 +893,7 @@ void KX_Chunk::ComputeColumnJointVertexNormal(COLUMN_TYPE columnType, bool rever
 	// La colonne adjacente au bas de cette colonne.
 	const COLUMN_TYPE frontColumn = FrontColumn(columnType);
 	// Le numero de noeud sur les colonnes adjacentes.
-	const unsigned short backFrontNodeIndex = (columnType == COLUMN_LEFT || columnType == COLUMN_FRONT) ? 0 : (VERTEX_COUNT - 2);
+	const unsigned short backFrontNodeIndex = (columnType == COLUMN_LEFT || columnType == COLUMN_FRONT) ? 1 : (VERTEX_COUNT - 1);
 	// Le noeud adjacent au haut de la colonne.
 	KX_ChunkNode *backNode = m_jointNode[backColumn][backFrontNodeIndex];
 	// Le noeud adjacent au bas de la colonne.
@@ -937,26 +924,26 @@ void KX_Chunk::ComputeColumnJointVertexNormal(COLUMN_TYPE columnType, bool rever
 		 * 
 		 * ----
 		 * |  /| -- Ce chunk et commun a la colonne que de un point
-		 * |C4 |    mais sont vertice commun doit avoir la même normale.
+		 * |C5 |    mais sont vertice commun doit avoir la même normale.
+		 * ----v4
+		 * |  /|
+		 * |C4\|
 		 * ----v3
 		 * |  /|
 		 * |C3 |
-		 * ----v3
-		 * |  /|
-		 * |C2 |
 		 * ----v2
 		 * |  /|
-		 * |C1 |
+		 * |C2 |
 		 * ----v1
 		 * |  /|
-		 * |C0\|
+		 * |C1 |
 		 * ----v0
 		 * |  /| -- Même chose ici.
-		 * |C-1|
+		 * |C0 |
 		 * ----
 		 */
 
-		const unsigned short nodeIndex = vertexIndex > 3 ? 3 : vertexIndex + 1;
+		const unsigned short nodeIndex = vertexIndex > 3 ? 4 : vertexIndex + 1;
 		KX_ChunkNode *jointNode = m_jointNode[columnType][nodeIndex];
 		if (!jointNode) {
 // 			DEBUG("no column joint node, node index : " << nodeIndex);
@@ -1044,7 +1031,7 @@ void KX_Chunk::ComputeColumnJointVertexNormal(COLUMN_TYPE columnType, bool rever
 			else if (frontNode) {
 // 				DEBUG("try with front node");
 				const unsigned short index = (columnType == COLUMN_LEFT || columnType == COLUMN_FRONT) ? 0 : (VERTEX_COUNT - 1);
-				quadVertexes[1] = GetExternChunkVertex(index, frontColumn, frontNode, &coVertexes[0]);
+				GetCoorespondingVertexesFromChunk(frontNode, index, frontColumn, 0, coVertexes, quadVertexes + 1);
 			}
 		}
 
@@ -1052,7 +1039,7 @@ void KX_Chunk::ComputeColumnJointVertexNormal(COLUMN_TYPE columnType, bool rever
 		{
 // 			DEBUG_HEADER("compute v2");
 			if (jointNode) {
-				quadVertexes[2] = GetExternChunkVertex(vertexIndex, columnType, jointNode, &coVertexes[1]);
+				GetCoorespondingVertexesFromChunk(jointNode, vertexIndex, columnType, 0, coVertexes + 1, quadVertexes + 2);
 			}
 		}
 
@@ -1073,7 +1060,7 @@ void KX_Chunk::ComputeColumnJointVertexNormal(COLUMN_TYPE columnType, bool rever
 			else if (backNode) {
 // 				DEBUG("try with back node");
 				const unsigned short index = (columnType == COLUMN_LEFT || columnType == COLUMN_FRONT) ? 0 : (VERTEX_COUNT - 1);
-				quadVertexes[3] = GetExternChunkVertex(index, backColumn, backNode, &coVertexes[2]);
+				GetCoorespondingVertexesFromChunk(backNode, index, backColumn, 0, coVertexes + 2, quadVertexes + 3);
 			}
 		}
 
@@ -1084,14 +1071,12 @@ void KX_Chunk::ComputeColumnJointVertexNormal(COLUMN_TYPE columnType, bool rever
 		if (onColumnEdge) {
 			KX_ChunkNode *node = m_jointNode[columnType][onColumnFront ? 0 : 5];
 			if (node && node->GetChunk()) {
-				const unsigned short columnAxis = ColumnAxis(columnType);
-				const unsigned short x = (columnAxis == 0) ? 
-					(VERTEX_COUNT - 1) - vertexIndex : ((columnType == COLUMN_LEFT) ? (VERTEX_COUNT - 1) : 0);
-				const unsigned short y = (columnAxis == 1) ? 
-					(VERTEX_COUNT - 1) - vertexIndex : ((columnType == COLUMN_FRONT) ? (VERTEX_COUNT - 1) : 0);
+				const unsigned short index = onColumnFront ? (VERTEX_COUNT - 1) : 0;
+				const short deltagap = onColumnFront ? (-(VERTEX_COUNT - 1)) : ((VERTEX_COUNT - 1));
+				DEBUG("on column front : " << onColumnFront << ", delta gap : " << deltagap << ", index : " << index);
 
-				coVertexes[3] = node->GetChunk()->GetVertex(x, y);
-				DEBUG("column : " << columnType << ", vertex index : " << vertexIndex << ", x : " << x << ", y : " << y << ", vert x : " << coVertexes[3]->relativePos[0] << ", vert y : " << coVertexes[3]->relativePos[1]);
+				GetCoorespondingVertexesFromChunk(node, index, columnType, deltagap, coVertexes + 3, NULL);
+// 				DEBUG("column : " << columnType << ", vertex index : " << vertexIndex << ", x : " << x << ", y : " << y << ", vert x : " << coVertexes[3]->relativePos[0] << ", vert y : " << coVertexes[3]->relativePos[1]);
 			}
 		}
 
