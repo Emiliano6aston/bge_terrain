@@ -126,7 +126,8 @@ private:
 	void ComputeJointVertexesNormal();
 	void ComputeColumnJointVertexNormal(COLUMN_TYPE columnType, bool reverse);
 	Vertex *GetVertex(unsigned short x, unsigned short y) const;
-	Vertex *GetExternChunkVertex(unsigned short origVertIndex, COLUMN_TYPE columnType, KX_ChunkNode *jointNode, Vertex **coVertex);
+	void GetCoorespondingVertexesFromChunk(KX_ChunkNode *jointNode, unsigned short origVertIndex, COLUMN_TYPE columnType, 
+											  short deltagap, Vertex **coExternVertex, Vertex **coInternVertex);
 	Vertex *NewVertex(unsigned short relx, unsigned short rely);
 
 	void InvalidateJointVertexesAndIndexes();
