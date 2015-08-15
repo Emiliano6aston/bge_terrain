@@ -23,8 +23,6 @@
 #
 # ***** END GPL LICENSE BLOCK *****
 
-set(CMAKE_BUILD_TYPE Debug)
-
 set(INC
 	.
 	..
