@@ -129,7 +129,7 @@ private:
 	Vertex *GetVertexByTerrainRelativePosition(int x, int y) const;
 	KX_ChunkNode::Point2D GetTerrainRelativeVertexPosition(unsigned short x, unsigned short y) const;
 	void GetCoorespondingVertexesFromChunk(KX_ChunkNode *jointNode, Vertex *origVertex, COLUMN_TYPE columnType, 
-											  short deltagap, Vertex **coExternVertex, Vertex **coInternVertex);
+										   Vertex **coExternVertex, Vertex **coInternVertex);
 	Vertex *NewVertex(unsigned short relx, unsigned short rely);
 
 	void InvalidateJointVertexesAndIndexes();
