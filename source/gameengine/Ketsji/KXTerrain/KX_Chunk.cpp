@@ -16,7 +16,6 @@
 #include "CcdPhysicsEnvironment.h"
 #include "CcdPhysicsController.h"
 #include "CcdGraphicController.h"
-// #include "BulletCollision/CollisionShapes/btScaledBvhTriangleMeshShape.h"
 #endif
 
 #include "BLI_math.h"
@@ -26,7 +25,6 @@
 
 #include <stdio.h>
 
-// #define DEBUG(msg) std::cout << "Debug (" << __func__ << ", " << this << ") : " << msg << std::endl;
 #define DEBUG(msg) std::cout << msg << std::endl;
 #define DEBUG_HEADER(msg) DEBUG("====================== " << msg << " ======================");
 
@@ -110,27 +108,6 @@ static void MoveVectorBackColumn(KX_Chunk::COLUMN_TYPE columnType, short &x, sho
 		y += length;
 	else if (columnType == KX_Chunk::COLUMN_FRONT || columnType == KX_Chunk::COLUMN_BACK)
 		x += length;
-}
-
-// Convertie un indice de vertice d'une colonne en une position.
-static void ConvertColumnVertexIndexToPosition(KX_Chunk::COLUMN_TYPE columnType, unsigned short index, short &x, short &y)
-{
-	if (columnType == KX_Chunk::COLUMN_LEFT) {
-		x = 0;
-		y = index;
-	}
-	else if (columnType == KX_Chunk::COLUMN_RIGHT) {
-		x = VERTEX_COUNT - 1;
-		y = index;
-	}
-	else if (columnType == KX_Chunk::COLUMN_FRONT) {
-		x = index;
-		y = 0;
-	}
-	else if (columnType == KX_Chunk::COLUMN_BACK) {
-		x = index;
-		y = VERTEX_COUNT - 1;
-	}
 }
 
 void KX_Chunk::ResetTime()
@@ -493,10 +470,6 @@ KX_Chunk::Vertex *KX_Chunk::GetVertexByTerrainRelativePosition(int x, int y) con
 	const unsigned short diffx = x - bottomx;
 	const unsigned short diffy = y - bottomy;
 
-	/*DEBUG("final x : " << diffx / interval << ", final y : " << diffy / interval << 
-	", original x : " << x << ", original y : " << y << ", interval : " << interval <<
-	", bottomx : " << bottomx << ", bottomy : " << bottomy << ", node pos : " << nodepos);*/
-
 	return GetVertexByChunkRelativePosition(diffx / interval, diffy / interval);
 }
 
@@ -510,10 +483,6 @@ KX_ChunkNode::Point2D KX_Chunk::GetTerrainRelativeVertexPosition(unsigned short 
 	// le bas du chunk par rapport au terrain * 2 pour les vertices
 	const int bottomx = nodepos.x * 2 - interval * 2;
 	const int bottomy = nodepos.y * 2 - interval * 2;
-
-	/*DEBUG(__func__ << "final x : " << bottomx + x * interval << ", final y : " << bottomy + y * interval << 
-	", original x : " << x << ", original y : " << y << ", interval : " << interval <<
-	", bottomx : " << bottomx << ", bottomy : " << bottomy << ", node pos : " << nodepos);*/
 
 	return KX_ChunkNode::Point2D(bottomx + x * interval, bottomy + y * interval);
 }
@@ -821,7 +790,7 @@ static short round(short value, short align, bool up)
  * au vertice referent.
  */
 void KX_Chunk::GetCoorespondingVertexesFromChunk(KX_ChunkNode *jointNode, Vertex *origVertex, COLUMN_TYPE columnType, 
-												 short deltagap, Vertex **coExternVertex, Vertex **coInternVertex)
+												 Vertex **coExternVertex, Vertex **coInternVertex)
 {
 	// La position du vertice par rapport au terrain
 	KX_ChunkNode::Point2D terrainVertexPos = GetTerrainRelativeVertexPosition(origVertex->relativePos[0], origVertex->relativePos[1]);
@@ -880,9 +849,6 @@ void KX_Chunk::GetCoorespondingVertexesFromChunk(KX_ChunkNode *jointNode, Vertex
 #if 1
 void KX_Chunk::ComputeColumnJointVertexNormal(COLUMN_TYPE columnType, bool reverse)
 {
-// 	DEBUG_HEADER("compute column normal joint vertexes");
-// 	DEBUG("column : " << columnType);
-
 	// La colonne adjacente au sommet de cette colonne.
 	const COLUMN_TYPE backColumn = BackColumn(columnType);
 	// La colonne adjacente au bas de cette colonne.
@@ -910,10 +876,8 @@ void KX_Chunk::ComputeColumnJointVertexNormal(COLUMN_TYPE columnType, bool rever
 		 ++vertexIndex)
 	{
 		Vertex *vertex = m_columns[columnType]->GetExternVertex(vertexIndex);
-		if (!vertex->valid || vertex->validNormal) {
-// 			DEBUG("invalid column vertex");
+		if (!vertex->valid || vertex->validNormal)
 			continue;
-		}
 
 		/* Le 1er et 2eme vertice utilise le même chunk.
 		 * 
@@ -941,11 +905,9 @@ void KX_Chunk::ComputeColumnJointVertexNormal(COLUMN_TYPE columnType, bool rever
 		const unsigned short nodeIndex = vertexIndex > 3 ? 4 : vertexIndex + 1;
 		KX_ChunkNode *jointNode = m_jointNode[columnType][nodeIndex];
 		if (!jointNode) {
-// 			DEBUG("no column joint node, node index : " << nodeIndex);
 			vertex->normal[0] = 0.0f;
 			vertex->normal[1] = 0.0f;
 			vertex->normal[2] = 1.0f;
-// 			vertex->validNormal = true;
 			continue;
 		}
 
@@ -959,12 +921,9 @@ void KX_Chunk::ComputeColumnJointVertexNormal(COLUMN_TYPE columnType, bool rever
 		// Le quadrilatère utilisé pour calculer la normale.
 		float quad[4][3];
 
-// 		DEBUG("vertex ratio : " << vertexRatio);
-
 		// La position du vertice central dans le chunk.
 		const unsigned short vertx = vertex->relativePos[0];
 		const unsigned short verty = vertex->relativePos[1];
-// 		DEBUG("vertex position x : " << vertx << ", y : " << verty);
 
 		// Le vertice est à une extremitée du chunk.
 		const bool onEdge = (vertx == 0 || vertx == (VERTEX_COUNT - 1) || verty == 0 || verty == (VERTEX_COUNT - 1));
@@ -994,21 +953,18 @@ void KX_Chunk::ComputeColumnJointVertexNormal(COLUMN_TYPE columnType, bool rever
 
 		// Calcul de v0.
 		{
-// 			DEBUG_HEADER("compute v0");
 			short x = vertx;
 			short y = verty;
 			/* On accede au vertice plus proche du centre de 1 unité si il n'y a pas
 			 * de joint sinon du ratio de vertice sur la jointure.
 			 */
 			MoveVectorToCenterColumn(columnType, x, y, onColumnFront ? frontVertexRatio : (onColumnBack ? backVertexRatio : 1));
-// 			DEBUG("find vertex position x : " << x << ", y : " << y);
 			// On acced finalement au vertice le plus simplement possible.
 			quadVertexes[0] = GetVertexByChunkRelativePosition(x, y);
 		}
 
 		// Calcul de v1.
 		{
-// 			DEBUG_HEADER("compute v1");
 			short x = vertx;
 			short y = verty;
 
@@ -1019,26 +975,20 @@ void KX_Chunk::ComputeColumnJointVertexNormal(COLUMN_TYPE columnType, bool rever
 				 */
 				MoveVectorFrontColumn(columnType, x, y, onEdge ? vertexRatio : 1);
 				quadVertexes[1] = GetVertexByChunkRelativePosition(x, y);
-// 				DEBUG("find vertex position x : " << x << ", y : " << y);
 
 			}
-			else if (frontNode) {
-// 				DEBUG("try with front node");
-				GetCoorespondingVertexesFromChunk(frontNode, vertex, frontColumn, 0, coVertexes, quadVertexes + 1);
-			}
+			else if (frontNode)
+				GetCoorespondingVertexesFromChunk(frontNode, vertex, frontColumn, coVertexes, quadVertexes + 1);
 		}
 
 		// Calcul de v2
 		{
-// 			DEBUG_HEADER("compute v2");
-			if (jointNode) {
-				GetCoorespondingVertexesFromChunk(jointNode, vertex, columnType, 0, coVertexes + 1, quadVertexes + 2);
-			}
+			if (jointNode)
+				GetCoorespondingVertexesFromChunk(jointNode, vertex, columnType, coVertexes + 1, quadVertexes + 2);
 		}
 
 		// Calcul de v3.
 		{
-// 			DEBUG_HEADER("compute v3");
 			short x = vertx;
 			short y = verty;
 
@@ -1048,12 +998,9 @@ void KX_Chunk::ComputeColumnJointVertexNormal(COLUMN_TYPE columnType, bool rever
 				 */
 				MoveVectorBackColumn(columnType, x, y, onEdge ? vertexRatio : 1);
 				quadVertexes[3] = GetVertexByChunkRelativePosition(x, y);
-// 				DEBUG("find vertex position x : " << x << ", y : " << y);
 			}
-			else if (backNode && backNode->GetChunk()) {
-// 				DEBUG("try with back node");
-				GetCoorespondingVertexesFromChunk(backNode, vertex, backColumn, 0, coVertexes + 2, quadVertexes + 3);
-			}
+			else if (backNode && backNode->GetChunk())
+				GetCoorespondingVertexesFromChunk(backNode, vertex, backColumn, coVertexes + 2, quadVertexes + 3);
 		}
 
 		/** Si le vertice client et sur une extremitées il a alors 3 equivalent
@@ -1062,16 +1009,11 @@ void KX_Chunk::ComputeColumnJointVertexNormal(COLUMN_TYPE columnType, bool rever
 		 */
 		if (onColumnEdge) {
 			KX_ChunkNode *node = m_jointNode[columnType][onColumnFront ? 0 : 5];
-			if (node && node->GetChunk()) {
-				const unsigned short index = onColumnFront ? (VERTEX_COUNT - 1) : 0;
-				const short deltagap = onColumnFront ? (-(VERTEX_COUNT - 1)) : ((VERTEX_COUNT - 1));
-
-				GetCoorespondingVertexesFromChunk(node, vertex, columnType, deltagap, coVertexes + 3, NULL);
-			}
+			if (node && node->GetChunk())
+				GetCoorespondingVertexesFromChunk(node, vertex, columnType, coVertexes + 3, NULL);
 		}
 
 		if (quadVertexes[0] && quadVertexes[1] && quadVertexes[2] && quadVertexes[3]) {
-// 			DEBUG("can compute vertex normal");
 			vertex->validNormal = true;
 
 			for (unsigned short i = 0; i < 4; ++i) {
@@ -1106,7 +1048,6 @@ void KX_Chunk::ComputeColumnJointVertexNormal(COLUMN_TYPE columnType, bool rever
 			vertex->normal[0] = 0.0f;
 			vertex->normal[1] = 0.0f;
 			vertex->normal[2] = 1.0f;
-// 			vertex->validNormal = true;
 
 			// pour debuguer
 			for (unsigned short i = 0; i < 4; ++i) {
@@ -1120,8 +1061,7 @@ void KX_Chunk::ComputeColumnJointVertexNormal(COLUMN_TYPE columnType, bool rever
 
 void KX_Chunk::UpdateColumnVertexesNormal(COLUMN_TYPE columnType)
 {
-	if (!m_meshObj /*|| m_normalColumnState[columnType]*/ || m_onConstruct) {
-// 		DEBUG("refuse update column vertex normal, mesh : " << m_meshObj << ", on construct : " << m_onConstruct);
+	if (!m_meshObj || m_onConstruct) {
 		return;
 	}
 
@@ -1149,8 +1089,6 @@ void KX_Chunk::ComputeJointVertexesNormal()
 	// La largeur du noeud parent.
 	const float relativewidth = width / 2.0f;
 
-// 	DEBUG_HEADER("get joint node by column");
-// 	DEBUG("self node position : " << nodepos << ", size : " << width);
 	for (unsigned short i = 0; i < 6; ++i) {
 		// De la gauche vers la droite.
 		{
@@ -1158,13 +1096,11 @@ void KX_Chunk::ComputeJointVertexesNormal()
 			{
 				const float x = nodepos.x - (relativewidth + 1);
 				m_jointNode[COLUMN_LEFT][i] = terrain->GetNodeRelativePosition(x, y);
-// 				DEBUG("search column left node for position : " << x << ", " << y);
 			}
 
 			{
 				const float x = nodepos.x + (relativewidth + 1);
 				m_jointNode[COLUMN_RIGHT][i] = terrain->GetNodeRelativePosition(x, y);
-// 				DEBUG("search column right node for position : " << x << ", " << y);
 			}
 		}
 
@@ -1174,12 +1110,10 @@ void KX_Chunk::ComputeJointVertexesNormal()
 			{
 				const float y = nodepos.y - (relativewidth + 1);
 				m_jointNode[COLUMN_FRONT][i] = terrain->GetNodeRelativePosition(x, y);
-// 				DEBUG("search column front node for position : " << x << ", " << y);
 			}
 			{
 				const float y = nodepos.y + (relativewidth + 1);
 				m_jointNode[COLUMN_BACK][i] = terrain->GetNodeRelativePosition(x, y);
-// 				DEBUG("search column back node for position : " << x << ", " << y);
 			}
 		}
 	}
@@ -1189,10 +1123,6 @@ void KX_Chunk::ComputeJointVertexesNormal()
 	ComputeColumnJointVertexNormal(COLUMN_FRONT, true);
 	ComputeColumnJointVertexNormal(COLUMN_BACK, false);
 
-	/*if (m_node->GetRelativeSize() == 4) {
-		DEBUG_HEADER("update normal for adjacent chunk")
-		DEBUG("self chunk position : " << m_node->GetRelativePos() << ", size : " << m_node->GetRelativeSize());
-	}*/
 	for (unsigned short columnIndex = COLUMN_LEFT; columnIndex <= COLUMN_BACK; ++columnIndex) {
 		for (unsigned short nodeIndex = 0; nodeIndex < 6; ++nodeIndex) {
 			KX_ChunkNode *node = m_jointNode[columnIndex][nodeIndex];
