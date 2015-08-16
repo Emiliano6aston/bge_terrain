@@ -64,11 +64,12 @@ typedef struct Terrain {
 	int maxlevel;
 	int width;
 	int vertexsubdivision;
-	int pad1;
-	float distance;
-	float physicsdistance;
+
+	float cameradistance;
+	float objectdistance;
 	float chunksize;
 
+	int minphysicslevel;
 	int active_zoneindex;
 	ListBase zones;
 } Terrain;

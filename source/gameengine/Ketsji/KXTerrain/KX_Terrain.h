@@ -55,6 +55,9 @@ private:
 	 */
 	unsigned short m_maxChunkLevel;
 
+	/// Le niveu de subdivision minimum pour un chunk physique.
+	unsigned short m_minPhysicsLevel;
+
 	/** En theorie le nombre de vertices en largeur dans un chunk.
 	 * Non implementé.
 	 */
@@ -66,10 +69,10 @@ private:
 	/** Tous les noeuds dans cette distance peuvent avoir un niveau
 	 * plus petit que 2 (soit le minimum).
 	 */
-	float m_maxDistance2;
+	float m_cameraMaxDistance2;
 
 	/// La même chose que m_maxDistance2 mais pour les objets physique.
-	float m_physicsMaxDistance2;
+	float m_objectMaxDistance2;
 
 	/// La largeur du mesh d'un chunk.
 	float m_chunkSize;
@@ -107,10 +110,11 @@ public:
 			   RAS_MaterialBucket *bucket,
 			   Material *material,
 			   unsigned short maxLevel,
+			   unsigned short minPhysicsLevel,
 			   unsigned short vertexSubdivision,
 			   unsigned short width,
-			   float maxDistance,
-			   float physicsMaxDistance,
+			   float cameraMaxDistance,
+			   float objectMaxDistance,
 			   float chunkSize);
 	~KX_Terrain();
 
@@ -127,6 +131,11 @@ public:
 	{
 		return m_maxChunkLevel;
 	}
+	/// Le niveu de subdivision minimum pour un chunk physique.
+	inline unsigned short GetMinPhysicsLevel() const
+	{
+		return m_minPhysicsLevel;
+	}
 	/// le nombre maximun de face en largeur dans un chunk
 	inline unsigned short GetVertexSubdivision() const
 	{
@@ -138,13 +147,13 @@ public:
 		return m_width;
 	}
 	/// La distance maximal pour avoir un niveau de subdivision superieur à 1
-	inline float GetMaxDistance2() const
+	inline float GetCameraMaxDistance2() const
 	{
-		return m_maxDistance2;
+		return m_cameraMaxDistance2;
 	}
-	inline float GetPhysicsMaxDistance2() const
+	inline float GetObjectMaxDistance2() const
 	{
-		return m_physicsMaxDistance2;
+		return m_objectMaxDistance2;
 	}
 	/// La taille de tous les chunks
 	inline float GetChunkSize() const
