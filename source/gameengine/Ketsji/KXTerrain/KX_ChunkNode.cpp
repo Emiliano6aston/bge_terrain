@@ -172,7 +172,7 @@ bool KX_ChunkNode::NeedCreateNodes(CListValue *objects, KX_Camera *culledcam) co
 			}
 		}
 
-		float distance2 = MT_Point3(m_realPos.x(), m_realPos.y(), 0.0f).distance2(object->NodeGetWorldPosition());
+		float distance2 = MT_Point3(m_realPos.x(), m_realPos.y(), (m_maxBoxHeight + m_minBoxHeight) / 2.0f).distance2(object->NodeGetWorldPosition());
 		distance2 -= iscamera ? m_radius2Camera : m_radius2Object;
 
 		needcreatenode = (m_terrain->GetSubdivision(distance2, iscamera) > m_level);
@@ -199,7 +199,7 @@ bool KX_ChunkNode::InNode(CListValue *objects) const
 			continue;
 		}
 
-		const float objdistance2 = MT_Point3(m_realPos.x(), m_realPos.y(), 0.).distance2(object->NodeGetWorldPosition()) - m_radius2NoGap;
+		const float objdistance2 = MT_Point3(m_realPos.x(), m_realPos.y(), (m_maxBoxHeight + m_minBoxHeight) / 2.0f).distance2(object->NodeGetWorldPosition()) - m_radius2NoGap;
 		innode = (objdistance2 < 0.0f);
 		if (innode)
 			break;
