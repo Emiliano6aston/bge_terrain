@@ -69,6 +69,8 @@ KX_TerrainZoneMesh::KX_TerrainZoneMesh(KX_Terrain *terrain, TerrainZone *zoneInf
 		m_derivedMesh = NULL;
 
 	m_buf = m_zoneInfo->image ? BKE_image_acquire_ibuf(m_zoneInfo->image, NULL, NULL) : NULL;
+	if (m_buf)
+		IMB_float_from_rect(m_buf);
 }
 
 KX_TerrainZoneMesh::~KX_TerrainZoneMesh()
@@ -220,14 +222,14 @@ float KX_TerrainZoneMesh::GetImageHeight(const float x, const float y) const
 		const float terrainsize = m_terrain->GetWidth() * m_terrain->GetChunkSize();
 		const float halfterrainsize = terrainsize / 2.0f;
 
-		unsigned char color[4];
+		float color[4];
 		float u = (halfterrainsize + x) / terrainsize * m_buf->x;
 		float v = (halfterrainsize + y) / terrainsize * m_buf->y;
 		const float epsilon = 0.00001f;
 		CLAMP(u, epsilon, m_buf->x - epsilon);
 		CLAMP(v, epsilon, m_buf->y - epsilon);
-		bilinear_interpolation_color_wrap(m_buf, color, NULL, u, v);
-		height = rgb_to_grayscale_byte(color) / 255.0f * m_zoneInfo->imageheight;
+		bilinear_interpolation_color_wrap(m_buf, NULL, color, u, v);
+		height = /*rgb_to_grayscale_byte(color) / 255.0f*/color[0] * m_zoneInfo->imageheight;
 	}
 
 	return height;
