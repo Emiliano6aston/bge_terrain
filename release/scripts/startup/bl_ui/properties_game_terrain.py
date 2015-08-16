@@ -65,16 +65,17 @@ class TERRAIN_PT_game_terrain_chunk(TerrainButtonsPanel, Panel):
         terrain = context.terrain
         split = layout.split()
 
-        col = split.column()
-        sub = col.column()
-        sub.prop(terrain, "max_level")
-        sub.prop(terrain, "width")
-        sub.prop(terrain, "chunk_size")
+        row = layout.row()
+        row.column().prop(terrain, "max_level")
+        row.column().prop(terrain, "min_physics_level")
 
-        col = split.column()
-        sub = col.column()
-        sub.prop(terrain, "distance")
-        sub.prop(terrain, "physics_distance")
+        row = layout.row()
+        row.column().prop(terrain, "width")
+        row.column().prop(terrain, "chunk_size")
+
+        row = layout.row()
+        row.column().prop(terrain, "camera_distance")
+        row.column().prop(terrain, "object_distance")
 
 class TERRAIN_PT_game_terrain_mesh(TerrainButtonsPanel, Panel):
     bl_label = "Mesh"

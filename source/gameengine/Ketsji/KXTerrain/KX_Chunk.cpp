@@ -347,8 +347,12 @@ void KX_Chunk::DestructMesh()
 
 void KX_Chunk::ConstructPhysicsController()
 {
-#ifdef WITH_BULLET
 	KX_Terrain *terrain = m_node->GetTerrain();
+
+	if (m_node->GetLevel() < terrain->GetMinPhysicsLevel())
+		return;
+
+#ifdef WITH_BULLET
 	Material *material = terrain->GetBlenderMaterial();
 
 	CcdPhysicsController *phyCtrl = (CcdPhysicsController *)m_physicsController;

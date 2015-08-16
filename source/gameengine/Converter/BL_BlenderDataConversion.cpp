@@ -1786,10 +1786,11 @@ static KX_Terrain *convert_terrain(Terrain *terrain, KX_Scene* scene, KX_Blender
 										   bucket,
 										   terrain->material,
 										   terrain->maxlevel,
+										   terrain->minphysicslevel,
 										   terrain->vertexsubdivision,
 										   terrain->width, 
-										   terrain->distance,
-										   terrain->physicsdistance,
+										   terrain->cameradistance,
+										   terrain->objectdistance,
 										   terrain->chunksize);
 
 	// Si on n'initialise pas les masques et groupes de collisions, les collisions peuvent être aléatoire.
