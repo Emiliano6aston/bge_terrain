@@ -87,7 +87,6 @@ public:
 		m_childTrans.setIdentity();
 	}
 
-	CcdShapeConstructionInfo(const CcdShapeConstructionInfo &other);
 	~CcdShapeConstructionInfo();
 
 	CcdShapeConstructionInfo* AddRef()
@@ -786,7 +785,7 @@ protected:
 			return GetConstructionInfo().m_shapeInfo->m_shapeType == PHY_SHAPE_COMPOUND;
 		}
 
-		virtual bool ReinstancePhysicsShape(KX_GameObject *from_gameobj, RAS_MeshObject* from_meshobj, bool share=true);
+		virtual bool ReinstancePhysicsShape(KX_GameObject *from_gameobj, RAS_MeshObject* from_meshobj);
 
 		/* Method to replicate rigid body joint contraints for group instances. */
 		virtual void ReplicateConstraints(KX_GameObject *gameobj, std::vector<KX_GameObject*> constobj);
