@@ -206,15 +206,15 @@ void RNA_def_terrain(BlenderRNA *brna)
 	RNA_def_property_range(prop, 0, 16384);
 	RNA_def_property_ui_text(prop, "Width", "");
 
-	prop = RNA_def_property(srna, "distance", PROP_FLOAT, PROP_NONE);
-	RNA_def_property_float_sdna(prop, NULL, "distance");
+	prop = RNA_def_property(srna, "camera_distance", PROP_FLOAT, PROP_NONE);
+	RNA_def_property_float_sdna(prop, NULL, "cameradistance");
 	RNA_def_property_range(prop, 0.0, FLT_MAX);
-	RNA_def_property_ui_text(prop, "Distance", "");
+	RNA_def_property_ui_text(prop, "Camera Distance", "");
 
-	prop = RNA_def_property(srna, "physics_distance", PROP_FLOAT, PROP_NONE);
-	RNA_def_property_float_sdna(prop, NULL, "physicsdistance");
+	prop = RNA_def_property(srna, "object_distance", PROP_FLOAT, PROP_NONE);
+	RNA_def_property_float_sdna(prop, NULL, "objectdistance");
 	RNA_def_property_range(prop, 0.0, FLT_MAX);
-	RNA_def_property_ui_text(prop, "Physics Distance", "");
+	RNA_def_property_ui_text(prop, "Object Distance", "");
 
 	prop = RNA_def_property(srna, "chunk_size", PROP_FLOAT, PROP_NONE);
 	RNA_def_property_float_sdna(prop, NULL, "chunksize");
@@ -226,6 +226,11 @@ void RNA_def_terrain(BlenderRNA *brna)
 	RNA_def_property_struct_type(prop, "Material");
 	RNA_def_property_flag(prop, PROP_EDITABLE);
 	RNA_def_property_ui_text(prop, "Material", "");
+
+	prop = RNA_def_property(srna, "min_physics_level", PROP_INT, PROP_NONE);
+	RNA_def_property_int_sdna(prop, NULL, "minphysicslevel");
+	RNA_def_property_range(prop, 0, 16);
+	RNA_def_property_ui_text(prop, "Min Physics Level", "");
 
 	rna_def_terrain_zone(brna);
 

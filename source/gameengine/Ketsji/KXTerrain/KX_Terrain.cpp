@@ -39,19 +39,21 @@ KX_Terrain::KX_Terrain(void *sgReplicationInfo,
 					   RAS_MaterialBucket *bucket,
 					   Material *material,
 					   unsigned short maxLevel,
+					   unsigned short minPhysicsLevel,
 					   unsigned short vertexSubdivision,
 					   unsigned short width,
-					   float maxDistance,
-					   float physicsMaxDistance,
+					   float cameraMaxDistance,
+					   float objectMaxDistance,
 					   float chunkSize)
 	:KX_GameObject(sgReplicationInfo, callbacks),
 	m_bucket(bucket),
 	m_material(material),
 	m_maxChunkLevel(maxLevel),
+	m_minPhysicsLevel(minPhysicsLevel),
 	m_vertexSubdivision(vertexSubdivision),
 	m_width(width),
-	m_maxDistance2(maxDistance * maxDistance),
-	m_physicsMaxDistance2(physicsMaxDistance * physicsMaxDistance),
+	m_cameraMaxDistance2(cameraMaxDistance * cameraMaxDistance),
+	m_objectMaxDistance2(objectMaxDistance * objectMaxDistance),
 	m_chunkSize(chunkSize),
 	m_maxHeight(0.0f),
 	m_minHeight(0.0f),
@@ -162,7 +164,7 @@ unsigned short KX_Terrain::GetSubdivision(float distance, bool iscamera) const
 {
 	unsigned int ret = 1;
 	// les objets non pas besoin d'une aussi grande subdivision que la camera
-	const float maxdistance = iscamera ? m_maxDistance2 : m_physicsMaxDistance2;
+	const float maxdistance = iscamera ? m_cameraMaxDistance2 : m_objectMaxDistance2;
 	for (float i = m_maxChunkLevel; i > 0.; --i) {
 		if (distance > (i / m_maxChunkLevel * maxdistance) || ret == m_maxChunkLevel)
 			break;
