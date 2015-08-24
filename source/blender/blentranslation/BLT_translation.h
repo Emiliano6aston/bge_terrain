@@ -143,6 +143,7 @@ const char *BLT_translate_do_new_dataname(const char *msgctxt, const char *msgid
 #define BLT_I18NCONTEXT_ID_SEQUENCE             "Sequence"
 #define BLT_I18NCONTEXT_ID_SPEAKER              "Speaker"
 #define BLT_I18NCONTEXT_ID_SOUND                "Sound"
+#define BLT_I18NCONTEXT_ID_TERRAIN              "Terrain"
 #define BLT_I18NCONTEXT_ID_TEXTURE              "Texture"
 #define BLT_I18NCONTEXT_ID_TEXT                 "Text"
 #define BLT_I18NCONTEXT_ID_VFONT                "VFont"
@@ -196,6 +197,7 @@ typedef struct {
 	BLT_I18NCONTEXTS_ITEM(BLT_I18NCONTEXT_ID_SEQUENCE, "id_sequence"),                                                 \
 	BLT_I18NCONTEXTS_ITEM(BLT_I18NCONTEXT_ID_SPEAKER, "id_speaker"),                                                   \
 	BLT_I18NCONTEXTS_ITEM(BLT_I18NCONTEXT_ID_SOUND, "id_sound"),                                                       \
+	BLT_I18NCONTEXTS_ITEM(BLT_I18NCONTEXT_ID_TERRAIN, "id_terrain"),                                                   \
 	BLT_I18NCONTEXTS_ITEM(BLT_I18NCONTEXT_ID_TEXTURE, "id_texture"),                                                   \
 	BLT_I18NCONTEXTS_ITEM(BLT_I18NCONTEXT_ID_TEXT, "id_text"),                                                         \
 	BLT_I18NCONTEXTS_ITEM(BLT_I18NCONTEXT_ID_VFONT, "id_vfont"),                                                       \
