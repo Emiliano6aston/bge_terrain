@@ -422,11 +422,17 @@ KX_Chunk::Vertex *KX_Chunk::NewVertex(unsigned short relx, unsigned short rely)
 	VertexZoneInfo *info = terrain->GetVertexInfo(nodepos.x() + vertx, nodepos.y() + verty);
 	const float vertz = info->height;
 
-	if (vertz > m_maxVertexHeight)
+	if (!m_requestCreateBox) {
+		if (vertz > m_maxVertexHeight)
+			m_maxVertexHeight = vertz;
+		else if (vertz < m_minVertexHeight)
+			m_minVertexHeight = vertz;
+	}
+	else {
 		m_maxVertexHeight = vertz;
-
-	if (vertz < m_minVertexHeight)
 		m_minVertexHeight = vertz;
+		m_requestCreateBox = false;
+	}
 
 	Vertex *vertex = new Vertex(info, relx, rely, vertx, verty, m_originVertexIndex++);
 	return vertex;
@@ -698,8 +704,7 @@ void KX_Chunk::ConstructVertexes()
 	 */
 	m_originVertexIndex = 0;
 
-	m_maxVertexHeight = 0.0f;
-	m_minVertexHeight = 0.0f;
+	m_requestCreateBox = true;
 
 	for (unsigned short i = 0; i < 4; ++i)
 		m_columns[i] = new JointColumn((i < 2));

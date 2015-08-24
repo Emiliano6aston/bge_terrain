@@ -103,6 +103,7 @@ private:
 
 	float m_maxVertexHeight;
 	float m_minVertexHeight;
+	bool m_requestCreateBox;
 
 	/// Les dernières jointures.
 	unsigned short m_lastHasJoint[4]; // TODO renommer et utiliser 1 comme valeur par default

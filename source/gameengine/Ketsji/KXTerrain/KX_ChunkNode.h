@@ -87,6 +87,8 @@ private:
 	float m_maxBoxHeight;
 	/// La hauteur minimal de la boite
 	float m_minBoxHeight;
+	/// Doit ont recreer la boite ?
+	bool m_requestCreateBox;
 
 	/// Le noeud est il visible ?
 	short m_culledState;
