@@ -320,17 +320,25 @@ void KX_ChunkNode::ResetBoxHeight()
 {
 	m_maxBoxHeight = 0.0f;
 	m_minBoxHeight = 0.0f;
+	m_requestCreateBox = true;
 }
 
 void KX_ChunkNode::CheckBoxHeight(float max, float min)
 {
-	if (max > m_maxBoxHeight) {
-		m_maxBoxHeight = max;
-		m_boxModified = true;
+	if (!m_requestCreateBox) {
+		if (max > m_maxBoxHeight) {
+			m_maxBoxHeight = max;
+			m_boxModified = true;
+		}
+		if (min < m_minBoxHeight) {
+			m_minBoxHeight = min;
+			m_boxModified = true;
+		}
 	}
-	if (min < m_minBoxHeight) {
+	else {
+		m_maxBoxHeight = max;
 		m_minBoxHeight = min;
-		m_boxModified = true;
+		m_requestCreateBox = false;
 	}
 
 	if (m_parentNode)
