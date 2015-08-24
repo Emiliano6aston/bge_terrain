@@ -492,6 +492,7 @@ static void template_ID(
 		                                 BLT_I18NCONTEXT_ID_CURVE,
 		                                 BLT_I18NCONTEXT_ID_METABALL,
 		                                 BLT_I18NCONTEXT_ID_MATERIAL,
+		                                 BLT_I18NCONTEXT_ID_TERRAIN,
 		                                 BLT_I18NCONTEXT_ID_TEXTURE,
 		                                 BLT_I18NCONTEXT_ID_IMAGE,
 		                                 BLT_I18NCONTEXT_ID_LATTICE,

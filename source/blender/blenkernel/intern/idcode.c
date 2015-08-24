@@ -84,7 +84,7 @@ static IDType idtypes[] = {
 	{ ID_SEQ,  "Sequence",           "sequences",       BLT_I18NCONTEXT_ID_SEQUENCE,           0                       }, /* not actually ID data */
 	{ ID_SPK,  "Speaker",            "speakers",        BLT_I18NCONTEXT_ID_SPEAKER,            IDTYPE_FLAGS_ISLINKABLE },
 	{ ID_SO,   "Sound",              "sounds",          BLT_I18NCONTEXT_ID_SOUND,              IDTYPE_FLAGS_ISLINKABLE },
-	{ ID_TER,  "Terrain",            "terrains",        BLF_I18NCONTEXT_ID_TERRAIN,            IDTYPE_FLAGS_ISLINKABLE },
+	{ ID_TER,  "Terrain",            "terrains",        BLT_I18NCONTEXT_ID_TERRAIN,            IDTYPE_FLAGS_ISLINKABLE },
 	{ ID_TE,   "Texture",            "textures",        BLT_I18NCONTEXT_ID_TEXTURE,            IDTYPE_FLAGS_ISLINKABLE },
 	{ ID_TXT,  "Text",               "texts",           BLT_I18NCONTEXT_ID_TEXT,               IDTYPE_FLAGS_ISLINKABLE },
 	{ ID_VF,   "VFont",              "fonts",           BLT_I18NCONTEXT_ID_VFONT,              IDTYPE_FLAGS_ISLINKABLE },
