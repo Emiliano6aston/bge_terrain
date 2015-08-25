@@ -293,7 +293,4 @@ void KX_TerrainZoneMesh::GetVertexInfo(const float x, const float y, VertexZoneI
 	}
 
 	r_info->height += deltaheight;
-	if (hit && m_zoneInfo->flag & TERRAIN_ZONE_VERTEX_COLOR) {
-		copy_v3_v3(r_info->color, m_zoneInfo->vertexcolor);
-	}
 }
