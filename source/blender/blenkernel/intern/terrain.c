@@ -180,6 +180,7 @@ void BKE_terrain_zone_add(Terrain *terrain)
 	zone->clampend = 0.0;
 	zone->image = NULL;
 	zone->imageheight = 0.0f;
+	zone->uvchannel = 2;
 
 	BLI_addtail(&terrain->zones, zone);
 
