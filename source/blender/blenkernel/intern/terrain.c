@@ -178,9 +178,6 @@ void BKE_terrain_zone_add(Terrain *terrain)
 	zone->resolution = 100.0;
 	zone->clampstart = 0.0;
 	zone->clampend = 0.0;
-	zone->vertexcolor[0] = 1.0;
-	zone->vertexcolor[1] = 1.0;
-	zone->vertexcolor[2] = 1.0;
 	zone->image = NULL;
 	zone->imageheight = 0.0f;
 
