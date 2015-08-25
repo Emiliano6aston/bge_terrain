@@ -26,7 +26,6 @@
 #include "DNA_mesh_types.h"
 #include "DNA_terrain_types.h"
 #include <iostream>
-#include "BLI_math.h"
 #include "BLI_noise.h"
 #include "BLI_utildefines.h"
 #include "BKE_image.h"
@@ -34,6 +33,7 @@
 
 extern "C" {
 	#include "IMB_imbuf.h"
+	#include "BLI_math.h"
 }
 
 KX_TerrainZoneMesh::KX_TerrainZoneMesh(KX_Terrain *terrain, TerrainZone *zoneInfo, Mesh *mesh)
@@ -69,8 +69,10 @@ KX_TerrainZoneMesh::KX_TerrainZoneMesh(KX_Terrain *terrain, TerrainZone *zoneInf
 		m_derivedMesh = NULL;
 
 	m_buf = m_zoneInfo->image ? BKE_image_acquire_ibuf(m_zoneInfo->image, NULL, NULL) : NULL;
-	if (m_buf)
+	if (m_buf) {
+		// On genère l'image avec une precision de 32 bits.
 		IMB_float_from_rect(m_buf);
+	}
 }
 
 KX_TerrainZoneMesh::~KX_TerrainZoneMesh()
@@ -223,13 +225,13 @@ float KX_TerrainZoneMesh::GetImageHeight(const float x, const float y) const
 		const float halfterrainsize = terrainsize / 2.0f;
 
 		float color[4];
-		float u = (halfterrainsize + x) / terrainsize * m_buf->x;
-		float v = (halfterrainsize + y) / terrainsize * m_buf->y;
-		const float epsilon = 0.00001f;
-		CLAMP(u, epsilon, m_buf->x - epsilon);
-		CLAMP(v, epsilon, m_buf->y - epsilon);
-		bilinear_interpolation_color_wrap(m_buf, NULL, color, u, v);
-		height = /*rgb_to_grayscale_byte(color) / 255.0f*/color[0] * m_zoneInfo->imageheight;
+
+		float u = (halfterrainsize + x) * m_buf->x / terrainsize;
+		float v = (halfterrainsize + y) * m_buf->y / terrainsize;
+
+		BLI_bicubic_interpolation_fl(m_buf->rect_float, color, m_buf->x, m_buf->y, 4, u, v);
+
+		height = color[0] * m_zoneInfo->imageheight;
 	}
 
 	return height;
