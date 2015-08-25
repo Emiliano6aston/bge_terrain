@@ -95,8 +95,6 @@ private:
 
 	/// on stocke les colonnes pour un reconstruction plus rapide
 	JointColumn *m_columns[4];
-	/// L'etat des normales des colonnes : calculé on non.
-	bool m_normalColumnState[4];
 	Vertex *m_center[VERTEX_COUNT_INTERN][VERTEX_COUNT_INTERN];
 	bool m_hasVertexes;
 	bool m_onConstruct;
@@ -140,7 +138,7 @@ private:
 	void ConstructJointColumnPolygones(JointColumn *column, bool reverse);
 	void AddMeshPolygonVertexes(Vertex *v1, Vertex *v2, Vertex *v3, bool reverse);
 
-	void SetNormal(Vertex *vertexCenter, bool intern) const;
+	void SetNormal(Vertex *vertexCenter) const;
 
 public:
 	KX_Chunk(KX_ChunkNode *node, RAS_MaterialBucket *m_bucket);
