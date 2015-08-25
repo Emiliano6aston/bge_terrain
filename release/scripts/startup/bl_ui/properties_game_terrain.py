@@ -207,5 +207,25 @@ class TERRAIN_PT_game_terrain_zones_clamp(TerrainButtonsPanel, Panel):
                 row.column().prop(zone, "clamp_start")
                 row.column().prop(zone, "clamp_end")
 
+class TERRAIN_PT_game_terrain_zones_vertex_uv(TerrainButtonsPanel, Panel):
+    bl_label = "Vertex UV"
+    COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_GAME'}
+
+    def draw(self, context):
+        layout = self.layout
+
+        scene = context.scene
+        terrain = scene.terrain
+        row = layout.row()
+
+        if terrain:
+            zone = terrain.zones.active_zone
+
+            if zone:
+                layout.active = zone.use_uv_texture_color
+                row = layout.row()
+                row.column().prop(zone, "use_uv_texture_color")
+                row.column().prop(zone, "uv_channel")
+
 if __name__ == "__main__":  # only for live edit.
     bpy.utils.register_module(__name__)

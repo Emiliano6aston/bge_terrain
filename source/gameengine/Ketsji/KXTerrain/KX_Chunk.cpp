@@ -551,7 +551,6 @@ void KX_Chunk::AddMeshPolygonVertexes(Vertex *v1, Vertex *v2, Vertex *v3, bool r
 #endif
 
 	RAS_Polygon* poly = m_meshObj->AddPolygon(m_bucket, 3);
-	const MT_Point2& nodepos = m_node->GetRealPos();
 
 	poly->SetVisible(true);
 	poly->SetCollider(true);
@@ -563,29 +562,19 @@ void KX_Chunk::AddMeshPolygonVertexes(Vertex *v1, Vertex *v2, Vertex *v3, bool r
 	starttime = KX_GetActiveEngine()->GetRealTime();
 #endif
 
-	MT_Point2 uvs_1[8];
-	MT_Point2 uvs_2[8];
-	MT_Point2 uvs_3[8];
-
-	for (unsigned short i = 0; i < 8; ++i) {
-		uvs_1[i] = MT_Point2(v1->absolutePos) + nodepos;
-		uvs_2[i] = MT_Point2(v2->absolutePos) + nodepos;
-		uvs_3[i] = MT_Point2(v3->absolutePos) + nodepos;
-	}
-
 	const MT_Vector4 tangent(0.0f, 0.0f, 0.0f, 0.0f);
 
 	if (v1->vertIndex == -1) {
 		v1->vertIndex = m_meshObj->AddVertex(m_bucket, MT_Point3(v1->absolutePos[0], v1->absolutePos[1], v1->vertexInfo->height),
-				uvs_1, tangent, 0, v1->normal, false, v1->origIndex, 3);
+				v1->vertexInfo->m_uvs, tangent, 0, v1->normal, false, v1->origIndex, 3);
 	}
 	if (v2->vertIndex == -1) {
 		v2->vertIndex = m_meshObj->AddVertex(m_bucket, MT_Point3(v2->absolutePos[0], v2->absolutePos[1], v2->vertexInfo->height),
-				uvs_2, tangent, 0, v2->normal, false, v2->origIndex, 3);
+				v2->vertexInfo->m_uvs, tangent, 0, v2->normal, false, v2->origIndex, 3);
 	}
 	if (v3->vertIndex == -1) {
 		v3->vertIndex = m_meshObj->AddVertex(m_bucket, MT_Point3(v3->absolutePos[0], v3->absolutePos[1], v3->vertexInfo->height), 
-				uvs_3, tangent, 0, v3->normal, false, v3->origIndex, 3);
+				v3->vertexInfo->m_uvs, tangent, 0, v3->normal, false, v3->origIndex, 3);
 	}
 
 	if (reverse) {

@@ -242,10 +242,6 @@ void KX_TerrainZoneMesh::GetVertexInfo(const float x, const float y, VertexZoneI
 	float deltaheight = 0.0f;
 	bool hit = false;
 
-	// set vertex 2d position
-	r_info->pos[0] = x;
-	r_info->pos[1] = y;
-
 	// on utilise un mesh comme zone
 	if (m_zoneInfo->flag & TERRAIN_ZONE_MESH && m_zoneInfo->mesh) {
 		// en premier on verifie que le point est bien compris dans les maximum et minimun du mesh
@@ -293,4 +289,13 @@ void KX_TerrainZoneMesh::GetVertexInfo(const float x, const float y, VertexZoneI
 	}
 
 	r_info->height += deltaheight;
+
+	if (m_zoneInfo->flag & TERRAIN_ZONE_USE_UV_TEXTURE_COLOR) {
+		const float epsilon = 0.001f;
+		if (deltaheight != 0.0f) {
+			const unsigned short channel = m_zoneInfo->uvchannel / 2;
+			const unsigned short coord = m_zoneInfo->uvchannel % 2;
+			r_info->m_uvs[channel][coord] = 1.0f;
+		}
+	}
 }
