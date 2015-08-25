@@ -176,7 +176,6 @@ struct KX_Chunk::Vertex
 	bool valid; // 1
 
 	bool validNormal;
-	float quad[4][3];
 
 	/// La normale du vertice.
 	float normal[3]; // 4 * 3 = 12
@@ -509,82 +508,32 @@ KX_ChunkNode::Point2D KX_Chunk::GetTerrainRelativeVertexPosition(unsigned short 
  *      3
  * C : centre du quadrilatère soit le vertice envoyé
  *
- * Ces quatre points peuvent être des vertices déjà existant, mais parfois non.
- * Dans ce cas la on calcule la position d'un vertice virtuelle.
+ * Ces quatre points doivent être des vertices déjà existant.
  */
-void KX_Chunk::SetNormal(Vertex *vertexCenter, bool intern) const
+void KX_Chunk::SetNormal(Vertex *vertexCenter) const
 {
-	// la position du vertice donc du centre du quad
-	const float x = vertexCenter->absolutePos[0];
-	const float y = vertexCenter->absolutePos[1];
-
 	// le quadrilatère
 	float quad[4][3];
 
 	/* Si le vertice n'est pas un vertice adjacent il suffit de
 	 * recupérer les 4 vertice autour.
 	 */
-	if (intern) {
-		// la position relative du vertice
-		const unsigned short relx = vertexCenter->relativePos[0];
-		const unsigned short rely = vertexCenter->relativePos[1];
+	// la position relative du vertice
+	const unsigned short relx = vertexCenter->relativePos[0];
+	const unsigned short rely = vertexCenter->relativePos[1];
 
-		// on trouve les 4 vertices adjacents
-		Vertex *vertexes[4] = {
-			GetVertexByChunkRelativePosition(relx + 1, rely),
-			GetVertexByChunkRelativePosition(relx, rely + 1),
-			GetVertexByChunkRelativePosition(relx - 1, rely),
-			GetVertexByChunkRelativePosition(relx, rely - 1)
-		};
-		// Puis pour chaque vertice on copie sa position en 3d
-		for (unsigned short i = 0; i < 4; ++i) {
-			quad[i][0] = vertexes[i]->absolutePos[0];
-			quad[i][1] = vertexes[i]->absolutePos[1];
-			quad[i][2] = vertexes[i]->vertexInfo->height;
-		}
-	}
-	// Sinon on créer des faux vertices autour.
-	else {
-		KX_Terrain *terrain = m_node->GetTerrain();
-		// la position du noeud parent du chunk
-		const MT_Point2& nodepos = m_node->GetRealPos();
-#if 0
-		// La camera active.
-		KX_Camera *cam = KX_GetActiveScene()->GetActiveCamera();
-		// La distance de ce point vers la camera.
-		const float distance = cam->NodeGetWorldPosition().distance(MT_Point3(x + nodepos.x(), y + nodepos.y(), 0.0f));
-		// Le rayon d'un chunk.
-		const float chunkwidth = sqrt(terrain->GetChunkSize() * terrain->GetChunkSize());
-		// Le rayon reel du terrain.
-		const float terrainwidth = chunkwidth * terrain->GetWidth();
-		// L'interval entre les vertices pour le plus petit des chunk.
-		const float mininterval = terrain->GetChunkSize() / POLY_COUNT;
-		// L'interval entre les vertices pour le plus grand des chunk, les plus grands des chunks sont le quart du terrain.
-		const float maxinterval = terrainwidth / POLY_COUNT / 2;
-#endif
-
-		// la taille du quad servant a calculer la normale
-		const float smothsize = 5.0f; // distance / (terrainwidth - chunkwidth) * (maxinterval - mininterval) + mininterval / 2.0f;
-
-		// on calcule 4 positions autours du vertice
-		quad[0][0] = x + smothsize; 
-		quad[0][1] = y;
-		quad[1][0] = x; 
-		quad[1][1] = y + smothsize;
-		quad[2][0] = x - smothsize;
-		quad[2][1] = y;
-		quad[3][0] = x;
-		quad[3][1] = y - smothsize;
-
-		for (unsigned short i = 0; i < 4; ++i) {
-// #ifdef JOINT_SMOOTH
-			VertexZoneInfo *info = terrain->GetVertexInfo(quad[i][0] + nodepos.x(), quad[i][1] + nodepos.y());
-			quad[i][2] = info->height;
-			info->Release();
-// #else
-// 			quad[i][2] = 0.0f;
-// #endif
-		}
+	// on trouve les 4 vertices adjacents
+	Vertex *vertexes[4] = {
+		GetVertexByChunkRelativePosition(relx + 1, rely),
+		GetVertexByChunkRelativePosition(relx, rely + 1),
+		GetVertexByChunkRelativePosition(relx - 1, rely),
+		GetVertexByChunkRelativePosition(relx, rely - 1)
+	};
+	// Puis pour chaque vertice on copie sa position en 3d
+	for (unsigned short i = 0; i < 4; ++i) {
+		quad[i][0] = vertexes[i]->absolutePos[0];
+		quad[i][1] = vertexes[i]->absolutePos[1];
+		quad[i][2] = vertexes[i]->vertexInfo->height;
 	}
 
 	normal_quad_v3(vertexCenter->normal, quad[0], quad[1], quad[2], quad[3]);
@@ -764,19 +713,9 @@ void KX_Chunk::ConstructVertexes()
 	starttime = KX_GetActiveEngine()->GetRealTime();
 #endif
 
-	/*for (unsigned short columnIndex = COLUMN_LEFT; columnIndex <= COLUMN_RIGHT; ++columnIndex) {
-		for (unsigned short vertexIndex = 0; vertexIndex < VERTEX_COUNT; ++vertexIndex)
-			SetNormal(m_columns[columnIndex]->GetExternVertex(vertexIndex), false);
-	}
-
-	for (unsigned short columnIndex = COLUMN_FRONT; columnIndex <= COLUMN_BACK; ++columnIndex) {
-		for (unsigned short vertexIndex = 1; vertexIndex < (VERTEX_COUNT - 1); ++vertexIndex)
-			SetNormal(m_columns[columnIndex]->GetExternVertex(vertexIndex), false);
-	}*/
-
 	for (unsigned short columnIndex = 1; columnIndex < (VERTEX_COUNT - 1); ++columnIndex) {
 		for (unsigned short vertexIndex = 1; vertexIndex < (VERTEX_COUNT - 1); ++vertexIndex)
-			SetNormal(m_center[columnIndex - 1][vertexIndex - 1], true);
+			SetNormal(m_center[columnIndex - 1][vertexIndex - 1]);
 	}
 
 #ifdef STATS
@@ -784,16 +723,6 @@ void KX_Chunk::ConstructVertexes()
 	normalComputingTime += endtime - starttime;
 #endif
 }
-
-#if 0
-static short round(short value, short align, bool up)
-{
-	// La difference entre la valuer alignée et non alignée/
-	short delta = ((short)value / align + (short)up) * align;
-	
-	return value - (value - delta);
-}
-#endif
 
 /* On accede au vertice dans le chunk voisin le plus proche et alignée
  * au vertice referent.
@@ -844,7 +773,6 @@ void KX_Chunk::GetCoorespondingVertexesFromChunk(KX_ChunkNode *jointNode, Vertex
 
 		const bool onFront = (vertexIndex == 0);
 		const bool onBack = (vertexIndex == (VERTEX_COUNT - 1));
-		const bool onEdge = (onFront || onBack);
 
 		// Le decalage en vertice par rapport a terrain.
 		const unsigned short vertexRatio = onFront ? frontColumnVertexRatio : (onBack ? backColumnVertexRatio : 1);
@@ -1026,15 +954,15 @@ void KX_Chunk::ComputeColumnJointVertexNormal(COLUMN_TYPE columnType, bool rever
 			vertex->validNormal = true;
 
 			for (unsigned short i = 0; i < 4; ++i) {
-				vertex->quad[i][0] = quadVertexes[i]->vertexInfo->pos[0];
-				vertex->quad[i][1] = quadVertexes[i]->vertexInfo->pos[1];
-				vertex->quad[i][2] = quadVertexes[i]->vertexInfo->height + .5;
+				quad[i][0] = quadVertexes[i]->vertexInfo->pos[0];
+				quad[i][1] = quadVertexes[i]->vertexInfo->pos[1];
+				quad[i][2] = quadVertexes[i]->vertexInfo->height;
 			}
 
 			if (reverse)
-				normal_quad_v3(vertex->normal, vertex->quad[0], vertex->quad[1], vertex->quad[2], vertex->quad[3]);
+				normal_quad_v3(vertex->normal, quad[0], quad[1], quad[2], quad[3]);
 			else
-				normal_quad_v3(vertex->normal, vertex->quad[3], vertex->quad[2], vertex->quad[1], vertex->quad[0]);
+				normal_quad_v3(vertex->normal, quad[3], quad[2], quad[1], quad[0]);
 
 			for (unsigned short i = 0; i < 4; ++i) {
 				Vertex *coVertex = coVertexes[i];
@@ -1045,25 +973,12 @@ void KX_Chunk::ComputeColumnJointVertexNormal(COLUMN_TYPE columnType, bool rever
 				coVertex->normal[1] = vertex->normal[1];
 				coVertex->normal[2] = vertex->normal[2];
 				coVertex->validNormal = true;
-
-				for (unsigned short i = 0; i < 4; ++i) {
-					coVertex->quad[i][0] = vertex->quad[i][0];
-					coVertex->quad[i][1] = vertex->quad[i][1];
-					coVertex->quad[i][2] = vertex->quad[i][2];
-				}
 			}
 		}
 		else {
 			vertex->normal[0] = 0.0f;
 			vertex->normal[1] = 0.0f;
 			vertex->normal[2] = 1.0f;
-
-			// pour debuguer
-			for (unsigned short i = 0; i < 4; ++i) {
-				vertex->quad[i][0] = 0.0f;
-				vertex->quad[i][1] = 0.0f;
-				vertex->quad[i][2] = 0.0f;
-			}
 		}
 	}
 }
@@ -1078,10 +993,6 @@ void KX_Chunk::UpdateColumnVertexesNormal(COLUMN_TYPE columnType)
 		Vertex *vertex = m_columns[columnType]->GetExternVertex(vertexIndex);
 		if (!vertex->valid)
 			continue;
-		if (vertex->vertIndex == -1) {
-			DEBUG("vertex : " << vertex << ", with invalid ras vert index");
-			continue;
-		}
 
 		RAS_TexVert *rasvert = m_meshObj->GetVertex(0, vertex->vertIndex);
 		rasvert->SetNormal(MT_Vector3(vertex->normal));
@@ -1327,11 +1238,6 @@ void KX_Chunk::UpdateMesh()
 		 * On remet aussi à default les indices des vertices.
 		 */
 		InvalidateJointVertexesAndIndexes();
-
-		m_normalColumnState[COLUMN_LEFT] = false;
-		m_normalColumnState[COLUMN_RIGHT] = false;
-		m_normalColumnState[COLUMN_FRONT] = false;
-		m_normalColumnState[COLUMN_BACK] = false;
 	}
 	m_node->CheckBoxHeight(m_maxVertexHeight, m_minVertexHeight);
 }

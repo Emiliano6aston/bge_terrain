@@ -226,8 +226,10 @@ float KX_TerrainZoneMesh::GetImageHeight(const float x, const float y) const
 
 		float color[4];
 
-		float u = (halfterrainsize + x) * m_buf->x / terrainsize;
-		float v = (halfterrainsize + y) * m_buf->y / terrainsize;
+		float u = (halfterrainsize + x) / terrainsize * m_buf->x;
+		float v = (halfterrainsize + y) / terrainsize * m_buf->y;
+		CLAMP(u, 1, m_buf->x - 1);
+		CLAMP(v, 1, m_buf->y - 1);
 
 		BLI_bicubic_interpolation_fl(m_buf->rect_float, color, m_buf->x, m_buf->y, 4, u, v);
 
