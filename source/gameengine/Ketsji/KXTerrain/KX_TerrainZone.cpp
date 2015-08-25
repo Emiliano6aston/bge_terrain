@@ -141,9 +141,9 @@ float KX_TerrainZoneMesh::GetMinHeight() const
 	return minheight;
 }
 
-float KX_TerrainZoneMesh::GetClampedHeight(const float orgheight, const float interp, const float x, const float y, const float *v1, const float *v2, const float *v3) const
+float KX_TerrainZoneMesh::GetClampedHeight(const float orgheight, const float x, const float y, const float *v1, const float *v2, const float *v3) const
 {
-	float height = orgheight;
+	float height = 0.0f;
 
 	if (m_zoneInfo->flag & TERRAIN_ZONE_CLAMP) {
 		/*if (m_zoneInfo->flag & TERRAIN_ZONE_CLAMP_MESH) {
@@ -156,12 +156,9 @@ float KX_TerrainZoneMesh::GetClampedHeight(const float orgheight, const float in
 			}
 		}
 		else {*/
-			if (orgheight > m_zoneInfo->clampend) {
-				height = m_zoneInfo->clampend + (orgheight - m_zoneInfo->clampend) * interp;
-			}
-			else if (orgheight < m_zoneInfo->clampstart) {
-				height = m_zoneInfo->clampstart + (orgheight - m_zoneInfo->clampstart) * interp;
-			}
+			float origheight2 = orgheight;
+			CLAMP(origheight2, m_zoneInfo->clampstart, m_zoneInfo->clampend);
+			height = origheight2 - orgheight;
 		// }
 	}
 
@@ -170,28 +167,28 @@ float KX_TerrainZoneMesh::GetClampedHeight(const float orgheight, const float in
 
 float KX_TerrainZoneMesh::GetMeshColorInterp(const float *point, const unsigned int faceindex, const MVert &v1, const MVert &v2, const MVert &v3) const
 {
-	float interp = 1.0;
+	float interp = 1.0f;
 
 	if (m_zoneInfo->flag & TERRAIN_ZONE_MESH_VERTEX_COLOR_INTERP) {
 		MCol *mcol = (MCol *)m_derivedMesh->getTessFaceDataArray(m_derivedMesh, CD_MCOL);
 
 		// couleur du remier vertice
 		float c1[3] = {
-			(float)mcol[faceindex * 4].r / 255, 
-			(float)mcol[faceindex * 4].g / 255,
-			(float)mcol[faceindex * 4].b / 255
+			(float)mcol[faceindex * 4].r / 255.0f, 
+			(float)mcol[faceindex * 4].g / 255.0f,
+			(float)mcol[faceindex * 4].b / 255.0f
 		};
 		// couleur du second vertice
 		float c2[3] = {
-			(float)mcol[faceindex * 4 + 1].r / 255,
-			(float)mcol[faceindex * 4 + 1].g / 255, 
-			(float)mcol[faceindex * 4 + 1].b / 255
+			(float)mcol[faceindex * 4 + 1].r / 255.0f,
+			(float)mcol[faceindex * 4 + 1].g / 255.0f,
+			(float)mcol[faceindex * 4 + 1].b / 255.0f
 		};
 		// couleur du troisieme vertice
 		float c3[3] = {
-			(float)mcol[faceindex * 4 + 2].r / 255, 
-			(float)mcol[faceindex * 4 + 2].g / 255,
-			(float)mcol[faceindex * 4 + 2].b / 255
+			(float)mcol[faceindex * 4 + 2].r / 255.0f,
+			(float)mcol[faceindex * 4 + 2].g / 255.0f,
+			(float)mcol[faceindex * 4 + 2].b / 255.0f
 		};
 
 		float weight[3];
@@ -207,10 +204,10 @@ float KX_TerrainZoneMesh::GetMeshColorInterp(const float *point, const unsigned 
 
 float KX_TerrainZoneMesh::GetNoiseHeight(const float x, const float y) const
 {
-	float height = 0.0;
+	float height = 0.0f;
 
 	if (m_zoneInfo->flag & TERRAIN_ZONE_PERLIN_NOISE) {
-		height = (BLI_hnoise(m_zoneInfo->resolution, x, y, 0.0) * m_zoneInfo->noiseheight);
+		height = (BLI_hnoise(m_zoneInfo->resolution, x, y, 0.0f) * m_zoneInfo->noiseheight);
 	}
 
 	return height;
@@ -218,7 +215,7 @@ float KX_TerrainZoneMesh::GetNoiseHeight(const float x, const float y) const
 
 float KX_TerrainZoneMesh::GetImageHeight(const float x, const float y) const
 {
-	float height = 0.0;
+	float height = 0.0f;
 
 	if (m_zoneInfo->flag & TERRAIN_ZONE_IMAGE && m_buf) {
 		const float terrainsize = m_terrain->GetWidth() * m_terrain->GetChunkSize();
@@ -242,7 +239,7 @@ float KX_TerrainZoneMesh::GetImageHeight(const float x, const float y) const
 // Si ledit point est en contact, on renvoie la modif asociée à sa hauteur
 void KX_TerrainZoneMesh::GetVertexInfo(const float x, const float y, VertexZoneInfo *r_info) const
 {
-	float height = 0.0;
+	float deltaheight = 0.0f;
 	bool hit = false;
 
 	// set vertex 2d position
@@ -269,34 +266,33 @@ void KX_TerrainZoneMesh::GetVertexInfo(const float x, const float y, VertexZoneI
 				if (result == 1) {
 					const float interp = GetMeshColorInterp(point, i, v1, v2, v3);
 					hit = true;
+					// La difference entre la hauteur precedente et une hauteur clampée.
+					deltaheight += GetClampedHeight(r_info->height, x, y, v1.co, v2.co, v3.co);
 					// La hauteur par default.
-					height += m_zoneInfo->offset;
+					deltaheight += m_zoneInfo->offset;
 					// La hauteur calculé avec un bruit de perlin.
-					height += GetNoiseHeight(x, y);
+					deltaheight += GetNoiseHeight(x, y);
 					// La hauteur dedui par une image.
-					height += GetImageHeight(x, y);
-					// on fais l'interpolation de cette diference de hauteur.
-					height *= interp;
-// TODO					height += GetClampedHeight(r_info->height, 1.0 - interp, x, y, v1.co, v2.co, v3.co);
+					deltaheight += GetImageHeight(x, y);
+					// On fais l'interpolation de cette difference de hauteur.
+					deltaheight *= interp;
 
 					break;
 				}
 			}
 		}
-		// si on ne touche rien il faut tout de même garder la valeur précedente
 		if (!hit) {
-			height = r_info->height;
-// 			height += GetClampedHeight(r_info->height, 1.0, x, y, NULL, NULL, NULL);
+			return;
 		}
 	}
 	else {
-// 		height += GetClampedHeight(r_info->height, 1.0, x, y, NULL, NULL, NULL);
-		height += m_zoneInfo->offset;
-		height += GetNoiseHeight(x, y);
-		height += GetImageHeight(x, y);
+		deltaheight += GetClampedHeight(r_info->height, x, y, NULL, NULL, NULL);
+		deltaheight += m_zoneInfo->offset;
+		deltaheight += GetNoiseHeight(x, y);
+		deltaheight += GetImageHeight(x, y);
 	}
 
-	r_info->height = height;
+	r_info->height += deltaheight;
 	if (hit && m_zoneInfo->flag & TERRAIN_ZONE_VERTEX_COLOR) {
 		copy_v3_v3(r_info->color, m_zoneInfo->vertexcolor);
 	}
