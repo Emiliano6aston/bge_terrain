@@ -103,7 +103,7 @@ public:
 	 * \param v3 The firth vertex of the triangle hited.
 	 * \return The height clamped
 	 */
-	float GetClampedHeight(const float orgheight, const float interp, const float x, const float y,
+	float GetClampedHeight(const float orgheight, const float x, const float y,
 						   const float *v1, const float *v2, const float *v3) const;
 
 	/** Compute the interpolation on a position.
