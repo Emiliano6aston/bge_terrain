@@ -45,8 +45,6 @@ public:
 	float height;
 	/// Vertex 2d coord
 	float pos[2];
-	/// Vertex color
-	float color[3];
 	/// count of chunk vertexes which use it.
 	unsigned char refcount;
 

@@ -577,18 +577,15 @@ void KX_Chunk::AddMeshPolygonVertexes(Vertex *v1, Vertex *v2, Vertex *v3, bool r
 
 	if (v1->vertIndex == -1) {
 		v1->vertIndex = m_meshObj->AddVertex(m_bucket, MT_Point3(v1->absolutePos[0], v1->absolutePos[1], v1->vertexInfo->height),
-				uvs_1, tangent, rgb_to_cpack(v1->vertexInfo->color[0], v1->vertexInfo->color[1], v1->vertexInfo->color[2]),
-				v1->normal, false, v1->origIndex, 3);
+				uvs_1, tangent, 0, v1->normal, false, v1->origIndex, 3);
 	}
 	if (v2->vertIndex == -1) {
 		v2->vertIndex = m_meshObj->AddVertex(m_bucket, MT_Point3(v2->absolutePos[0], v2->absolutePos[1], v2->vertexInfo->height),
-				uvs_2, tangent, rgb_to_cpack(v2->vertexInfo->color[0], v2->vertexInfo->color[1], v2->vertexInfo->color[2]),
-				v2->normal, false, v2->origIndex, 3);
+				uvs_2, tangent, 0, v2->normal, false, v2->origIndex, 3);
 	}
 	if (v3->vertIndex == -1) {
 		v3->vertIndex = m_meshObj->AddVertex(m_bucket, MT_Point3(v3->absolutePos[0], v3->absolutePos[1], v3->vertexInfo->height), 
-				uvs_3, tangent, rgb_to_cpack(v3->vertexInfo->color[0], v3->vertexInfo->color[1], v3->vertexInfo->color[2]),
-				v3->normal, false, v3->origIndex, 3);
+				uvs_3, tangent, 0, v3->normal, false, v3->origIndex, 3);
 	}
 
 	if (reverse) {

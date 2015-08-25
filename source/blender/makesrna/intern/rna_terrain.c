@@ -129,16 +129,6 @@ static void rna_def_terrain_zone(BlenderRNA *brna)
 	RNA_def_property_range(prop, -FLT_MAX, FLT_MAX);
 	RNA_def_property_ui_text(prop, "Clamp End", "");
 
-	prop = RNA_def_property(srna, "use_vertex_color", PROP_BOOLEAN, PROP_NONE);
-	RNA_def_property_boolean_sdna(prop, NULL, "flag", TERRAIN_ZONE_VERTEX_COLOR);
-	RNA_def_property_ui_text(prop, "Use Vertex Color", "");
-
-	prop = RNA_def_property(srna, "vertex_color", PROP_FLOAT, PROP_COLOR);
-	RNA_def_property_float_sdna(prop, NULL, "vertexcolor");
-	RNA_def_property_array(prop, 3);
-	RNA_def_property_range(prop, 0.0, 1.0);
-	RNA_def_property_ui_text(prop, "Vertex Color", "");
-
 	prop = RNA_def_property(srna, "use_image", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "flag", TERRAIN_ZONE_IMAGE);
 	RNA_def_property_ui_text(prop, "Use Image", "");
