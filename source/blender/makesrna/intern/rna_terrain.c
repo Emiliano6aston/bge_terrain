@@ -143,6 +143,15 @@ static void rna_def_terrain_zone(BlenderRNA *brna)
 	RNA_def_property_float_sdna(prop, NULL, "imageheight");
 	RNA_def_property_range(prop, -FLT_MAX, FLT_MAX);
 	RNA_def_property_ui_text(prop, "Image Height", "");
+
+	prop = RNA_def_property(srna, "use_uv_texture_color", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_sdna(prop, NULL, "flag", TERRAIN_ZONE_USE_UV_TEXTURE_COLOR);
+	RNA_def_property_ui_text(prop, "Use UV Texture Color", "");
+
+	prop = RNA_def_property(srna, "uv_channel", PROP_INT, PROP_NONE);
+	RNA_def_property_int_sdna(prop, NULL, "uvchannel");
+	RNA_def_property_range(prop, 2, 15);
+	RNA_def_property_ui_text(prop, "UV Channel", "");
 }
 
 static void rna_def_terrain_zone_collection(BlenderRNA *brna, PropertyRNA *cprop)
