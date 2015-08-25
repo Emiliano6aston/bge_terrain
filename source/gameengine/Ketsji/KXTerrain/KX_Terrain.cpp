@@ -187,6 +187,13 @@ VertexZoneInfo *KX_Terrain::GetVertexInfo(float x, float y) const
 {
 	VertexZoneInfo *info = new VertexZoneInfo();
 
+	// set vertex 2d position
+	info->pos[0] = x;
+	info->pos[1] = y;
+
+	info->m_uvs[0].x() = x;
+	info->m_uvs[0].y() = y;
+
 	for (unsigned short i = 0; i < m_zoneMeshList.size(); ++i)
 		m_zoneMeshList[i]->GetVertexInfo(x, y, info);
 

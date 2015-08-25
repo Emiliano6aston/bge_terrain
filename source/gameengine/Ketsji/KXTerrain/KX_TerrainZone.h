@@ -47,11 +47,20 @@ public:
 	float pos[2];
 	/// count of chunk vertexes which use it.
 	unsigned char refcount;
+	/** Tous les cannal d'UVs.
+	 * Le premier cannal et utilisé pour l'UV du vertice
+	 * et les autres pour la couleur des textures.
+	 */
+	MT_Point2 m_uvs[8];
 
 	VertexZoneInfo()
 		:height(0.0f),
 		refcount(1)
 	{
+		for (unsigned short i = 0; i < 8; ++i) {
+			m_uvs[i].x() = 0.0f;
+			m_uvs[i].y() = 0.0f;
+		}
 	}
 
 	void AddRef()
