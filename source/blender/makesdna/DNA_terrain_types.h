@@ -55,6 +55,8 @@ typedef struct TerrainZone {
 	float imageheight;
 
 	int uvchannel;
+	float color;
+	float colordividor;
 
 	int pad2;
 
@@ -85,6 +87,8 @@ typedef struct Terrain {
 #define TERRAIN_ZONE_CLAMP_MESH					(1 << 4)
 #define TERRAIN_ZONE_MESH_VERTEX_COLOR_INTERP	(1 << 5)
 #define TERRAIN_ZONE_USE_UV_TEXTURE_COLOR		(1 << 6)
+#define TERRAIN_ZONE_USE_HEIGHT_COLOR			(1 << 7)
+#define TERRAIN_ZONE_DIVIDE_COLOR				(1 << 8) /* Used only with TERRAIN_ZONE_USE_HEIGHT_COLOR */
 
 #endif /*__DNA_TERRAIN_TYPES_H__*/
 

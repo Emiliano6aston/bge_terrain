@@ -181,6 +181,8 @@ void BKE_terrain_zone_add(Terrain *terrain)
 	zone->image = NULL;
 	zone->imageheight = 0.0f;
 	zone->uvchannel = 2;
+	zone->color = 1.0f;
+	zone->colordividor = 1.0f;
 
 	BLI_addtail(&terrain->zones, zone);
 

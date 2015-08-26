@@ -240,6 +240,7 @@ float KX_TerrainZoneMesh::GetImageHeight(const float x, const float y) const
 void KX_TerrainZoneMesh::GetVertexInfo(const float x, const float y, VertexZoneInfo *r_info) const
 {
 	float deltaheight = 0.0f;
+	float interp = 1.0f;
 	bool hit = false;
 
 	// on utilise un mesh comme zone
@@ -260,7 +261,7 @@ void KX_TerrainZoneMesh::GetVertexInfo(const float x, const float y, VertexZoneI
 				const int result = isect_point_tri_v2(point, v1.co, v2.co, v3.co);
 				// Si le point est bien dans un des triangles
 				if (result == 1) {
-					const float interp = GetMeshColorInterp(point, i, v1, v2, v3);
+					interp = GetMeshColorInterp(point, i, v1, v2, v3);
 					hit = true;
 					// La difference entre la hauteur precedente et une hauteur clampée.
 					deltaheight += GetClampedHeight(r_info->height, x, y, v1.co, v2.co, v3.co);
@@ -295,7 +296,17 @@ void KX_TerrainZoneMesh::GetVertexInfo(const float x, const float y, VertexZoneI
 		if (deltaheight != 0.0f) {
 			const unsigned short channel = m_zoneInfo->uvchannel / 2;
 			const unsigned short coord = m_zoneInfo->uvchannel % 2;
-			r_info->m_uvs[channel][coord] = 1.0f;
+			float value;
+			if (m_zoneInfo->flag & TERRAIN_ZONE_USE_HEIGHT_COLOR) {
+				value = fabs(deltaheight);
+				if (m_zoneInfo->flag & TERRAIN_ZONE_DIVIDE_COLOR) {
+					value /= m_zoneInfo->colordividor;
+				}
+			}
+			else {
+				value = m_zoneInfo->color;
+			}
+			r_info->m_uvs[channel][coord] = value * interp;
 		}
 	}
 }

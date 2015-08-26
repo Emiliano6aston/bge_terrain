@@ -211,6 +211,13 @@ class TERRAIN_PT_game_terrain_zones_vertex_uv(TerrainButtonsPanel, Panel):
     bl_label = "Vertex UV"
     COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_GAME'}
 
+    def draw_header(self, context):
+        scene = context.scene
+        terrain = scene.terrain
+        zone = terrain.zones.active_zone
+        if zone:
+            self.layout.prop(zone, "use_uv_texture_color", text="")
+
     def draw(self, context):
         layout = self.layout
 
@@ -224,8 +231,13 @@ class TERRAIN_PT_game_terrain_zones_vertex_uv(TerrainButtonsPanel, Panel):
             if zone:
                 layout.active = zone.use_uv_texture_color
                 row = layout.row()
-                row.column().prop(zone, "use_uv_texture_color")
                 row.column().prop(zone, "uv_channel")
+                row = layout.row()
+                row.column().prop(zone, "use_height_color")
+                row.column().prop(zone, "use_color_dividor")
+                row = layout.row()
+                row.column().prop(zone, "color")
+                row.column().prop(zone, "color_dividor")
 
 if __name__ == "__main__":  # only for live edit.
     bpy.utils.register_module(__name__)
