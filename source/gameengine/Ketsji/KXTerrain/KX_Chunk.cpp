@@ -1240,8 +1240,17 @@ void KX_Chunk::EndUpdateMesh()
 		DestructMesh();
 		ConstructMesh();
 
+#ifdef STATS
+		starttime = KX_GetActiveEngine()->GetRealTime();
+#endif
+
 		// Calcule des normales.
 		ComputeJointVertexesNormal();
+
+#ifdef STATS
+		endtime = KX_GetActiveEngine()->GetRealTime();
+		normalComputingTime += endtime - starttime;
+#endif
 
 		// Construction des polygones.
 		ConstructPolygones();
