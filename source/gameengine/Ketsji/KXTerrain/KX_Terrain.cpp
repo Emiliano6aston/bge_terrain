@@ -91,7 +91,8 @@ void KX_Terrain::Destruct()
 {
 	DEBUG("Destruct terrain");
 	// destruction du noeud principal
-	delete m_nodeTree;
+	if (m_nodeTree)
+		delete m_nodeTree;
 
 	ScheduleEuthanasyChunks();
 }
