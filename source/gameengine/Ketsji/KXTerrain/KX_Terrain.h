@@ -91,8 +91,8 @@ private:
 	 */
 	unsigned short m_frame;
 
-	/// Les 4 noeuds principaux du terrain.
-	KX_ChunkNode **m_nodeTree;
+	/// Le noeud principal du terrain.
+	KX_ChunkNode *m_nodeTree;
 
 	typedef std::list<KX_Chunk *> KX_ChunkList;
 
