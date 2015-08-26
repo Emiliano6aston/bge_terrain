@@ -83,20 +83,15 @@ void KX_Terrain::Construct()
 {
 	DEBUG("Construct terrain");
 
-	m_nodeTree = NewNodeList(NULL, 0, 0, 1);
+	m_nodeTree = new KX_ChunkNode(NULL, 0, 0, m_width, 0, this);
 	m_construct = true;
 }
 
 void KX_Terrain::Destruct()
 {
 	DEBUG("Destruct terrain");
-	// destruction des chunks
-	delete m_nodeTree[0];
-	delete m_nodeTree[1];
-	delete m_nodeTree[2];
-	delete m_nodeTree[3];
-
-	free(m_nodeTree);
+	// destruction du noeud principal
+	delete m_nodeTree;
 
 	ScheduleEuthanasyChunks();
 }
@@ -108,8 +103,7 @@ void KX_Terrain::CalculateVisibleChunks(KX_Camera* culledcam)
 
 	CListValue *objects = KX_GetActiveScene()->GetObjectList();
 
-	for (unsigned short i = 0; i < 4; ++i)
-		m_nodeTree[i]->CalculateVisible(culledcam, objects);
+	m_nodeTree->CalculateVisible(culledcam, objects);
 
 	ScheduleEuthanasyChunks();
 }
@@ -124,13 +118,6 @@ void KX_Terrain::UpdateChunksMeshes()
 		(*it)->EndUpdateMesh();
 	}
 
-
-	/*for (KX_ChunkList::iterator it = m_chunkList.begin(); it != m_chunkList.end(); ++it) {
-		(*it)->UpdateColumnVertexesNormal(KX_Chunk::COLUMN_LEFT);
-		(*it)->UpdateColumnVertexesNormal(KX_Chunk::COLUMN_RIGHT);
-		(*it)->UpdateColumnVertexesNormal(KX_Chunk::COLUMN_FRONT);
-		(*it)->UpdateColumnVertexesNormal(KX_Chunk::COLUMN_BACK);
-	}*/
 #ifdef STATS
 	++m_frame;
 
@@ -155,8 +142,7 @@ void KX_Terrain::RenderChunksMeshes(const MT_Transform& cameratrans, RAS_IRaster
 void KX_Terrain::DrawDebugNode()
 {
 #ifdef DRAW_DEBUG
-	for (unsigned int i = 0; i < 4; ++i)
-		m_nodeTree[i]->DrawDebugInfo(KX_ChunkNode::DEBUG_BOX);
+	m_nodeTree->DrawDebugInfo(KX_ChunkNode::DEBUG_BOX);
 #endif // DRAW_DEBUG
 }
 
@@ -175,12 +161,9 @@ unsigned short KX_Terrain::GetSubdivision(float distance, bool iscamera) const
 
 KX_ChunkNode *KX_Terrain::GetNodeRelativePosition(float x, float y)
 {
-	for (unsigned int i = 0; i < 4; ++i) {
-		KX_ChunkNode *node = m_nodeTree[i]->GetNodeRelativePosition(x, y);
-		if (node)
-			return node;
-	}
-	return NULL;
+	KX_ChunkNode *node = m_nodeTree->GetNodeRelativePosition(x, y);
+
+	return node;
 }
 
 VertexZoneInfo *KX_Terrain::GetVertexInfo(float x, float y) const
