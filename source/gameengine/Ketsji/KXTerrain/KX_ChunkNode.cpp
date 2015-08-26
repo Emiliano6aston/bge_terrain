@@ -279,6 +279,11 @@ void KX_ChunkNode::CalculateVisible(KX_Camera *culledcam, CListValue *objects)
 	ResetBoxHeight();
 }
 
+bool KX_ChunkNode::IsShadowCameraVisible(KX_Camera *shadowcam)
+{
+	return shadowcam->BoxInsideFrustum(m_box) != KX_Camera::OUTSIDE;
+}
+
 void KX_ChunkNode::DrawDebugInfo(DEBUG_DRAW_MODE mode)
 {
 	if (mode == DEBUG_BOX) {

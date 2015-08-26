@@ -612,7 +612,7 @@ public:
 
 	void CalculateVisibleTerrainChunks();
 	void UpdateTerrainChunksMeshes();
-	void RenderTerrainChunksMeshes(const MT_Transform &cameratrans, RAS_IRasterizer *rasty);
+	void RenderTerrainChunksMeshes(KX_Camera *cam, RAS_IRasterizer *rasty);
 	void DrawDebugTerrainNode();
 
 #ifdef WITH_PYTHON

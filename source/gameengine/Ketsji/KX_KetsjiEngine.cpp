@@ -1079,6 +1079,8 @@ void KX_KetsjiEngine::RenderShadowBuffers(KX_Scene *scene)
 			/* render */
 			m_rasterizer->ClearDepthBuffer();
 			m_rasterizer->ClearColorBuffer();
+
+			scene->RenderTerrainChunksMeshes(cam, m_rasterizer);
 			scene->RenderBuckets(camtrans, m_rasterizer);
 
 			/* unbind framebuffer object, restore drawmode, free camera */
@@ -1230,7 +1232,7 @@ void KX_KetsjiEngine::RenderFrame(KX_Scene* scene, KX_Camera* cam)
 	m_logger->StartLog(tc_rasterizer, m_kxsystem->GetTimeInSeconds(), true);
 	SG_SetActiveStage(SG_STAGE_RENDER);
 	// render debug info for terrain and update visible flags
-	scene->RenderTerrainChunksMeshes(camtrans, m_rasterizer);
+	scene->RenderTerrainChunksMeshes(cam, m_rasterizer);
 	scene->DrawDebugTerrainNode();
 
 #ifdef WITH_PYTHON

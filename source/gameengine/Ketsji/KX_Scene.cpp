@@ -1863,10 +1863,10 @@ void KX_Scene::UpdateTerrainChunksMeshes()
 		m_terrain->UpdateChunksMeshes();
 }
 
-void KX_Scene::RenderTerrainChunksMeshes(const MT_Transform& cameratrans, RAS_IRasterizer* rasty)
+void KX_Scene::RenderTerrainChunksMeshes(KX_Camera *cam, RAS_IRasterizer* rasty)
 {
 	if (m_terrain) {
-		m_terrain->RenderChunksMeshes(cameratrans, rasty);
+		m_terrain->RenderChunksMeshes(cam, rasty);
 		KX_BlenderMaterial::EndFrame();
 	}
 }
