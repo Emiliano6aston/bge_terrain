@@ -148,10 +148,28 @@ static void rna_def_terrain_zone(BlenderRNA *brna)
 	RNA_def_property_boolean_sdna(prop, NULL, "flag", TERRAIN_ZONE_USE_UV_TEXTURE_COLOR);
 	RNA_def_property_ui_text(prop, "Use UV Texture Color", "");
 
+	prop = RNA_def_property(srna, "use_height_color", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_sdna(prop, NULL, "flag", TERRAIN_ZONE_USE_HEIGHT_COLOR);
+	RNA_def_property_ui_text(prop, "Use Height Color", "");
+
+	prop = RNA_def_property(srna, "use_color_dividor", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_sdna(prop, NULL, "flag", TERRAIN_ZONE_DIVIDE_COLOR);
+	RNA_def_property_ui_text(prop, "Use Color Dividor", "");
+
 	prop = RNA_def_property(srna, "uv_channel", PROP_INT, PROP_NONE);
 	RNA_def_property_int_sdna(prop, NULL, "uvchannel");
 	RNA_def_property_range(prop, 2, 15);
 	RNA_def_property_ui_text(prop, "UV Channel", "");
+
+	prop = RNA_def_property(srna, "color", PROP_FLOAT, PROP_NONE);
+	RNA_def_property_float_sdna(prop, NULL, "color");
+	RNA_def_property_range(prop, -FLT_MAX, FLT_MAX);
+	RNA_def_property_ui_text(prop, "Color", "");
+
+	prop = RNA_def_property(srna, "color_dividor", PROP_FLOAT, PROP_NONE);
+	RNA_def_property_float_sdna(prop, NULL, "colordividor");
+	RNA_def_property_range(prop, -FLT_MAX, FLT_MAX);
+	RNA_def_property_ui_text(prop, "Color dividor", "");
 }
 
 static void rna_def_terrain_zone_collection(BlenderRNA *brna, PropertyRNA *cprop)
