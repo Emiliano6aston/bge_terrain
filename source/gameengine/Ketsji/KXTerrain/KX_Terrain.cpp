@@ -27,12 +27,11 @@
 #include "KX_Camera.h"
 #include "KX_PythonInit.h"
 #include "KX_Scene.h"
+#include "RAS_IRasterizer.h"
 #include "DNA_terrain_types.h"
 #include "DNA_material_types.h"
 
 #define DEBUG(msg) // std::cout << "Debug (" << __func__ << ", " << this << ") : " << msg << std::endl;
-
-static STR_String camname = "Camera";
 
 KX_Terrain::KX_Terrain(void *sgReplicationInfo,
 					   SG_Callbacks callbacks,
@@ -130,12 +129,14 @@ void KX_Terrain::UpdateChunksMeshes()
 #endif
 }
 
-void KX_Terrain::RenderChunksMeshes(const MT_Transform& cameratrans, RAS_IRasterizer* rasty)
+void KX_Terrain::RenderChunksMeshes(KX_Camera *cam, RAS_IRasterizer* rasty)
 {
-	KX_Camera* cam = KX_GetActiveScene()->FindCamera(camname);
 	// rendu du mesh
 	for (KX_ChunkList::iterator it = m_chunkList.begin(); it != m_chunkList.end(); ++it) {
 		KX_Chunk *chunk = *it;
+		if (rasty->GetDrawingMode() == RAS_IRasterizer::KX_SHADOW && !chunk->GetNode()->IsShadowCameraVisible(cam)) {
+			continue;
+		}
 		chunk->RenderMesh(rasty, cam);
 	}
 }

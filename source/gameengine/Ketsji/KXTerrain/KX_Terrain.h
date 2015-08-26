@@ -123,7 +123,7 @@ public:
 
 	void CalculateVisibleChunks(KX_Camera *culledcam);
 	void UpdateChunksMeshes();
-	void RenderChunksMeshes(const MT_Transform &cameratrans, RAS_IRasterizer *rasty);
+	void RenderChunksMeshes(KX_Camera *cam, RAS_IRasterizer *rasty);
 	void DrawDebugNode();
 
 	/// Le niveau de subdivision maximal
