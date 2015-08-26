@@ -32,7 +32,7 @@
 #include "KX_TerrainZone.h"
 #include "KX_GameObject.h"
 
-// #define STATS // Active les informations de debug de temps et de memoire.
+#define STATS // Active les informations de debug de temps et de memoire.
 
 class RAS_IRasterizer;
 class RAS_MaterialBucket;
