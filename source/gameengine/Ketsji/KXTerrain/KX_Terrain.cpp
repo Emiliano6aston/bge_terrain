@@ -134,8 +134,9 @@ void KX_Terrain::RenderChunksMeshes(KX_Camera *cam, RAS_IRasterizer* rasty)
 	// rendu du mesh
 	for (KX_ChunkList::iterator it = m_chunkList.begin(); it != m_chunkList.end(); ++it) {
 		KX_Chunk *chunk = *it;
-		if (rasty->GetDrawingMode() == RAS_IRasterizer::KX_SHADOW && !chunk->GetNode()->IsShadowCameraVisible(cam)) {
-			continue;
+		if (rasty->GetDrawingMode() == RAS_IRasterizer::KX_SHADOW) {
+			if (chunk->GetNode()->IsCameraVisible(cam) != KX_Camera::OUTSIDE)
+				continue;
 		}
 		chunk->RenderMesh(rasty, cam);
 	}

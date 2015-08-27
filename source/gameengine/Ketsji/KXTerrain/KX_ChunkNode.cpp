@@ -220,7 +220,17 @@ void KX_ChunkNode::MarkCulled(KX_Camera* culledcam)
 			return;
 		}
 	}
-	m_culledState = culledcam->BoxInsideFrustum(m_box);
+	m_culledState = IsCameraVisible(culledcam);
+}
+
+short KX_ChunkNode::IsCameraVisible(KX_Camera *cam)
+{
+	short culledState = cam->SphereInsideFrustum(MT_Point3(m_realPos.x(), m_realPos.y(), (m_maxBoxHeight + m_minBoxHeight) / 2.0f),
+												 m_radius2NoGap);
+	if (culledState != KX_Camera::INTERSECT)
+		return culledState;
+
+	return cam->BoxInsideFrustum(m_box);
 }
 
 void KX_ChunkNode::CalculateVisible(KX_Camera *culledcam, CListValue *objects)
@@ -277,11 +287,6 @@ void KX_ChunkNode::CalculateVisible(KX_Camera *culledcam, CListValue *objects)
 	}
 
 	ResetBoxHeight();
-}
-
-bool KX_ChunkNode::IsShadowCameraVisible(KX_Camera *shadowcam)
-{
-	return shadowcam->BoxInsideFrustum(m_box) != KX_Camera::OUTSIDE;
 }
 
 void KX_ChunkNode::DrawDebugInfo(DEBUG_DRAW_MODE mode)
