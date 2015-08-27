@@ -170,6 +170,8 @@ public:
 	{
 		return m_lastHasJoint[columnType];
 	}
+
+	unsigned short GetColumnVertexInterval(COLUMN_TYPE columnType) const;
 };
 
 #endif // __KX_CHUNK_H__
