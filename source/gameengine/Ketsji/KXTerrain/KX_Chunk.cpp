@@ -747,10 +747,8 @@ void KX_Chunk::GetCoorespondingVertexesFromChunk(KX_ChunkNode *jointNode, Vertex
 		// la colonne adjacent au bas de la colonne opposée.
 		const COLUMN_TYPE frontColumn = FrontColumn(opposedColumn);
 
-		const unsigned short frontColumnJointLevel = jointChunk->GetJointLevel(frontColumn);
-		const unsigned short frontColumnVertexRatio = ((frontColumnJointLevel > 0) ? frontColumnJointLevel * 2 : 1);
-		const unsigned short backColumnJointLevel = jointChunk->GetJointLevel(backColumn);
-		const unsigned short backColumnVertexRatio = (backColumnJointLevel > 0) ? backColumnJointLevel * 2 : 1;
+		const unsigned short frontColumnVertexRatio = jointChunk->GetColumnVertexInterval(frontColumn);
+		const unsigned short backColumnVertexRatio = jointChunk->GetColumnVertexInterval(backColumn);
 
 		short x = externVertex->relativePos[0];
 		short y = externVertex->relativePos[1];
@@ -783,16 +781,12 @@ void KX_Chunk::ComputeColumnJointVertexNormal(COLUMN_TYPE columnType, bool rever
 	// Le noeud adjacent au bas de la colonne.
 	KX_ChunkNode *frontNode = m_jointNode[frontColumn][backFrontNodeIndex];
 
-	// Le niveau de jointure sur cette colonne.
-	const unsigned short columnJointLevel = m_lastHasJoint[columnType];
-	// Le ratio de vertice sur une jointure 2/5 4/5 ect…
-	const unsigned short vertexRatio = (columnJointLevel > 0) ? columnJointLevel * 2 : 1;
-
-	const unsigned short frontColumnJointLevel = m_lastHasJoint[frontColumn];
-	const unsigned short frontVertexRatio = (frontColumnJointLevel > 0) ? frontColumnJointLevel * 2 : 1;
-
-	const unsigned short backColumnJointLevel = m_lastHasJoint[backColumn];
-	const unsigned short backVertexRatio = (backColumnJointLevel > 0) ? backColumnJointLevel * 2 : 1;
+	// Le ratio de vertices sur une jointure 2/5 4/5 ect…
+	const unsigned short vertexRatio = GetColumnVertexInterval(columnType);
+	// Le ratio de vertices pour la colonne frontal.
+	const unsigned short frontVertexRatio = GetColumnVertexInterval(frontColumn);
+	// Le ratio de vertices pour la colonne arrière.
+	const unsigned short backVertexRatio = GetColumnVertexInterval(backColumn);
 
 	for (unsigned short vertexIndex = (columnType == COLUMN_LEFT || columnType == COLUMN_RIGHT) ? 0 : 1;
 		 vertexIndex < ((columnType == COLUMN_LEFT || columnType == COLUMN_RIGHT) ? VERTEX_COUNT : (VERTEX_COUNT - 1));
@@ -1045,7 +1039,7 @@ void KX_Chunk::InvalidateJointVertexesAndIndexes()
 	for (unsigned short vertexIndex = 0; vertexIndex < VERTEX_COUNT; ++vertexIndex) {
 		for (unsigned short columnIndex = COLUMN_LEFT; columnIndex <= COLUMN_RIGHT; ++columnIndex) {
 			Vertex* vertex = m_columns[columnIndex]->GetExternVertex(vertexIndex);
-			if (m_lastHasJoint[columnIndex] && vertexIndex % (m_lastHasJoint[columnIndex] * 2))
+			if (vertexIndex % GetColumnVertexInterval((COLUMN_TYPE)columnIndex))
 				vertex->Invalidate();
 			else
 				vertex->Validate();
@@ -1057,7 +1051,7 @@ void KX_Chunk::InvalidateJointVertexesAndIndexes()
 	for (unsigned short vertexIndex = 1; vertexIndex < (VERTEX_COUNT - 1); ++vertexIndex) {
 		for (unsigned short columnIndex = COLUMN_FRONT; columnIndex <= COLUMN_BACK; ++columnIndex) {
 			Vertex* vertex = m_columns[columnIndex]->GetExternVertex(vertexIndex);
-			if (m_lastHasJoint[columnIndex] && vertexIndex % (m_lastHasJoint[columnIndex] * 2))
+			if (vertexIndex % GetColumnVertexInterval((COLUMN_TYPE)columnIndex))
 				vertex->Invalidate();
 			else
 				vertex->Validate();
@@ -1341,4 +1335,10 @@ void KX_Chunk::RenderMesh(RAS_IRasterizer *rasty, KX_Camera *cam)
 		RAS_MeshSlot *ms = *mit;
 		ms->m_bucket->ActivateMesh(ms);
 	}
+}
+
+unsigned short KX_Chunk::GetColumnVertexInterval(COLUMN_TYPE columnType) const
+{
+	unsigned short jointLevel = m_lastHasJoint[columnType];
+	return jointLevel > 0 ? jointLevel * 2 : 1;
 }
