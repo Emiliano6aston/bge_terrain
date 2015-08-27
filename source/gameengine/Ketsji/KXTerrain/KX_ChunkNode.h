@@ -119,10 +119,10 @@ public:
 				 KX_Terrain* terrain);
 	virtual ~KX_ChunkNode();
 
+	/// Teste si le noeud est visible par une camera.
+	short IsCameraVisible(KX_Camera *cam);
 	/// Teste si le noeud est visible et créer des sous noeuds si besoin
 	void CalculateVisible(KX_Camera *culledcam, CListValue *objects);
-	/// Teste si le noeud est visible par une camera utilisé pour les ombres.
-	bool IsShadowCameraVisible(KX_Camera *shadowcam);
 	/// Draw debug info for culling box
 	void DrawDebugInfo(DEBUG_DRAW_MODE mode);
 
