@@ -236,12 +236,16 @@ class TERRAIN_PT_game_terrain_zones_vertex_uv(TerrainButtonsPanel, Panel):
                 layout.active = zone.use_uv_texture_color
                 row = layout.row()
                 row.column().prop(zone, "uv_channel")
+
                 row = layout.row()
                 row.column().prop(zone, "use_height_color")
                 row.column().prop(zone, "use_color_dividor")
+
                 row = layout.row()
                 row.column().prop(zone, "color")
-                row.column().prop(zone, "color_dividor")
+                column = row.column()
+                column.active = zone.use_color_dividor
+                column.prop(zone, "color_dividor")
 
 if __name__ == "__main__":  # only for live edit.
     bpy.utils.register_module(__name__)
