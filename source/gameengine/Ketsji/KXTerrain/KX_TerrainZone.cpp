@@ -40,11 +40,6 @@ KX_TerrainZoneMesh::KX_TerrainZoneMesh(KX_Terrain *terrain, TerrainZone *zoneInf
 	:m_terrain(terrain),
 	m_zoneInfo(zoneInfo)
 {
-	m_box[0] = 0.0; // min x
-	m_box[1] = 0.0; // max x
-	m_box[2] = 0.0; // min y
-	m_box[3] = 0.0; // max y
-
 	if (mesh) {
 		m_derivedMesh = CDDM_from_mesh(mesh);
 		DM_ensure_tessface(m_derivedMesh);
@@ -53,6 +48,14 @@ KX_TerrainZoneMesh::KX_TerrainZoneMesh(KX_Terrain *terrain, TerrainZone *zoneInf
 		MVert *mvert = m_derivedMesh->getVertArray(m_derivedMesh);
 		for (unsigned int i = 0; i < totvert; ++i) {
 			const MVert &vert = mvert[i];
+
+			if (i == 0) {
+				m_box[0] = vert.co[0];
+				m_box[1] = vert.co[0];
+				m_box[2] = vert.co[1];
+				m_box[3] = vert.co[1];
+				continue;
+			}
 
 			if (vert.co[0] < m_box[0])
 				m_box[0] = vert.co[0];
