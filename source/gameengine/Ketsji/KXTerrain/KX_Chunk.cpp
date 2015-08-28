@@ -467,14 +467,19 @@ KX_Chunk::Vertex *KX_Chunk::GetVertexByChunkRelativePosition(unsigned short x, u
 KX_Chunk::Vertex *KX_Chunk::GetVertexByTerrainRelativePosition(int x, int y) const
 {
 	const unsigned short size = m_node->GetRelativeSize();
-	// l'espace entre 2 vertice * 2 : size / 4 * 2
-	const unsigned short interval = size * 2 / 4;
+	// l'espace entre 2 vertice et toujours de 1 * size
+	const unsigned short interval = size / 2.0f;
+
+	/* Le facteur pour passer de la position d'un noeud à celle d'un vertice absolue,
+	 * 2 = la taille minimun d'un noeud.
+	 */
+	const float scale = POLY_COUNT / 2.0f;
 
 	const KX_ChunkNode::Point2D nodepos = m_node->GetRelativePos();
 
 	// le bas du chunk par rapport au terrain * 2 pour les vertices
-	const int bottomx = nodepos.x * 2 - interval * 2;
-	const int bottomy = nodepos.y * 2 - interval * 2;
+	const int bottomx = nodepos.x * scale - POLY_COUNT * interval / 2.0f;
+	const int bottomy = nodepos.y * scale - POLY_COUNT * interval / 2.0f;
 
 	const unsigned short diffx = x - bottomx;
 	const unsigned short diffy = y - bottomy;
@@ -485,13 +490,19 @@ KX_Chunk::Vertex *KX_Chunk::GetVertexByTerrainRelativePosition(int x, int y) con
 KX_ChunkNode::Point2D KX_Chunk::GetTerrainRelativeVertexPosition(unsigned short x, unsigned short y) const
 {
 	const unsigned short size = m_node->GetRelativeSize();
-	const unsigned short interval = size * 2 / 4;
+	// l'espace entre 2 vertice et toujours de 1 * size
+	const unsigned short interval = size / 2.0f;
+
+	/* Le facteur pour passer de la position d'un noeud à celle d'un vertice absolue,
+	 * 2 = la taille minimun d'un noeud.
+	 */
+	const float scale = POLY_COUNT / 2.0f;
 
 	const KX_ChunkNode::Point2D nodepos = m_node->GetRelativePos();
 
 	// le bas du chunk par rapport au terrain * 2 pour les vertices
-	const int bottomx = nodepos.x * 2 - interval * 2;
-	const int bottomy = nodepos.y * 2 - interval * 2;
+	const int bottomx = nodepos.x * scale - POLY_COUNT * interval / 2.0f;
+	const int bottomy = nodepos.y * scale - POLY_COUNT * interval / 2.0f;
 
 	return KX_ChunkNode::Point2D(bottomx + x * interval, bottomy + y * interval);
 }
@@ -721,23 +732,29 @@ void KX_Chunk::GetCoorespondingVertexesFromChunk(KX_ChunkNode *jointNode, Vertex
 
 	KX_Chunk *jointChunk = jointNode->GetChunk();
 
-	/** Ce vertice est a la même position que celui entrain de calculer la normal.
-	 * Donc pour optimizer on copiera la normal.
+	/** Ce vertice est à la même position que celui entrain de calculer la normale.
+	 * Donc pour optimiser on copiera la normale.
 	 */
 	Vertex *externVertex = jointChunk->GetVertexByTerrainRelativePosition(terrainVertexPos.x, terrainVertexPos.y);
+
+	if (!externVertex) {
+		DEBUG("Error : none extern coresponding vertex");
+		return;
+	}
+
 	if (coExternVertex)
 		(*coExternVertex) = externVertex;
 
 	if (externVertex->vertexInfo->pos[0] != origVertex->vertexInfo->pos[0] || 
 		externVertex->vertexInfo->pos[1] != origVertex->vertexInfo->pos[1])
 	{
-		DEBUG("wrong coresponding vertex");
+		DEBUG("Error : wrong extern coresponding vertex");
 		return;
 	}
 
 	if (coInternVertex) {
 		if (!externVertex) {
-			DEBUG("can't compute intern vertex");
+			DEBUG("Error : can't compute intern vertex");
 			return;
 		}
 
@@ -770,12 +787,15 @@ void KX_Chunk::GetCoorespondingVertexesFromChunk(KX_ChunkNode *jointNode, Vertex
 #if 1
 void KX_Chunk::ComputeColumnJointVertexNormal(COLUMN_TYPE columnType, bool reverse)
 {
+	// Passage du vertice au noeud, 4 = nombre de noeuds adjacents par une ligne.
+	const float scaleVertexToNode = 4.0f / POLY_COUNT;
 	// La colonne adjacente au sommet de cette colonne.
 	const COLUMN_TYPE backColumn = BackColumn(columnType);
 	// La colonne adjacente au bas de cette colonne.
 	const COLUMN_TYPE frontColumn = FrontColumn(columnType);
 	// Le numero de noeud sur les colonnes adjacentes.
-	const unsigned short backFrontNodeIndex = (columnType == COLUMN_LEFT || columnType == COLUMN_FRONT) ? 1 : (VERTEX_COUNT - 1);
+	const unsigned short backFrontNodeIndex = (columnType == COLUMN_LEFT || columnType == COLUMN_FRONT) ?
+											  1 : (POLY_COUNT * scaleVertexToNode);
 	// Le noeud adjacent au haut de la colonne.
 	KX_ChunkNode *backNode = m_jointNode[backColumn][backFrontNodeIndex];
 	// Le noeud adjacent au bas de la colonne.
@@ -819,7 +839,7 @@ void KX_Chunk::ComputeColumnJointVertexNormal(COLUMN_TYPE columnType, bool rever
 		 * ----
 		 */
 
-		const unsigned short nodeIndex = vertexIndex > 3 ? 4 : vertexIndex + 1;
+		const unsigned short nodeIndex = vertexIndex > (VERTEX_COUNT - 2) ? 4 : vertexIndex * scaleVertexToNode + 1;
 		KX_ChunkNode *jointNode = m_jointNode[columnType][nodeIndex];
 		if (!jointNode) {
 			vertex->normal[0] = 0.0f;
