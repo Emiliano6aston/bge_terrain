@@ -183,6 +183,7 @@ void BKE_terrain_zone_add(Terrain *terrain)
 	zone->uvchannel = 2;
 	zone->color = 1.0f;
 	zone->colordividor = 1.0f;
+	zone->flag = TERRAIN_ZONE_ACTIVE;
 
 	BLI_addtail(&terrain->zones, zone);
 
