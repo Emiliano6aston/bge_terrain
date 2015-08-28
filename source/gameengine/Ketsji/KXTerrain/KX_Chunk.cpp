@@ -1219,7 +1219,7 @@ void KX_Chunk::UpdateMesh()
 		 */
 		InvalidateJointVertexesAndIndexes();
 	}
-	m_node->CheckBoxHeight(m_maxVertexHeight, m_minVertexHeight);
+	m_node->ExtendFrustumBoxHeights(m_maxVertexHeight, m_minVertexHeight);
 }
 
 void KX_Chunk::EndUpdateMesh()
