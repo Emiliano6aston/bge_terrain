@@ -446,19 +446,19 @@ KX_Chunk::Vertex *KX_Chunk::GetVertexByChunkRelativePosition(unsigned short x, u
 	Vertex *vertex = NULL;
 
 	// Pour un vertice interne.
-	if ((0 < x && x < (VERTEX_COUNT - 1)) &&
-		(0 < y && y < (VERTEX_COUNT - 1)))
+	if ((0 < x && x < POLY_COUNT) &&
+		(0 < y && y < POLY_COUNT))
 	{
 		vertex = m_center[x - 1][y - 1];
 	}
 	// Sinon pour les colonnes
 	else if (x == 0)
 		vertex = m_columns[COLUMN_LEFT]->GetExternVertex(y);
-	else if (x == (VERTEX_COUNT - 1))
+	else if (x == POLY_COUNT)
 		vertex = m_columns[COLUMN_RIGHT]->GetExternVertex(y);
 	else if (y == 0)
 		vertex = m_columns[COLUMN_FRONT]->GetExternVertex(x);
-	else if (y == (VERTEX_COUNT - 1))
+	else if (y == POLY_COUNT)
 		vertex = m_columns[COLUMN_BACK]->GetExternVertex(x);
 
 	return vertex;
@@ -656,8 +656,8 @@ void KX_Chunk::ConstructVertexes()
 		m_columns[i] = new JointColumn((i < 2));
 
 	// on construit tous les vertices et on stocke leur numero dans des colonnes
-	for(unsigned short columnIndex = 1; columnIndex < (VERTEX_COUNT - 1); ++columnIndex) {
-		for(unsigned short vertexIndex = 1; vertexIndex < (VERTEX_COUNT - 1) ; ++vertexIndex) {
+	for(unsigned short columnIndex = 1; columnIndex < POLY_COUNT; ++columnIndex) {
+		for(unsigned short vertexIndex = 1; vertexIndex < POLY_COUNT ; ++vertexIndex) {
 			// on créer un vertice temporaire, ces donné seront reutilisé lors de la création des polygones
 			Vertex *vertex = NewVertex(columnIndex, vertexIndex);
 			m_center[columnIndex - 1][vertexIndex - 1] = vertex;
@@ -682,23 +682,23 @@ void KX_Chunk::ConstructVertexes()
 
 			if (vertexIndex == 0)
 				m_columns[COLUMN_FRONT]->SetExternVertex(0, vertex);
-			else if (vertexIndex == (VERTEX_COUNT - 1))
+			else if (vertexIndex == POLY_COUNT)
 				m_columns[COLUMN_BACK]->SetExternVertex(0, vertex);
 		}
 		{ // colonne de droite externe
-			Vertex *vertex = NewVertex((VERTEX_COUNT - 1), vertexIndex);
+			Vertex *vertex = NewVertex(POLY_COUNT, vertexIndex);
 			m_columns[COLUMN_RIGHT]->SetExternVertex(vertexIndex, vertex);
 
 			if (vertexIndex == 0)
-				m_columns[COLUMN_FRONT]->SetExternVertex(VERTEX_COUNT - 1, vertex);
-			else if (vertexIndex == (VERTEX_COUNT - 1))
-				m_columns[COLUMN_BACK]->SetExternVertex(VERTEX_COUNT - 1, vertex);
+				m_columns[COLUMN_FRONT]->SetExternVertex(POLY_COUNT, vertex);
+			else if (vertexIndex == POLY_COUNT)
+				m_columns[COLUMN_BACK]->SetExternVertex(POLY_COUNT, vertex);
 		}
 	}
 
-	for (unsigned short vertexIndex = 1; vertexIndex < (VERTEX_COUNT - 1); ++vertexIndex) {
+	for (unsigned short vertexIndex = 1; vertexIndex < POLY_COUNT; ++vertexIndex) {
 		for (unsigned short columnIndex = COLUMN_FRONT; columnIndex <= COLUMN_BACK; ++columnIndex) {
-			Vertex *vertex = NewVertex(vertexIndex, (columnIndex == COLUMN_FRONT) ? 0 : (VERTEX_COUNT - 1));
+			Vertex *vertex = NewVertex(vertexIndex, (columnIndex == COLUMN_FRONT) ? 0 : POLY_COUNT);
 			// le premier vertice de la colonne est déjà partagé donc on remplie ceux après
 			m_columns[columnIndex]->SetExternVertex(vertexIndex, vertex);
 		}
@@ -710,8 +710,8 @@ void KX_Chunk::ConstructVertexes()
 	starttime = KX_GetActiveEngine()->GetRealTime();
 #endif
 
-	for (unsigned short columnIndex = 1; columnIndex < (VERTEX_COUNT - 1); ++columnIndex) {
-		for (unsigned short vertexIndex = 1; vertexIndex < (VERTEX_COUNT - 1); ++vertexIndex)
+	for (unsigned short columnIndex = 1; columnIndex < POLY_COUNT; ++columnIndex) {
+		for (unsigned short vertexIndex = 1; vertexIndex < POLY_COUNT; ++vertexIndex)
 			SetNormal(m_center[columnIndex - 1][vertexIndex - 1]);
 	}
 
@@ -773,7 +773,7 @@ void KX_Chunk::GetCoorespondingVertexesFromChunk(KX_ChunkNode *jointNode, Vertex
 		const unsigned short vertexIndex = (ColumnAxis(opposedColumn) == 0) ? x : y;
 
 		const bool onFront = (vertexIndex == 0);
-		const bool onBack = (vertexIndex == (VERTEX_COUNT - 1));
+		const bool onBack = (vertexIndex == POLY_COUNT);
 
 		// Le decalage en vertice par rapport a terrain.
 		const unsigned short vertexRatio = onFront ? frontColumnVertexRatio : (onBack ? backColumnVertexRatio : 1);
@@ -809,7 +809,7 @@ void KX_Chunk::ComputeColumnJointVertexNormal(COLUMN_TYPE columnType, bool rever
 	const unsigned short backVertexRatio = GetColumnVertexInterval(backColumn);
 
 	for (unsigned short vertexIndex = (columnType == COLUMN_LEFT || columnType == COLUMN_RIGHT) ? 0 : 1;
-		 vertexIndex < ((columnType == COLUMN_LEFT || columnType == COLUMN_RIGHT) ? VERTEX_COUNT : (VERTEX_COUNT - 1));
+		 vertexIndex < ((columnType == COLUMN_LEFT || columnType == COLUMN_RIGHT) ? VERTEX_COUNT : POLY_COUNT);
 		 ++vertexIndex)
 	{
 		Vertex *vertex = m_columns[columnType]->GetExternVertex(vertexIndex);
@@ -839,7 +839,7 @@ void KX_Chunk::ComputeColumnJointVertexNormal(COLUMN_TYPE columnType, bool rever
 		 * ----
 		 */
 
-		const unsigned short nodeIndex = vertexIndex > (VERTEX_COUNT - 2) ? 4 : vertexIndex * scaleVertexToNode + 1;
+		const unsigned short nodeIndex = vertexIndex > VERTEX_COUNT_INTERN ? 4 : vertexIndex * scaleVertexToNode + 1;
 		KX_ChunkNode *jointNode = m_jointNode[columnType][nodeIndex];
 		if (!jointNode) {
 			vertex->normal[0] = 0.0f;
@@ -863,10 +863,10 @@ void KX_Chunk::ComputeColumnJointVertexNormal(COLUMN_TYPE columnType, bool rever
 		const unsigned short verty = vertex->relativePos[1];
 
 		// Le vertice est à une extremitée du chunk.
-		const bool onEdge = (vertx == 0 || vertx == (VERTEX_COUNT - 1) || verty == 0 || verty == (VERTEX_COUNT - 1));
+		const bool onEdge = (vertx == 0 || vertx == POLY_COUNT || verty == 0 || verty == POLY_COUNT);
 
 		const bool onColumnFront = (vertexIndex == 0);
-		const bool onColumnBack = (vertexIndex == (VERTEX_COUNT - 1));
+		const bool onColumnBack = (vertexIndex == POLY_COUNT);
 		// Le vertice est a une extremitée de la colonne.
 		const bool onColumnEdge = (onColumnFront || onColumnBack);
 
@@ -929,7 +929,7 @@ void KX_Chunk::ComputeColumnJointVertexNormal(COLUMN_TYPE columnType, bool rever
 			short x = vertx;
 			short y = verty;
 
-			if (vertexIndex < (VERTEX_COUNT - 1)) {
+			if (vertexIndex < POLY_COUNT) {
 				/* si le vertice n'est pas sur les extremitées on accede simplement au
 				 * vertice après.
 				 */
@@ -1068,7 +1068,7 @@ void KX_Chunk::InvalidateJointVertexesAndIndexes()
 		}
 	}
 
-	for (unsigned short vertexIndex = 1; vertexIndex < (VERTEX_COUNT - 1); ++vertexIndex) {
+	for (unsigned short vertexIndex = 1; vertexIndex < POLY_COUNT; ++vertexIndex) {
 		for (unsigned short columnIndex = COLUMN_FRONT; columnIndex <= COLUMN_BACK; ++columnIndex) {
 			Vertex* vertex = m_columns[columnIndex]->GetExternVertex(vertexIndex);
 			if (vertexIndex % GetColumnVertexInterval((COLUMN_TYPE)columnIndex))
@@ -1319,7 +1319,7 @@ void KX_Chunk::RenderMesh(RAS_IRasterizer *rasty, KX_Camera *cam)
 #if 0
 	for (unsigned short columnIndex = COLUMN_LEFT; columnIndex <= COLUMN_BACK; ++columnIndex) {
 		for (unsigned short vertexIndex = (columnIndex == COLUMN_LEFT || columnIndex == COLUMN_RIGHT) ? 0 : 1;
-			 vertexIndex < ((columnIndex == COLUMN_LEFT || columnIndex == COLUMN_RIGHT) ? VERTEX_COUNT : (VERTEX_COUNT - 1));
+			 vertexIndex < ((columnIndex == COLUMN_LEFT || columnIndex == COLUMN_RIGHT) ? VERTEX_COUNT : POLY_COUNT);
 			 ++vertexIndex)
 		{
 			Vertex *vertex = m_columns[columnIndex]->GetExternVertex(vertexIndex);
