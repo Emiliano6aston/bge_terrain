@@ -82,6 +82,10 @@ static void rna_def_terrain_zone(BlenderRNA *brna)
 	RNA_def_property_ui_text(prop, "Line Set Name", "Terrain Zone set name");
 	RNA_def_struct_name_property(srna, prop);
 
+	prop = RNA_def_property(srna, "active", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_sdna(prop, NULL, "flag", TERRAIN_ZONE_ACTIVE);
+	RNA_def_property_ui_text(prop, "Active", "");
+
 	prop = RNA_def_property(srna, "use_mesh", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "flag", TERRAIN_ZONE_MESH);
 	RNA_def_property_ui_text(prop, "Use Mesh", "");
