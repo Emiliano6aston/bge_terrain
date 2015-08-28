@@ -146,20 +146,23 @@ float KX_TerrainZoneMesh::GetClampedHeight(const float orgheight, const float x,
 	float height = 0.0f;
 
 	if (m_zoneInfo->flag & TERRAIN_ZONE_CLAMP) {
-		/*if (m_zoneInfo->flag & TERRAIN_ZONE_CLAMP_MESH) {
-			if (v1 && v2 && v3)) {
-				float start[3] = {x, y, 1000.0};
-				float normal[3] = {0.0, 0.0, -1000.0};
-				float lambda;
-				isect_ray_tri_v3(start, normal, v1, v2, v3, &lambda, NULL);
-				std::cout << "lambda : " << lambda << std::endl;
+		if (m_zoneInfo->flag & TERRAIN_ZONE_CLAMP_MESH) {
+			if (v1 && v2 && v3) {
+				const float rayheight = 5000.0f; // TODO exposer à l'utilisateur
+				float start[3] = {x, y, rayheight};
+				float normal[3] = {0.0f, 0.0f, -1.0f};
+				float uv[2];
+				float lambda = 0.0f;
+				if (isect_ray_tri_v3(start, normal, v1, v2, v3, &lambda, uv)) {
+					height = rayheight - lambda - orgheight;
+				}
 			}
 		}
-		else {*/
+		else {
 			float origheight2 = orgheight;
 			CLAMP(origheight2, m_zoneInfo->clampstart, m_zoneInfo->clampend);
 			height = origheight2 - orgheight;
-		// }
+		}
 	}
 
 	return height;
@@ -292,7 +295,6 @@ void KX_TerrainZoneMesh::GetVertexInfo(const float x, const float y, VertexZoneI
 	r_info->height += deltaheight;
 
 	if (m_zoneInfo->flag & TERRAIN_ZONE_USE_UV_TEXTURE_COLOR) {
-		const float epsilon = 0.001f;
 		if (deltaheight != 0.0f) {
 			const unsigned short channel = m_zoneInfo->uvchannel / 2;
 			const unsigned short coord = m_zoneInfo->uvchannel % 2;
