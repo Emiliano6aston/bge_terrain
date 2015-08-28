@@ -127,15 +127,15 @@ public:
 	void DrawDebugInfo(DEBUG_DRAW_MODE mode);
 
 	/// On remet à 0 les variables m_maxBoxHeight et m_minBoxHeight
-	void ResetBoxHeight();
+	void ResetFrustumBoxHeights();
 
 	/* On verifie que les arguments max et min ne sont pas plus grand/petit 
 	 * que m_maxBoxHeight et m_minBoxHeight
 	 */
-	void CheckBoxHeight(float max, float min);
+	void ExtendFrustumBoxHeights(float max, float min);
 
-	/// Reconstruction de la boite
-	void ReConstructBox();
+	/// Reconstruction de la boite et du rayon.
+	void ReConstructFrustumBoxAndRadius();
 
 	KX_ChunkNode *GetNodeRelativePosition(float x, float y);
 
