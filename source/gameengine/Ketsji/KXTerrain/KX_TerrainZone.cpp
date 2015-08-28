@@ -245,6 +245,10 @@ float KX_TerrainZoneMesh::GetImageHeight(const float x, const float y) const
 // Si ledit point est en contact, on renvoie la modif asociée à sa hauteur
 void KX_TerrainZoneMesh::GetVertexInfo(const float x, const float y, VertexZoneInfo *r_info) const
 {
+	if (!(m_zoneInfo->flag & TERRAIN_ZONE_ACTIVE)) {
+		return;
+	}
+
 	float deltaheight = 0.0f;
 	float interp = 1.0f;
 	bool hit = false;

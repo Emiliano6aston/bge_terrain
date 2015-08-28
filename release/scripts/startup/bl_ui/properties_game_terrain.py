@@ -18,7 +18,7 @@
 
 # <pep8 compliant>
 import bpy
-from bpy.types import Panel
+from bpy.types import Panel, UIList
 from rna_prop_ui import PropertyPanel
 
 
@@ -95,6 +95,13 @@ class TERRAIN_PT_game_terrain_mesh(TerrainButtonsPanel, Panel):
         row.column().prop(terrain, "material")
         row.column().prop(terrain, "vertex_subdivision")
 
+class TERRAIN_UL_zoneslots(UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
+        if self.layout_type in {'DEFAULT', 'COMPACT'}:
+            if item:
+                layout.prop(item, "name", text="", emboss=False)
+                layout.prop(item, "active", text="")
+
 class TERRAIN_PT_game_terrain_zones(TerrainButtonsPanel, Panel):
     bl_label = "Terrain Zones"
     COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_GAME'}
@@ -112,7 +119,7 @@ class TERRAIN_PT_game_terrain_zones(TerrainButtonsPanel, Panel):
         row = layout.row()
 
         col = row.column()
-        col.template_list("UI_UL_list", "zones", terrain, "zones", terrain.zones, "active_zone_index", rows=1)
+        col.template_list("TERRAIN_UL_zoneslots", "zones", terrain, "zones", terrain.zones, "active_zone_index", rows=1)
 
         col = row.column(align=True)
         col.operator("terrain.zone_add", icon='ZOOMIN', text="")
