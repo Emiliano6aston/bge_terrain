@@ -28,15 +28,13 @@
 #include "MT_Point3.h"
 
 class KX_Terrain;
-class KX_GameObject;
 class KX_Camera;
 class CListValue;
 class KX_Chunk;
 
-/*
- * Cette classe ne fait que gérer la visibilité des chunks, leur création et destruction.
+/** Cette classe ne fait que gérer la visibilité des chunks, leur création et destruction.
  * On ce base sur un QuadTree pour la recherche et la création mais les chunks qui sont comme des noeuds
- * finaux sont stockés dans une liste contenue dans le terrain pour le rendu et la mise a jour du mesh
+ * finaux sont stockés dans une liste contenue dans le terrain pour le rendu et la mise à jour du mesh
  * et de la physique.
  */
 
@@ -58,18 +56,18 @@ public:
 	};
 
 private:
-	/// Le noeud parent
+	/// Le noeud parent.
 	KX_ChunkNode *m_parentNode;
 
 	/** La position relative du noeud, à multiplier par la largeur d'un 
-	 * chunk pour retrouver la position réelle
+	 * chunk pour retrouver la position réelle.
 	 */
 	const Point2D m_relativePos;
-	/// La taille relative du noeud la plus petite taille est 1
+	/// La taille relative du noeud la plus petite taille est 1.
 	const unsigned short m_relativeSize;
-	/// La position réelle du noeud
+	/// La position réelle du noeud.
 	MT_Point2 m_realPos;
-	/// Plus ce nombre est grand plus ce noeud est loin dans le QuadTree
+	/// Plus ce nombre est grand plus ce noeud est loin dans le QuadTree.
 	const unsigned short m_level;
 
 	/// Le rayon du noeud pour les cameras.
@@ -79,13 +77,13 @@ private:
 	/// Le rayon du noeud sans marge.
 	float m_radius2NoGap;
 
-	/// La boite englobant le noeud pour le frustum culling
+	/// La boite englobant le noeud pour le frustum culling.
 	MT_Point3 m_box[8];
 	/// Si vrai la boite de culling est modifiée.
 	bool m_boxModified;
-	/// La hauteur maximal de la boite
+	/// La hauteur maximal de la boite.
 	float m_maxBoxHeight;
-	/// La hauteur minimal de la boite
+	/// La hauteur minimal de la boite.
 	float m_minBoxHeight;
 	/// Doit ont recreer la boite ?
 	bool m_requestCreateBox;
@@ -93,12 +91,12 @@ private:
 	/// Le noeud est il visible ?
 	short m_culledState;
 
-	/// Tableau de 4 sous noeuds
+	/// Tableau de 4 sous noeuds.
 	KX_ChunkNode **m_nodeList;
-	/// Le chunk ou objet avec mesh et physique
+	/// Le chunk ou objet avec mesh et physique.
 	KX_Chunk *m_chunk;
 
-	/// Le terrain utilisé comme usine à chunks
+	/// Le terrain utilisé comme usine à chunks.
 	KX_Terrain *m_terrain;
 
 	bool NeedCreateNodes(CListValue *objects, KX_Camera *culledcam) const;
@@ -121,16 +119,16 @@ public:
 
 	/// Teste si le noeud est visible par une camera.
 	short IsCameraVisible(KX_Camera *cam);
-	/// Teste si le noeud est visible et créer des sous noeuds si besoin
+	/// Teste si le noeud est visible et créer des sous noeuds si besoin.
 	void CalculateVisible(KX_Camera *culledcam, CListValue *objects);
 	/// Draw debug info for culling box
 	void DrawDebugInfo(DEBUG_DRAW_MODE mode);
 
-	/// On remet à 0 les variables m_maxBoxHeight et m_minBoxHeight
+	/// On remet à 0 les variables m_maxBoxHeight et m_minBoxHeight.
 	void ResetFrustumBoxHeights();
 
-	/* On verifie que les arguments max et min ne sont pas plus grand/petit 
-	 * que m_maxBoxHeight et m_minBoxHeight
+	/** On verifie que les arguments max et min ne sont pas plus grand/petit 
+	 * que m_maxBoxHeight et m_minBoxHeight.
 	 */
 	void ExtendFrustumBoxHeights(float max, float min);
 
@@ -160,7 +158,7 @@ public:
 		return m_box;
 	}
 
-	/// Utilisé pour savoir si un noeud est visible
+	/// Utilisé pour savoir si un noeud est visible.
 	inline short GetCulledState() const
 	{
 		return m_culledState;
@@ -169,7 +167,7 @@ public:
 	{
 		return m_chunk; 
 	}
-	/// Utilisé lors des tests jointures
+	/// Utilisé lors des testes jointures.
 	inline unsigned short GetLevel() const
 	{
 		return m_level;
