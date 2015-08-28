@@ -161,14 +161,13 @@ bool KX_ChunkNode::NeedCreateNodes(CListValue *objects, KX_Camera *culledcam) co
 			!object->GetPhysicsController()->IsDynamic() || 
 			object->GetPhysicsController()->IsSuspended())
 		{
-			// Si c'est une camera on test en plus si elle est active.
+			// Si ce n'est pas une camera on passe.
 			if (!iscamera)
 				continue;
 
 			KX_Camera *cam = (KX_Camera *)object;
-			if (cam != culledcam &&
-				!cam->GetViewport())
-			{
+			// Si la camera n'est pas active on passe aussi.
+			if (cam != culledcam && !cam->GetViewport()) {
 				continue;
 			}
 		}
@@ -191,7 +190,7 @@ bool KX_ChunkNode::InNode(CListValue *objects) const
 	for (unsigned int i = 0; i < objects->GetCount(); ++i) {
 		KX_GameObject *object = (KX_GameObject *)objects->GetValue(i);
 
-		// Les même type de condition que dans NeedCreateNodes.
+		// Les même type de conditions que dans NeedCreateNodes.
 		if (!object->GetVisible() ||
 			!object->GetPhysicsController() ||
 			!object->GetPhysicsController()->IsDynamic() || 
@@ -211,14 +210,17 @@ bool KX_ChunkNode::InNode(CListValue *objects) const
 
 void KX_ChunkNode::MarkCulled(KX_Camera* culledcam)
 {
+	/* Si ce noeud possède un parent on se fie à sont état si il est
+	 * totalement a l'interieur ou à l'exterieur du champ de la caméra.
+	 */
 	if (m_parentNode) {
-		if (m_parentNode->GetCulledState() == KX_Camera::INSIDE) {
-			m_culledState = KX_Camera::INSIDE;
-			return;
-		}
-		else if (m_parentNode->GetCulledState() == KX_Camera::OUTSIDE) {
-			m_culledState = KX_Camera::OUTSIDE;
-			return;
+		switch (m_parentNode->GetCulledState()) {
+			case KX_Camera::INSIDE:
+				m_culledState = KX_Camera::INSIDE;
+				return;
+			case KX_Camera::OUTSIDE:
+				m_culledState = KX_Camera::OUTSIDE;
+				return;
 		}
 	}
 	m_culledState = IsCameraVisible(culledcam);
@@ -238,41 +240,50 @@ short KX_ChunkNode::IsCameraVisible(KX_Camera *cam)
 
 void KX_ChunkNode::CalculateVisible(KX_Camera *culledcam, CListValue *objects)
 {
+	/* On reconstruit la boite si elle est modifiée par une création
+	 * de chunk à la dernière mise à jour.
+	 */
 	ReConstructFrustumBoxAndRadius();
-	MarkCulled(culledcam); // on test si le chunk est visible
+	// On test si le chunk est visible.
+	MarkCulled(culledcam);
 
-	// si le noeud est visible
+	// Si le noeud est visible.
 	if (m_culledState != KX_Camera::OUTSIDE) {
-		// le noeud est a une distance suffisante d'un des objets dans la liste requise pour une subdivision
+		/* Le noeud est a une distance suffisante d'un des objets dans 
+		 * la liste requise pour une subdivision.
+		 */
 		if (NeedCreateNodes(objects, culledcam)) {
-			// donc on subdivise les noeuds
+			// Donc on subdivise les noeuds.
 			ConstructNodes();
-			// et supprimons le chunk
+			// Et supprimons le chunk.
 			DestructChunk();
 
-			// puis on fais la même chose avec nos nouveaux noeuds
+			// Puis on fais la même chose avec nos nouveaux noeuds.
 			for (unsigned short i = 0; i < 4; ++i)
 				m_nodeList[i]->CalculateVisible(culledcam, objects);
 		}
-		// sinon si aucun des objets n'est assez près
+		// Sinon si aucun des objets n'est assez près.
 		else {
-			// on détruit les anciens noeuds
+			// On détruit les anciens noeuds.
 			DestructNodes();
-			// et créons le chunk
+			// Et créons le chunk.
 			ConstructChunk();
 		}
 	}
-	// si le noeud est invisible
+	// Si le noeud est invisible.
 	else {
-		// si un des objets a sa position dans la zone recouverte par le noeud
+		// Si un des objets a sa position dans la zone recouverte par le noeud.
 		if (InNode(objects)) {
-			if (m_level != m_terrain->GetMaxLevel())
-			{
-				// donc on subdivise les noeuds
+			/* Le seul moyen d'eviter de subdiviser à l'infinie les noeud.
+			 * Pour le cas où le noeud est visible GetSubdivision fait cette condition.
+			 */
+			if (m_level != m_terrain->GetMaxLevel()) {
+				// Donc on subdivise les noeuds.
 				ConstructNodes();
+				// Et detruisont le chunk.
 				DestructChunk();
 
-				// puis on fais la même chose avec nos nouveau noeuds
+				// Puis on fais la même chose avec nos nouveau noeuds.
 				for (unsigned short i = 0; i < 4; ++i)
 					m_nodeList[i]->CalculateVisible(culledcam, objects);
 			}
@@ -281,15 +292,20 @@ void KX_ChunkNode::CalculateVisible(KX_Camera *culledcam, CListValue *objects)
 				DestructNodes();
 			}
 		}
-		// sinon si aucun objets ne se situent sur le noeud
+		// Sinon si aucun objets ne se situent sur le noeud.
 		else {
 			DestructNodes();
 			DestructChunk();
 		}
+		// Rend le chunk invisble au rendu.
 		DisableChunkVisibility();
 	}
 
+	// Reinitialise les hauteurs de la boite de frustum culling.
 	ResetFrustumBoxHeights();
+	/* Le chunk n'est plus considére "en construction" et peut maintenant utiliser 
+	 * une sphere pour le frustum culling.
+	 */
 	m_onConstruct = false;
 }
 
@@ -339,7 +355,13 @@ void KX_ChunkNode::ResetFrustumBoxHeights()
 
 void KX_ChunkNode::ExtendFrustumBoxHeights(float max, float min)
 {
-	if (!m_requestCreateBox) {
+	if (m_requestCreateBox) {
+		m_maxBoxHeight = max;
+		m_minBoxHeight = min;
+		m_boxModified = true;
+		m_requestCreateBox = false;
+	}
+	else {
 		if (max > m_maxBoxHeight) {
 			m_maxBoxHeight = max;
 			m_boxModified = true;
@@ -349,11 +371,7 @@ void KX_ChunkNode::ExtendFrustumBoxHeights(float max, float min)
 			m_boxModified = true;
 		}
 	}
-	else {
-		m_maxBoxHeight = max;
-		m_minBoxHeight = min;
-		m_requestCreateBox = false;
-	}
+
 
 	if (m_parentNode)
 		m_parentNode->ExtendFrustumBoxHeights(max, min);
@@ -365,18 +383,18 @@ void KX_ChunkNode::ReConstructFrustumBoxAndRadius()
 	if (m_boxModified) {
 		m_boxModified = false;
 
-		// redimensionnement de la boite
+		// Redimensionnement de la boite.
 		for (unsigned int i = 0; i < 4; ++i)
 			m_box[i].z() = m_minBoxHeight;
 		for (unsigned int i = 4; i < 8; ++i)
 			m_box[i].z() = m_maxBoxHeight;
 
-		// la taille et sa moitié du chunk
+		// La taille et sa moitié du chunk.
 		const float size = m_terrain->GetChunkSize();
 		const float halfwidth = size * m_relativeSize / 2.0f;
 		const float halfBoxHeigth = (m_maxBoxHeight - m_minBoxHeight) / 2.0f;
 
-		// le rayon du chunk
+		// Le rayon du chunk.
 		m_radius2NoGap = halfwidth * halfwidth * 2.0f + halfBoxHeigth * halfBoxHeigth;
 		m_radius2Object = m_radius2NoGap * 2.0f;
 		float gap = size * m_relativeSize * 2.0f;
@@ -387,8 +405,12 @@ void KX_ChunkNode::ReConstructFrustumBoxAndRadius()
 
 KX_ChunkNode *KX_ChunkNode::GetNodeRelativePosition(float x, float y)
 {
+	// La motié de la largeur.
 	const unsigned short relativewidth = m_relativeSize / 2;
 
+	/* Si le noeud et invisble on considére qu'il ne doit pas être utilisable
+	 * Cela arrvie que pour les chunk physique des objets cachés.
+	 */
 	if(m_culledState != KX_Camera::OUTSIDE &&
 	  (m_relativePos.x - relativewidth) < x && x < (m_relativePos.x + relativewidth) &&
 	  (m_relativePos.y - relativewidth) < y && y < (m_relativePos.y + relativewidth))
@@ -396,12 +418,14 @@ KX_ChunkNode *KX_ChunkNode::GetNodeRelativePosition(float x, float y)
 		if (m_nodeList) {
 			for (unsigned short i = 0; i < 4; ++i) {
 				KX_ChunkNode *ret = m_nodeList[i]->GetNodeRelativePosition(x, y);
-				if (ret)
+				if (ret) {
 					return ret;
+				}
 			}
 		}
-		else
+		else {
 			return this;
+		}
 	}
 	return NULL;
 }
