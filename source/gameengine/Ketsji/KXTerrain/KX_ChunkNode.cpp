@@ -51,6 +51,7 @@ KX_ChunkNode::KX_ChunkNode(KX_ChunkNode *parentNode,
 	m_relativeSize(relativesize),
 	m_level(level),
 	m_boxModified(false),
+	m_onConstruct(true),
 	m_culledState(KX_Camera::INSIDE),
 	m_nodeList(NULL),
 	m_chunk(NULL),
@@ -225,10 +226,12 @@ void KX_ChunkNode::MarkCulled(KX_Camera* culledcam)
 
 short KX_ChunkNode::IsCameraVisible(KX_Camera *cam)
 {
-	short culledState = cam->SphereInsideFrustum(MT_Point3(m_realPos.x(), m_realPos.y(), (m_maxBoxHeight + m_minBoxHeight) / 2.0f),
-												 m_radius2NoGap);
-	if (culledState != KX_Camera::INTERSECT)
-		return culledState;
+	if (!m_onConstruct) {
+		short culledState = cam->SphereInsideFrustum(MT_Point3(m_realPos.x(), m_realPos.y(), (m_maxBoxHeight + m_minBoxHeight) / 2.0f),
+													 m_radius2NoGap);
+		if (culledState != KX_Camera::INTERSECT)
+			return culledState;
+	}
 
 	return cam->BoxInsideFrustum(m_box);
 }
@@ -287,6 +290,7 @@ void KX_ChunkNode::CalculateVisible(KX_Camera *culledcam, CListValue *objects)
 	}
 
 	ResetFrustumBoxHeights();
+	m_onConstruct = false;
 }
 
 void KX_ChunkNode::DrawDebugInfo(DEBUG_DRAW_MODE mode)
@@ -366,6 +370,17 @@ void KX_ChunkNode::ReConstructFrustumBoxAndRadius()
 			m_box[i].z() = m_minBoxHeight;
 		for (unsigned int i = 4; i < 8; ++i)
 			m_box[i].z() = m_maxBoxHeight;
+
+		// la taille et sa moitié du chunk
+		const float size = m_terrain->GetChunkSize();
+		const float halfwidth = size * m_relativeSize / 2.0f;
+		const float halfBoxHeigth = (m_maxBoxHeight - m_minBoxHeight) / 2.0f;
+
+		// le rayon du chunk
+		m_radius2NoGap = halfwidth * halfwidth * 2.0f + halfBoxHeigth * halfBoxHeigth;
+		m_radius2Object = m_radius2NoGap * 2.0f;
+		float gap = size * m_relativeSize * 2.0f;
+		m_radius2Camera = m_radius2NoGap + (gap * gap);
 	}
 }
 
