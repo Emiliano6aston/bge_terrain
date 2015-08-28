@@ -204,6 +204,10 @@ class TERRAIN_PT_game_terrain_zones_clamp(TerrainButtonsPanel, Panel):
             if zone:
                 layout.active = zone.use_clamp
                 row = layout.row()
+                row.column().prop(zone, "use_clamp_mesh")
+
+                row = layout.row()
+                row.active = not zone.use_clamp_mesh
                 row.column().prop(zone, "clamp_start")
                 row.column().prop(zone, "clamp_end")
 

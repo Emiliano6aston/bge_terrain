@@ -119,6 +119,10 @@ static void rna_def_terrain_zone(BlenderRNA *brna)
 	RNA_def_property_boolean_sdna(prop, NULL, "flag", TERRAIN_ZONE_CLAMP);
 	RNA_def_property_ui_text(prop, "Use Clamp", "");
 
+	prop = RNA_def_property(srna, "use_clamp_mesh", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_sdna(prop, NULL, "flag", TERRAIN_ZONE_CLAMP_MESH);
+	RNA_def_property_ui_text(prop, "Use Clamp Mesh", "");
+
 	prop = RNA_def_property(srna, "clamp_start", PROP_FLOAT, PROP_NONE);
 	RNA_def_property_float_sdna(prop, NULL, "clampstart");
 	RNA_def_property_range(prop, -FLT_MAX, FLT_MAX);
