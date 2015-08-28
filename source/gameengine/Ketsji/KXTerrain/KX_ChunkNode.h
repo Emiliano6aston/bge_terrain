@@ -89,7 +89,7 @@ private:
 	float m_minBoxHeight;
 	/// Doit ont recreer la boite ?
 	bool m_requestCreateBox;
-
+	bool m_onConstruct;
 	/// Le noeud est il visible ?
 	short m_culledState;
 
