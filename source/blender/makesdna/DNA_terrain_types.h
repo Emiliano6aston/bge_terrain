@@ -89,6 +89,7 @@ typedef struct Terrain {
 #define TERRAIN_ZONE_USE_UV_TEXTURE_COLOR		(1 << 6)
 #define TERRAIN_ZONE_USE_HEIGHT_COLOR			(1 << 7)
 #define TERRAIN_ZONE_DIVIDE_COLOR				(1 << 8) /* Used only with TERRAIN_ZONE_USE_HEIGHT_COLOR */
+#define TERRAIN_ZONE_ACTIVE						(1 << 9)
 
 #endif /*__DNA_TERRAIN_TYPES_H__*/
 
