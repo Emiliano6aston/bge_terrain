@@ -82,7 +82,7 @@ void KX_Terrain::Construct()
 {
 	DEBUG("Construct terrain");
 
-	m_nodeTree = new KX_ChunkNode(NULL, 0, 0, m_width, 0, this);
+	m_nodeTree = new KX_ChunkNode(NULL, 0, 0, m_width, 1, this);
 	m_construct = true;
 }
 
