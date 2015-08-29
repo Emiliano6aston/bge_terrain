@@ -30,8 +30,6 @@
 #define POLY_COUNT (VERTEX_COUNT - 1)
 #define POLY_COUNT_INTERN (VERTEX_COUNT_INTERN - 1)
 
-#include <BLI_noise.h>
-
 class KX_ChunkNode;
 class RAS_MeshObject;
 class RAS_MaterialBucket;
@@ -151,7 +149,7 @@ public:
 	void EndUpdateMesh();
 	void RenderMesh(RAS_IRasterizer *rasty, KX_Camera *cam);
 
-	inline KX_ChunkNode* GetNode() const
+	inline KX_ChunkNode *GetNode() const
 	{
 		return m_node;
 	}
