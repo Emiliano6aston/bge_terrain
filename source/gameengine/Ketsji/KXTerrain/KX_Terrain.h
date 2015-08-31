@@ -69,10 +69,10 @@ private:
 	/** Tous les noeuds dans cette distance peuvent avoir un niveau
 	 * plus petit que 2 (soit le minimum).
 	 */
-	float m_cameraMaxDistance2;
+	float m_cameraMaxDistance;
 
-	/// La même chose que m_maxDistance2 mais pour les objets physique.
-	float m_objectMaxDistance2;
+	/// La même chose que m_cameraMaxDistance mais pour les objets physique.
+	float m_objectMaxDistance;
 
 	/// La largeur du mesh d'un chunk.
 	float m_chunkSize;
@@ -147,13 +147,13 @@ public:
 		return m_width;
 	}
 	/// La distance maximal pour avoir un niveau de subdivision superieur à 1
-	inline float GetCameraMaxDistance2() const
+	inline float GetCameraMaxDistance() const
 	{
-		return m_cameraMaxDistance2;
+		return m_cameraMaxDistance;
 	}
-	inline float GetObjectMaxDistance2() const
+	inline float GetObjectMaxDistance() const
 	{
-		return m_objectMaxDistance2;
+		return m_objectMaxDistance;
 	}
 	/// La taille de tous les chunks
 	inline float GetChunkSize() const
