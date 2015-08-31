@@ -71,11 +71,11 @@ private:
 	const unsigned short m_level;
 
 	/// Le rayon du noeud pour les cameras.
-	float m_radius2Camera;
+	float m_radiusCamera;
 	/// Le rayon du noeud pour les objets.
-	float m_radius2Object;
+	float m_radiusObject;
 	/// Le rayon du noeud sans marge.
-	float m_radius2NoGap;
+	float m_radiusNoGap;
 
 	/// La boite englobant le noeud pour le frustum culling.
 	MT_Point3 m_box[8];

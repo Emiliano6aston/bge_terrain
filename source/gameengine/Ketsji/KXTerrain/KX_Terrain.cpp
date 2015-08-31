@@ -51,8 +51,8 @@ KX_Terrain::KX_Terrain(void *sgReplicationInfo,
 	m_minPhysicsLevel(minPhysicsLevel),
 	m_vertexSubdivision(vertexSubdivision),
 	m_width(width),
-	m_cameraMaxDistance2(cameraMaxDistance * cameraMaxDistance),
-	m_objectMaxDistance2(objectMaxDistance * objectMaxDistance),
+	m_cameraMaxDistance(cameraMaxDistance),
+	m_objectMaxDistance(objectMaxDistance),
 	m_chunkSize(chunkSize),
 	m_maxHeight(0.0f),
 	m_minHeight(0.0f),
@@ -153,7 +153,7 @@ unsigned short KX_Terrain::GetSubdivision(float distance, bool iscamera) const
 {
 	unsigned int ret = 1;
 	// les objets non pas besoin d'une aussi grande subdivision que la camera
-	const float maxdistance = iscamera ? m_cameraMaxDistance2 : m_objectMaxDistance2;
+	const float maxdistance = iscamera ? m_cameraMaxDistance : m_objectMaxDistance;
 	for (float i = m_maxChunkLevel; i > 0.; --i) {
 		if (distance > (i / m_maxChunkLevel * maxdistance) || ret == m_maxChunkLevel)
 			break;
