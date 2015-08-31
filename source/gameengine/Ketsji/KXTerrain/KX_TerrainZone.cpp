@@ -304,18 +304,19 @@ void KX_TerrainZoneMesh::GetVertexInfo(const float x, const float y, VertexZoneI
 	if (m_zoneInfo->flag & TERRAIN_ZONE_USE_UV_TEXTURE_COLOR) {
 		if (deltaheight != 0.0f) {
 			const unsigned short channel = m_zoneInfo->uvchannel / 2;
-			const unsigned short coord = m_zoneInfo->uvchannel % 2;
+			const unsigned short axis = m_zoneInfo->uvchannel % 2;
 			float value;
 			if (m_zoneInfo->flag & TERRAIN_ZONE_USE_HEIGHT_COLOR) {
 				value = fabs(deltaheight);
 				if (m_zoneInfo->flag & TERRAIN_ZONE_DIVIDE_COLOR) {
 					value /= m_zoneInfo->colordividor;
 				}
+				value *= m_zoneInfo->color;
 			}
 			else {
 				value = m_zoneInfo->color;
 			}
-			r_info->m_uvs[channel][coord] = value * interp;
+			r_info->m_uvs[channel][axis] = value * interp;
 		}
 	}
 }
