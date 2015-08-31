@@ -70,11 +70,14 @@ KX_ChunkNode::KX_ChunkNode(KX_ChunkNode *parentNode,
 	const float maxHeight = m_terrain->GetMaxHeight();
 	const float minHeight = m_terrain->GetMinHeight();
 
-	// le rayon du chunk
-	m_radius2NoGap = halfwidth * halfwidth * 2.0f;
-	m_radius2Object = m_radius2NoGap * 2.0f;
-	float gap = size * relativesize * 2.0f;
-	m_radius2Camera = m_radius2NoGap + (gap * gap);
+	// le rayon du chunk sqrt(x² + y²)
+	m_radiusNoGap = sqrt(halfwidth * halfwidth * 2.0f);
+	m_radiusObject = m_radiusNoGap;
+	/* Le décalage pour que le noeud parent se subdivise avant ses noeuds
+	 * enfant evitant ainsi d'enorme création de chunk silmutanement.
+	 */
+	float gap = size * relativesize;
+	m_radiusCamera = m_radiusNoGap + sqrt(gap * gap * 2.0f);
 
 	// la coordonnée reel du chunk
 	const float realX = x * size;
@@ -172,10 +175,10 @@ bool KX_ChunkNode::NeedCreateNodes(CListValue *objects, KX_Camera *culledcam) co
 			}
 		}
 
-		float distance2 = MT_Point3(m_realPos.x(), m_realPos.y(), (m_maxBoxHeight + m_minBoxHeight) / 2.0f).distance2(object->NodeGetWorldPosition());
-		distance2 -= iscamera ? m_radius2Camera : m_radius2Object;
+		float distance = MT_Point3(m_realPos.x(), m_realPos.y(), (m_maxBoxHeight + m_minBoxHeight) / 2.0f).distance(object->NodeGetWorldPosition());
+		distance -= iscamera ? m_radiusCamera : m_radiusObject;
 
-		needcreatenode = (m_terrain->GetSubdivision(distance2, iscamera) > m_level);
+		needcreatenode = (m_terrain->GetSubdivision(distance, iscamera) > m_level);
 		if (needcreatenode)
 			break;
 	}
@@ -199,8 +202,8 @@ bool KX_ChunkNode::InNode(CListValue *objects) const
 			continue;
 		}
 
-		const float objdistance2 = MT_Point3(m_realPos.x(), m_realPos.y(), (m_maxBoxHeight + m_minBoxHeight) / 2.0f).distance2(object->NodeGetWorldPosition()) - m_radius2NoGap;
-		innode = (objdistance2 < 0.0f);
+		const float objdistance = MT_Point3(m_realPos.x(), m_realPos.y(), (m_maxBoxHeight + m_minBoxHeight) / 2.0f).distance(object->NodeGetWorldPosition()) - m_radiusNoGap;
+		innode = (objdistance < 0.0f);
 		if (innode)
 			break;
 	}
@@ -230,7 +233,7 @@ short KX_ChunkNode::IsCameraVisible(KX_Camera *cam)
 {
 	if (!m_onConstruct) {
 		short culledState = cam->SphereInsideFrustum(MT_Point3(m_realPos.x(), m_realPos.y(), (m_maxBoxHeight + m_minBoxHeight) / 2.0f),
-													 m_radius2NoGap);
+													 m_radiusNoGap);
 		if (culledState != KX_Camera::INTERSECT)
 			return culledState;
 	}
@@ -389,7 +392,7 @@ void KX_ChunkNode::ReConstructFrustumBoxAndRadius()
 		for (unsigned int i = 4; i < 8; ++i)
 			m_box[i].z() = m_maxBoxHeight;
 
-		// La taille et sa moitié du chunk.
+		/*// La taille et sa moitié du chunk.
 		const float size = m_terrain->GetChunkSize();
 		const float halfwidth = size * m_relativeSize / 2.0f;
 		const float halfBoxHeigth = (m_maxBoxHeight - m_minBoxHeight) / 2.0f;
@@ -398,7 +401,7 @@ void KX_ChunkNode::ReConstructFrustumBoxAndRadius()
 		m_radius2NoGap = halfwidth * halfwidth * 2.0f + halfBoxHeigth * halfBoxHeigth;
 		m_radius2Object = m_radius2NoGap * 2.0f;
 		float gap = size * m_relativeSize * 2.0f;
-		m_radius2Camera = m_radius2NoGap + (gap * gap);
+		m_radius2Camera = m_radius2NoGap + (gap * gap);*/
 	}
 }
 
