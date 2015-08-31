@@ -27,6 +27,8 @@
 #include "KX_Camera.h"
 #include "KX_PythonInit.h"
 
+#include "SG_Node.h"
+
 #include "RAS_IRasterizer.h"
 
 #include "PHY_IPhysicsController.h"
@@ -175,7 +177,8 @@ bool KX_ChunkNode::NeedCreateNodes(CListValue *objects, KX_Camera *culledcam) co
 			}
 		}
 
-		float distance = MT_Point3(m_realPos.x(), m_realPos.y(), (m_maxBoxHeight + m_minBoxHeight) / 2.0f).distance(object->NodeGetWorldPosition());
+		const float objradius = object->GetSGNode()->Radius();
+		float distance = MT_Point3(m_realPos.x(), m_realPos.y(), (m_maxBoxHeight + m_minBoxHeight) / 2.0f).distance(object->NodeGetWorldPosition()) - objradius;
 		distance -= iscamera ? m_radiusCamera : m_radiusObject;
 
 		needcreatenode = (m_terrain->GetSubdivision(distance, iscamera) > m_level);
@@ -202,7 +205,8 @@ bool KX_ChunkNode::InNode(CListValue *objects) const
 			continue;
 		}
 
-		const float objdistance = MT_Point3(m_realPos.x(), m_realPos.y(), (m_maxBoxHeight + m_minBoxHeight) / 2.0f).distance(object->NodeGetWorldPosition()) - m_radiusNoGap;
+		const float objradius = object->GetSGNode()->Radius();
+		const float objdistance = MT_Point3(m_realPos.x(), m_realPos.y(), (m_maxBoxHeight + m_minBoxHeight) / 2.0f).distance(object->NodeGetWorldPosition()) - m_radiusNoGap - objradius;
 		innode = (objdistance < 0.0f);
 		if (innode)
 			break;
