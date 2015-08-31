@@ -1776,15 +1776,18 @@ static KX_Terrain *convert_terrain(Terrain *terrain, KX_Scene* scene, KX_Blender
 {
 	unsigned int rgb[3] = {0, 0, 0};
 	MT_Point2 uvs[4][RAS_TexVert::MAX_UNIT];
+
+	Material *material = terrain->material ? terrain->material : &defmaterial;
+
 	// On recupère le materiau.
-	RAS_MaterialBucket *bucket = material_from_mesh(terrain->material, NULL, NULL, NULL, NULL, 
-													0, rgb, uvs, NULL, scene, converter, true);
+	RAS_MaterialBucket *bucket = material_from_mesh(material, NULL,
+													NULL, NULL, NULL, 0, rgb, uvs, NULL, scene, converter, true);
 
 	// Creation du terrain.
 	KX_Terrain *kxterrain = new KX_Terrain(scene,
 										   KX_Scene::m_callbacks,
 										   bucket,
-										   terrain->material,
+										   material,
 										   terrain->maxlevel,
 										   terrain->minphysicslevel,
 										   terrain->vertexsubdivision,
