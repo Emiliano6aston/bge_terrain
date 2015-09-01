@@ -70,12 +70,10 @@ private:
 	/// Plus ce nombre est grand plus ce noeud est loin dans le QuadTree.
 	const unsigned short m_level;
 
-	/// Le rayon du noeud pour les cameras.
-	float m_radiusCamera;
-	/// Le rayon du noeud pour les objets.
-	float m_radiusObject;
-	/// Le rayon du noeud sans marge.
-	float m_radiusNoGap;
+	/// Le rayon du noeud.
+	float m_radius;
+	/// La marge du rayon du noeud.
+	float m_radiusGap;
 
 	/// La boite englobant le noeud pour le frustum culling.
 	MT_Point3 m_box[8];
