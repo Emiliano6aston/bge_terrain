@@ -403,14 +403,6 @@ void KX_ChunkNode::ReConstructFrustumBoxAndRadius()
 			m_box[i].z() = m_minBoxHeight;
 		for (unsigned int i = 4; i < 8; ++i)
 			m_box[i].z() = m_maxBoxHeight;
-
-		// La taille et sa moitié du chunk.
-		const float size = m_terrain->GetChunkSize();
-		const float halfwidth = size * m_relativeSize / 2.0f;
-		const float halfBoxHeigth = (m_maxBoxHeight - m_minBoxHeight) / 2.0f;
-
-		// le rayon du chunk sqrt(x² + y² + z²)
-		m_radius = MT_Point3(halfwidth, halfwidth, halfBoxHeigth).length();
 	}
 }
 
