@@ -73,13 +73,11 @@ KX_ChunkNode::KX_ChunkNode(KX_ChunkNode *parentNode,
 	const float minHeight = m_terrain->GetMinHeight();
 
 	// le rayon du chunk sqrt(x² + y²)
-	m_radiusNoGap = MT_Point3(halfwidth, halfwidth, 0.0f).length();
-	m_radiusObject = m_radiusNoGap * 2.0f;
+	m_radius = MT_Point3(halfwidth, halfwidth, 0.0f).length();
 	/* Le décalage pour que le noeud parent se subdivise avant ses noeuds
 	 * enfant evitant ainsi d'enorme création de chunk silmutanement.
 	 */
-	float gap = size * relativesize;
-	m_radiusCamera = m_radiusNoGap + sqrt(gap * gap * 2.0f);
+	m_radiusGap = MT_Point3(size * relativesize, size * relativesize, 0.0f).length();
 
 	// la coordonnée reel du chunk
 	const float realX = x * size;
@@ -179,7 +177,7 @@ bool KX_ChunkNode::NeedCreateNodes(CListValue *objects, KX_Camera *culledcam) co
 
 		const float objradius = object->GetSGNode()->Radius();
 		float distance = MT_Point3(m_realPos.x(), m_realPos.y(), (m_maxBoxHeight + m_minBoxHeight) / 2.0f).distance(object->NodeGetWorldPosition()) - objradius;
-		distance -= iscamera ? m_radiusCamera : m_radiusObject;
+		distance -= m_radius + (iscamera ? m_radiusGap * 2.0f : 2.0f);
 
 		needcreatenode = (m_terrain->GetSubdivision(distance, iscamera) > m_level);
 		if (needcreatenode)
@@ -206,7 +204,7 @@ bool KX_ChunkNode::InNode(CListValue *objects) const
 		}
 
 		const float objradius = object->GetSGNode()->Radius();
-		const float objdistance = MT_Point3(m_realPos.x(), m_realPos.y(), (m_maxBoxHeight + m_minBoxHeight) / 2.0f).distance(object->NodeGetWorldPosition()) - m_radiusNoGap - objradius;
+		const float objdistance = MT_Point3(m_realPos.x(), m_realPos.y(), (m_maxBoxHeight + m_minBoxHeight) / 2.0f).distance(object->NodeGetWorldPosition()) - m_radius - objradius;
 		innode = (objdistance < 0.0f);
 		if (innode)
 			break;
@@ -347,7 +345,7 @@ void KX_ChunkNode::DrawDebugInfo(DEBUG_DRAW_MODE mode)
 		glEnd();*/
 
 		MT_Point3 nodepos3d(m_realPos.x(), m_realPos.y(), (m_maxBoxHeight + m_minBoxHeight) / 2.0f);
-		KX_RasterizerDrawDebugCircle(nodepos3d, m_radiusNoGap, MT_Vector3(0, 1, 0), MT_Vector3(0, 0, 1), 64);
+		KX_RasterizerDrawDebugCircle(nodepos3d, m_radius, MT_Vector3(0, 1, 0), MT_Vector3(0, 0, 1), 64);
 		KX_RasterizerDrawDebugLine(nodepos3d, nodepos3d + MT_Point3(0, 0, 1), MT_Vector3(1, 0, 0));
 		/*glBegin(GL_LINES);
 			glVertex3f(nodepos3d.x() - m_radiusNoGap, nodepos3d.y() - m_radiusNoGap, nodepos3d.z());
@@ -409,16 +407,10 @@ void KX_ChunkNode::ReConstructFrustumBoxAndRadius()
 		// La taille et sa moitié du chunk.
 		const float size = m_terrain->GetChunkSize();
 		const float halfwidth = size * m_relativeSize / 2.0f;
-		const float halfBoxHeigth = (m_maxBoxHeight - m_minBoxHeight);
+		const float halfBoxHeigth = (m_maxBoxHeight - m_minBoxHeight) / 2.0f;
 
 		// le rayon du chunk sqrt(x² + y² + z²)
-		m_radiusNoGap = MT_Point3(halfwidth, halfwidth, halfBoxHeigth).length();
-		m_radiusObject = m_radiusNoGap * 2.0f;
-		/* Le décalage pour que le noeud parent se subdivise avant ses noeuds
-		 * enfant evitant ainsi d'enorme création de chunk silmutanement.
-		 */
-		float gap = size * m_relativeSize;
-		m_radiusCamera = m_radiusNoGap + sqrt(gap * gap * 2.0f);
+		m_radius = MT_Point3(halfwidth, halfwidth, halfBoxHeigth).length();
 	}
 }
 
