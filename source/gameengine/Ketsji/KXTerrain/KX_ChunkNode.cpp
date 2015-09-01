@@ -73,8 +73,8 @@ KX_ChunkNode::KX_ChunkNode(KX_ChunkNode *parentNode,
 	const float minHeight = m_terrain->GetMinHeight();
 
 	// le rayon du chunk sqrt(x² + y²)
-	m_radiusNoGap = sqrt(halfwidth * halfwidth * 2.0f);
-	m_radiusObject = m_radiusNoGap;
+	m_radiusNoGap = MT_Point3(halfwidth, halfwidth, 0.0f).length();
+	m_radiusObject = m_radiusNoGap * 2.0f;
 	/* Le décalage pour que le noeud parent se subdivise avant ses noeuds
 	 * enfant evitant ainsi d'enorme création de chunk silmutanement.
 	 */
@@ -318,33 +318,43 @@ void KX_ChunkNode::CalculateVisible(KX_Camera *culledcam, CListValue *objects)
 
 void KX_ChunkNode::DrawDebugInfo(DEBUG_DRAW_MODE mode)
 {
-	if (mode == DEBUG_BOX) {
+	if (mode == DEBUG_BOX/* && m_level == 9*/) {
 		glDisable(GL_CULL_FACE);
 // 		GPU_set_material_alpha_blend(GPU_BLEND_ALPHA);
 
-		glColor4f(1.0, 0.0, 0.0, 1.0);
-		glBegin(GL_LINE_LOOP);
+		glColor4f(1.0, 0.0, 0.0, .05);
+		/*glBegin(GL_LINE_LOOP);
 		for (unsigned int i = 0; i < 4; ++i)
 			glVertex3f(m_box[i].x(), m_box[i].y(), m_box[i].z());
-		glEnd();
-		glBegin(GL_LINE_LOOP);
+		glEnd();*/
+		/*glBegin(GL_QUADS);
 			glVertex3f(m_box[0].x(), m_box[0].y(), m_box[0].z());
-			glVertex3f(m_box[2].x(), m_box[2].y(), m_box[2].z());
 			glVertex3f(m_box[1].x(), m_box[1].y(), m_box[1].z());
+			glVertex3f(m_box[2].x(), m_box[2].y(), m_box[2].z());
 			glVertex3f(m_box[3].x(), m_box[3].y(), m_box[3].z());
 		glEnd();
 
-		glColor4f(0.0, 1.0, 0.0, 1.0);
-		glBegin(GL_LINE_LOOP);
+		glColor4f(0.0, 1.0, 0.0, .05);*/
+		/*glBegin(GL_LINE_LOOP);
 		for (unsigned int i = 4; i < 8; ++i)
 			glVertex3f(m_box[i].x(), m_box[i].y(), m_box[i].z());
-		glEnd();
-		glBegin(GL_LINE_LOOP);
+		glEnd();*/
+		/*glBegin(GL_QUADS);
 			glVertex3f(m_box[4].x(), m_box[4].y(), m_box[4].z());
-			glVertex3f(m_box[6].x(), m_box[6].y(), m_box[6].z());
 			glVertex3f(m_box[5].x(), m_box[5].y(), m_box[5].z());
+			glVertex3f(m_box[6].x(), m_box[6].y(), m_box[6].z());
 			glVertex3f(m_box[7].x(), m_box[7].y(), m_box[7].z());
-		glEnd();
+		glEnd();*/
+
+		MT_Point3 nodepos3d(m_realPos.x(), m_realPos.y(), (m_maxBoxHeight + m_minBoxHeight) / 2.0f);
+		KX_RasterizerDrawDebugCircle(nodepos3d, m_radiusNoGap, MT_Vector3(0, 1, 0), MT_Vector3(0, 0, 1), 64);
+		KX_RasterizerDrawDebugLine(nodepos3d, nodepos3d + MT_Point3(0, 0, 1), MT_Vector3(1, 0, 0));
+		/*glBegin(GL_LINES);
+			glVertex3f(nodepos3d.x() - m_radiusNoGap, nodepos3d.y() - m_radiusNoGap, nodepos3d.z());
+			glVertex3f(nodepos3d.x() + m_radiusNoGap, nodepos3d.y() + m_radiusNoGap, nodepos3d.z());
+			glVertex3f(nodepos3d.x() - m_radiusNoGap, nodepos3d.y() + m_radiusNoGap, nodepos3d.z());
+			glVertex3f(nodepos3d.x() + m_radiusNoGap, nodepos3d.y() - m_radiusNoGap, nodepos3d.z());
+		glEnd();*/
 	}
 
 	if (m_nodeList) {
@@ -396,16 +406,19 @@ void KX_ChunkNode::ReConstructFrustumBoxAndRadius()
 		for (unsigned int i = 4; i < 8; ++i)
 			m_box[i].z() = m_maxBoxHeight;
 
-		/*// La taille et sa moitié du chunk.
+		// La taille et sa moitié du chunk.
 		const float size = m_terrain->GetChunkSize();
 		const float halfwidth = size * m_relativeSize / 2.0f;
-		const float halfBoxHeigth = (m_maxBoxHeight - m_minBoxHeight) / 2.0f;
+		const float halfBoxHeigth = (m_maxBoxHeight - m_minBoxHeight);
 
-		// Le rayon du chunk.
-		m_radius2NoGap = halfwidth * halfwidth * 2.0f + halfBoxHeigth * halfBoxHeigth;
-		m_radius2Object = m_radius2NoGap * 2.0f;
-		float gap = size * m_relativeSize * 2.0f;
-		m_radius2Camera = m_radius2NoGap + (gap * gap);*/
+		// le rayon du chunk sqrt(x² + y² + z²)
+		m_radiusNoGap = MT_Point3(halfwidth, halfwidth, halfBoxHeigth).length();
+		m_radiusObject = m_radiusNoGap * 2.0f;
+		/* Le décalage pour que le noeud parent se subdivise avant ses noeuds
+		 * enfant evitant ainsi d'enorme création de chunk silmutanement.
+		 */
+		float gap = size * m_relativeSize;
+		m_radiusCamera = m_radiusNoGap + sqrt(gap * gap * 2.0f);
 	}
 }
 
