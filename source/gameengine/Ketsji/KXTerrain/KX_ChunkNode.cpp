@@ -235,12 +235,12 @@ void KX_ChunkNode::MarkCulled(KX_Camera* culledcam)
 
 short KX_ChunkNode::IsCameraVisible(KX_Camera *cam)
 {
-	if (!m_onConstruct) {
+	/*if (!m_onConstruct) {
 		short culledState = cam->SphereInsideFrustum(MT_Point3(m_realPos.x(), m_realPos.y(), (m_maxBoxHeight + m_minBoxHeight) / 2.0f),
 													 m_radiusNoGap);
 		if (culledState != KX_Camera::INTERSECT)
 			return culledState;
-	}
+	}*/
 
 	return cam->BoxInsideFrustum(m_box);
 }
