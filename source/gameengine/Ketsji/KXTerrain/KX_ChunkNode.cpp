@@ -221,15 +221,9 @@ void KX_ChunkNode::MarkCulled(KX_Camera* culledcam)
 	/* Si ce noeud possède un parent on se fie à sont état si il est
 	 * totalement a l'interieur ou à l'exterieur du champ de la caméra.
 	 */
-	if (m_parentNode) {
-		switch (m_parentNode->GetCulledState()) {
-			case KX_Camera::INSIDE:
-				m_culledState = KX_Camera::INSIDE;
-				return;
-			case KX_Camera::OUTSIDE:
-				m_culledState = KX_Camera::OUTSIDE;
-				return;
-		}
+	if (m_parentNode && m_parentNode->GetCulledState() != KX_Camera::INTERSECT) {
+		m_culledState = m_parentNode->GetCulledState();
+		return;
 	}
 	m_culledState = IsCameraVisible(culledcam);
 }
