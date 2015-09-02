@@ -27,7 +27,9 @@
 #include "KX_Camera.h"
 #include "KX_PythonInit.h"
 #include "KX_Scene.h"
+
 #include "RAS_IRasterizer.h"
+
 #include "DNA_terrain_types.h"
 #include "DNA_material_types.h"
 
@@ -43,7 +45,8 @@ KX_Terrain::KX_Terrain(void *sgReplicationInfo,
 					   unsigned short width,
 					   float cameraMaxDistance,
 					   float objectMaxDistance,
-					   float chunkSize)
+					   float chunkSize,
+					   short debugMode)
 	:KX_GameObject(sgReplicationInfo, callbacks),
 	m_bucket(bucket),
 	m_material(material),
@@ -56,6 +59,7 @@ KX_Terrain::KX_Terrain(void *sgReplicationInfo,
 	m_chunkSize(chunkSize),
 	m_maxHeight(0.0f),
 	m_minHeight(0.0f),
+	m_debugMode(debugMode),
 	m_construct(false),
 	m_frame(0)
 {
@@ -144,9 +148,7 @@ void KX_Terrain::RenderChunksMeshes(KX_Camera *cam, RAS_IRasterizer* rasty)
 
 void KX_Terrain::DrawDebugNode()
 {
-// #ifdef DRAW_DEBUG
-	m_nodeTree->DrawDebugInfo(KX_ChunkNode::DEBUG_BOX);
-// #endif // DRAW_DEBUG
+	m_nodeTree->DrawDebugInfo(m_debugMode);
 }
 
 unsigned short KX_Terrain::GetSubdivision(float distance, bool iscamera) const

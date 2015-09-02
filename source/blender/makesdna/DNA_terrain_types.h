@@ -75,6 +75,9 @@ typedef struct Terrain {
 	float objectdistance;
 	float chunksize;
 
+	int debugmode;
+	int pad;
+
 	int minphysicslevel;
 	int active_zoneindex;
 	ListBase zones;
@@ -90,6 +93,10 @@ typedef struct Terrain {
 #define TERRAIN_ZONE_USE_HEIGHT_COLOR			(1 << 7)
 #define TERRAIN_ZONE_DIVIDE_COLOR				(1 << 8) /* Used only with TERRAIN_ZONE_USE_HEIGHT_COLOR */
 #define TERRAIN_ZONE_ACTIVE						(1 << 9)
+
+#define DEBUG_BOX		(1 << 0)
+#define DEBUG_LINE		(1 << 1)
+#define DEBUG_CENTER	(1 << 2)
 
 #endif /*__DNA_TERRAIN_TYPES_H__*/
 

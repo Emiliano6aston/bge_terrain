@@ -95,6 +95,26 @@ class TERRAIN_PT_game_terrain_mesh(TerrainButtonsPanel, Panel):
         row.column().prop(terrain, "material")
         row.column().prop(terrain, "vertex_subdivision")
 
+class TERRAIN_PT_game_terrain_debug(TerrainButtonsPanel, Panel):
+    bl_label = "Debug"
+    COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_GAME'}
+
+    @classmethod
+    def poll(cls, context):
+        scene = context.scene
+        return (scene.terrain)
+
+    def draw(self, context):
+        layout = self.layout
+
+        terrain = context.terrain
+
+        row = layout.row()
+        col = row.column()
+        col.prop(terrain, "debug_box")
+        col.prop(terrain, "debug_line")
+        col.prop(terrain, "debug_center")
+
 class TERRAIN_UL_zoneslots(UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         if self.layout_type in {'DEFAULT', 'COMPACT'}:
