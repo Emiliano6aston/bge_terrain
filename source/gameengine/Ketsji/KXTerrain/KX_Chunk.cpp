@@ -424,7 +424,7 @@ KX_Chunk::Vertex *KX_Chunk::NewVertex(unsigned short relx, unsigned short rely)
 	if (!m_requestCreateBox) {
 		if (vertz > m_maxVertexHeight)
 			m_maxVertexHeight = vertz;
-		else if (vertz < m_minVertexHeight)
+		if (vertz < m_minVertexHeight)
 			m_minVertexHeight = vertz;
 	}
 	else {
@@ -845,6 +845,18 @@ void KX_Chunk::ComputeColumnJointVertexNormal(COLUMN_TYPE columnType, bool rever
 			vertex->normal[0] = 0.0f;
 			vertex->normal[1] = 0.0f;
 			vertex->normal[2] = 1.0f;
+			continue;
+		}
+		if (std::abs(jointNode->GetLevel() - m_node->GetLevel()) > 2) {
+			DEBUG("Error : more than to level difference between to joint nodes (joint node)");
+			continue;
+		}
+		if (frontNode && std::abs(frontNode->GetLevel() - m_node->GetLevel()) > 2) {
+			DEBUG("Error : more than to level difference between to joint nodes (front node)");
+			continue;
+		}
+		if (backNode && std::abs(backNode->GetLevel() - m_node->GetLevel()) > 2) {
+			DEBUG("Error : more than to level difference between to joint nodes (back node)");
 			continue;
 		}
 

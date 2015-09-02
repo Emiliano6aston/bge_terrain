@@ -107,6 +107,8 @@ private:
 
 	void MarkCulled(KX_Camera *culldecam);
 
+	MT_Point3 GetCenter() const;
+
 public:
 	KX_ChunkNode(KX_ChunkNode *parentNode,
 				 int x, int y, 
@@ -169,6 +171,16 @@ public:
 	inline unsigned short GetLevel() const
 	{
 		return m_level;
+	}
+
+	inline float GetMinBoxHeight() const
+	{
+		return m_minBoxHeight;
+	}
+
+	inline float GetMaxBoxHeight() const
+	{
+		return m_maxBoxHeight;
 	}
 
 	static unsigned int m_activeNode;
