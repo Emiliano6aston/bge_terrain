@@ -51,10 +51,6 @@ public:
 		}
 	};
 
-	enum DEBUG_DRAW_MODE {
-		DEBUG_BOX=0,
-	};
-
 private:
 	/// Le noeud parent.
 	KX_ChunkNode *m_parentNode;
@@ -122,7 +118,7 @@ public:
 	/// Teste si le noeud est visible et créer des sous noeuds si besoin.
 	void CalculateVisible(KX_Camera *culledcam, CListValue *objects);
 	/// Draw debug info for culling box
-	void DrawDebugInfo(DEBUG_DRAW_MODE mode);
+	void DrawDebugInfo(short mode);
 
 	/// On remet à 0 les variables m_maxBoxHeight et m_minBoxHeight.
 	void ResetFrustumBoxHeights();
