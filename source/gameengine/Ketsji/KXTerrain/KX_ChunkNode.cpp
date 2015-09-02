@@ -39,7 +39,7 @@
 #include "GPU_draw.h"
 #include "GPU_material.h"
 
-#define DEBUG(msg) std::cout << "Debug (" << __func__ << ", " << this << ") : " << msg << std::endl
+#define DEBUG(msg) std::cout << msg << std::endl;
 
 unsigned int KX_ChunkNode::m_activeNode = 0;
 
@@ -69,8 +69,8 @@ KX_ChunkNode::KX_ChunkNode(KX_ChunkNode *parentNode,
 	const float halfwidth = size * relativesize / 2.0f;
 
 	// la taille maximale et minimale en hauteur de la boite de frustum culling
-	const float maxHeight = m_terrain->GetMaxHeight();
-	const float minHeight = m_terrain->GetMinHeight();
+	const float defaultMaxHeight = m_terrain->GetMaxHeight();
+	const float defaultMinHeight = m_terrain->GetMinHeight();
 
 	// le rayon du chunk sqrt(x² + y²)
 	m_radius = MT_Point3(halfwidth, halfwidth, 0.0f).length();
@@ -88,14 +88,17 @@ KX_ChunkNode::KX_ChunkNode(KX_ChunkNode *parentNode,
 	 * recursive des noeuds. Celle ci sera redimensionner plus tard pour
 	 * une meilleur optimization
 	 */
-	m_box[0] = MT_Point3(realX - halfwidth, realY - halfwidth, minHeight);
-	m_box[1] = MT_Point3(realX + halfwidth, realY - halfwidth, minHeight);
-	m_box[2] = MT_Point3(realX + halfwidth, realY + halfwidth, minHeight);
-	m_box[3] = MT_Point3(realX - halfwidth, realY + halfwidth, minHeight);
-	m_box[4] = MT_Point3(realX - halfwidth, realY - halfwidth, maxHeight);
-	m_box[5] = MT_Point3(realX + halfwidth, realY - halfwidth, maxHeight);
-	m_box[6] = MT_Point3(realX + halfwidth, realY + halfwidth, maxHeight);
-	m_box[7] = MT_Point3(realX - halfwidth, realY + halfwidth, maxHeight);
+	MT_Point3 min(realX - halfwidth, realY - halfwidth, defaultMinHeight);
+	MT_Point3 max(realX + halfwidth, realY + halfwidth, defaultMaxHeight);
+
+	m_box[0] = min;
+	m_box[1] = MT_Point3(min[0], min[1], max[2]);
+	m_box[2] = MT_Point3(min[0], max[1], min[2]);
+	m_box[3] = MT_Point3(min[0], max[1], max[2]);
+	m_box[4] = MT_Point3(max[0], min[1], min[2]);
+	m_box[5] = MT_Point3(max[0], min[1], max[2]);
+	m_box[6] = MT_Point3(max[0], max[1], min[2]);
+	m_box[7] = max;
 }
 
 KX_ChunkNode::~KX_ChunkNode()
@@ -176,7 +179,7 @@ bool KX_ChunkNode::NeedCreateNodes(CListValue *objects, KX_Camera *culledcam) co
 		}
 
 		const float objradius = object->GetSGNode()->Radius();
-		float distance = MT_Point3(m_realPos.x(), m_realPos.y(), (m_maxBoxHeight + m_minBoxHeight) / 2.0f).distance(object->NodeGetWorldPosition()) - objradius;
+		float distance = GetCenter().distance(object->NodeGetWorldPosition()) - objradius;
 		distance -= m_radius + (iscamera ? m_radiusGap * 2.0f : 2.0f);
 
 		needcreatenode = (m_terrain->GetSubdivision(distance, iscamera) > m_level);
@@ -204,7 +207,7 @@ bool KX_ChunkNode::InNode(CListValue *objects) const
 		}
 
 		const float objradius = object->GetSGNode()->Radius();
-		const float objdistance = MT_Point3(m_realPos.x(), m_realPos.y(), (m_maxBoxHeight + m_minBoxHeight) / 2.0f).distance(object->NodeGetWorldPosition()) - m_radius - objradius;
+		const float objdistance = GetCenter().distance(object->NodeGetWorldPosition()) - m_radius - objradius;
 		innode = (objdistance < 0.0f);
 		if (innode)
 			break;
@@ -231,11 +234,24 @@ void KX_ChunkNode::MarkCulled(KX_Camera* culledcam)
 	m_culledState = IsCameraVisible(culledcam);
 }
 
+MT_Point3 KX_ChunkNode::GetCenter() const
+{
+	float z = 0.0f;
+	if (m_chunk) {
+		z = (m_maxBoxHeight + m_minBoxHeight) / 2.0f;
+	}
+	else if (m_parentNode) {
+		z = (m_parentNode->GetMaxBoxHeight() + m_parentNode->GetMinBoxHeight()) / 2.0f;
+	}
+
+	return MT_Point3(m_realPos.x(), m_realPos.y(), z);
+}
+
 short KX_ChunkNode::IsCameraVisible(KX_Camera *cam)
 {
 	/*if (!m_onConstruct) {
-		short culledState = cam->SphereInsideFrustum(MT_Point3(m_realPos.x(), m_realPos.y(), (m_maxBoxHeight + m_minBoxHeight) / 2.0f),
-													 m_radiusNoGap);
+		const float radius = (m_box[7] - m_box[0]).length();
+		short culledState = cam->SphereInsideFrustum(GetCenter(), radius);
 		if (culledState != KX_Camera::INTERSECT)
 			return culledState;
 	}*/
@@ -317,42 +333,89 @@ void KX_ChunkNode::CalculateVisible(KX_Camera *culledcam, CListValue *objects)
 void KX_ChunkNode::DrawDebugInfo(DEBUG_DRAW_MODE mode)
 {
 	if (mode == DEBUG_BOX/* && m_level == 9*/) {
-		glDisable(GL_CULL_FACE);
-// 		GPU_set_material_alpha_blend(GPU_BLEND_ALPHA);
+		MT_Point3 nodepos3d(GetCenter());
 
-		glColor4f(1.0, 0.0, 0.0, .05);
-		/*glBegin(GL_LINE_LOOP);
-		for (unsigned int i = 0; i < 4; ++i)
-			glVertex3f(m_box[i].x(), m_box[i].y(), m_box[i].z());
-		glEnd();*/
-		/*glBegin(GL_QUADS);
+		glBegin(GL_LINES);
+			glColor4f(1.0, 0.0, 0.0, 1.0);
 			glVertex3f(m_box[0].x(), m_box[0].y(), m_box[0].z());
 			glVertex3f(m_box[1].x(), m_box[1].y(), m_box[1].z());
-			glVertex3f(m_box[2].x(), m_box[2].y(), m_box[2].z());
+			glVertex3f(m_box[1].x(), m_box[1].y(), m_box[1].z());
 			glVertex3f(m_box[3].x(), m_box[3].y(), m_box[3].z());
-		glEnd();
+			glVertex3f(m_box[3].x(), m_box[3].y(), m_box[3].z());
+			glVertex3f(m_box[2].x(), m_box[2].y(), m_box[2].z());
+			glVertex3f(m_box[2].x(), m_box[2].y(), m_box[2].z());
+			glVertex3f(m_box[0].x(), m_box[0].y(), m_box[0].z());
 
-		glColor4f(0.0, 1.0, 0.0, .05);*/
-		/*glBegin(GL_LINE_LOOP);
-		for (unsigned int i = 4; i < 8; ++i)
-			glVertex3f(m_box[i].x(), m_box[i].y(), m_box[i].z());
-		glEnd();*/
-		/*glBegin(GL_QUADS);
 			glVertex3f(m_box[4].x(), m_box[4].y(), m_box[4].z());
 			glVertex3f(m_box[5].x(), m_box[5].y(), m_box[5].z());
-			glVertex3f(m_box[6].x(), m_box[6].y(), m_box[6].z());
+			glVertex3f(m_box[5].x(), m_box[5].y(), m_box[5].z());
 			glVertex3f(m_box[7].x(), m_box[7].y(), m_box[7].z());
-		glEnd();*/
+			glVertex3f(m_box[7].x(), m_box[7].y(), m_box[7].z());
+			glVertex3f(m_box[6].x(), m_box[6].y(), m_box[6].z());
+			glVertex3f(m_box[6].x(), m_box[6].y(), m_box[6].z());
+			glVertex3f(m_box[4].x(), m_box[4].y(), m_box[4].z());
 
-		MT_Point3 nodepos3d(m_realPos.x(), m_realPos.y(), (m_maxBoxHeight + m_minBoxHeight) / 2.0f);
-		KX_RasterizerDrawDebugCircle(nodepos3d, m_radius, MT_Vector3(0, 1, 0), MT_Vector3(0, 0, 1), 64);
-		KX_RasterizerDrawDebugLine(nodepos3d, nodepos3d + MT_Point3(0, 0, 1), MT_Vector3(1, 0, 0));
-		/*glBegin(GL_LINES);
-			glVertex3f(nodepos3d.x() - m_radiusNoGap, nodepos3d.y() - m_radiusNoGap, nodepos3d.z());
-			glVertex3f(nodepos3d.x() + m_radiusNoGap, nodepos3d.y() + m_radiusNoGap, nodepos3d.z());
-			glVertex3f(nodepos3d.x() - m_radiusNoGap, nodepos3d.y() + m_radiusNoGap, nodepos3d.z());
-			glVertex3f(nodepos3d.x() + m_radiusNoGap, nodepos3d.y() - m_radiusNoGap, nodepos3d.z());
-		glEnd();*/
+			glVertex3f(m_box[1].x(), m_box[1].y(), m_box[1].z());
+			glVertex3f(m_box[5].x(), m_box[5].y(), m_box[5].z());
+			glVertex3f(m_box[3].x(), m_box[3].y(), m_box[3].z());
+			glVertex3f(m_box[7].x(), m_box[7].y(), m_box[7].z());
+			glVertex3f(m_box[0].x(), m_box[0].y(), m_box[0].z());
+			glVertex3f(m_box[4].x(), m_box[4].y(), m_box[4].z());
+			glVertex3f(m_box[2].x(), m_box[2].y(), m_box[2].z());
+			glVertex3f(m_box[6].x(), m_box[6].y(), m_box[6].z());
+
+			glColor4f(1.0, 0.0, 0.0, 1.0);
+			glVertex3f(nodepos3d.x(), nodepos3d.y(), nodepos3d.z());
+			glVertex3f(nodepos3d.x() + 1.0, nodepos3d.y(), nodepos3d.z());
+			glColor4f(0.0, 1.0, 0.0, 1.0);
+			glVertex3f(nodepos3d.x(), nodepos3d.y(), nodepos3d.z());
+			glVertex3f(nodepos3d.x(), nodepos3d.y() + 1.0, nodepos3d.z());
+			glColor4f(0.0, 0.0, 1.0, 1.0);
+			glVertex3f(nodepos3d.x(), nodepos3d.y(), nodepos3d.z());
+			glVertex3f(nodepos3d.x(), nodepos3d.y(), nodepos3d.z() + 1.0);
+		glEnd();
+
+		glDisable(GL_CULL_FACE);
+		glDisable(GL_DEPTH_TEST);
+		GPU_set_material_alpha_blend(GPU_BLEND_ALPHA);
+		glBegin(GL_QUADS);
+			if (m_culledState == KX_Camera::OUTSIDE) {
+				glColor4f(0.0, 0.0, 0.0, 1.0);
+			}
+			else if (m_culledState == KX_Camera::INSIDE) {
+				glColor4f(0.0, 1.0, 0.0, 0.01);
+			}
+			else {
+				glColor4f(1.0, 0.0, 0.0, 0.01);
+			}
+
+			glVertex3f(m_box[0].x(), m_box[0].y(), m_box[0].z());
+			glVertex3f(m_box[1].x(), m_box[1].y(), m_box[1].z());
+			glVertex3f(m_box[3].x(), m_box[3].y(), m_box[3].z());
+			glVertex3f(m_box[2].x(), m_box[2].y(), m_box[2].z());
+			glVertex3f(m_box[4].x(), m_box[4].y(), m_box[4].z());
+			glVertex3f(m_box[5].x(), m_box[5].y(), m_box[5].z());
+			glVertex3f(m_box[7].x(), m_box[7].y(), m_box[7].z());
+			glVertex3f(m_box[6].x(), m_box[6].y(), m_box[6].z());
+
+			glVertex3f(m_box[0].x(), m_box[0].y(), m_box[0].z());
+			glVertex3f(m_box[1].x(), m_box[1].y(), m_box[1].z());
+			glVertex3f(m_box[5].x(), m_box[5].y(), m_box[5].z());
+			glVertex3f(m_box[4].x(), m_box[4].y(), m_box[4].z());
+			glVertex3f(m_box[6].x(), m_box[6].y(), m_box[6].z());
+			glVertex3f(m_box[2].x(), m_box[2].y(), m_box[2].z());
+			glVertex3f(m_box[3].x(), m_box[3].y(), m_box[3].z());
+			glVertex3f(m_box[7].x(), m_box[7].y(), m_box[7].z());
+
+			glVertex3f(m_box[5].x(), m_box[5].y(), m_box[5].z());
+			glVertex3f(m_box[1].x(), m_box[1].y(), m_box[1].z());
+			glVertex3f(m_box[3].x(), m_box[3].y(), m_box[3].z());
+			glVertex3f(m_box[7].x(), m_box[7].y(), m_box[7].z());
+			glVertex3f(m_box[4].x(), m_box[4].y(), m_box[4].z());
+			glVertex3f(m_box[0].x(), m_box[0].y(), m_box[0].z());
+			glVertex3f(m_box[2].x(), m_box[2].y(), m_box[2].z());
+			glVertex3f(m_box[6].x(), m_box[6].y(), m_box[6].z());
+		glEnd();
 	}
 
 	if (m_nodeList) {
@@ -370,27 +433,34 @@ void KX_ChunkNode::ResetFrustumBoxHeights()
 
 void KX_ChunkNode::ExtendFrustumBoxHeights(float max, float min)
 {
+	const float invertlevel = 1.0f - ((float)m_level - 1) / (m_terrain->GetMaxLevel() - 1);
+
+	const float defaultMaxHeight = m_terrain->GetMaxHeight();
+	const float defaultMinHeight = m_terrain->GetMinHeight();
+
+	const float correctmax = max + (defaultMaxHeight - max) * invertlevel;
+	const float correctmin = min + (defaultMinHeight - min) * invertlevel;
+
 	if (m_requestCreateBox) {
-		m_maxBoxHeight = max;
-		m_minBoxHeight = min;
+		m_maxBoxHeight = correctmax;
+		m_minBoxHeight = correctmin;
 		m_boxModified = true;
 		m_requestCreateBox = false;
 	}
 	else {
-		if (max > m_maxBoxHeight) {
-			m_maxBoxHeight = max;
+		if (correctmax > m_maxBoxHeight) {
+			m_maxBoxHeight = correctmax;
 			m_boxModified = true;
 		}
-		if (min < m_minBoxHeight) {
-			m_minBoxHeight = min;
+		if (correctmin < m_minBoxHeight) {
+			m_minBoxHeight = correctmin;
 			m_boxModified = true;
 		}
 	}
 
-
-	if (m_parentNode)
+	if (m_parentNode) {
 		m_parentNode->ExtendFrustumBoxHeights(max, min);
-
+	}
 }
 
 void KX_ChunkNode::ReConstructFrustumBoxAndRadius()
@@ -398,11 +468,12 @@ void KX_ChunkNode::ReConstructFrustumBoxAndRadius()
 	if (m_boxModified) {
 		m_boxModified = false;
 
+		const float margin = 0.0f; //(m_maxBoxHeight - m_minBoxHeight);
 		// Redimensionnement de la boite.
-		for (unsigned int i = 0; i < 4; ++i)
-			m_box[i].z() = m_minBoxHeight;
-		for (unsigned int i = 4; i < 8; ++i)
-			m_box[i].z() = m_maxBoxHeight;
+		for (unsigned int i = 0; i < 7; i += 2)
+			m_box[i].z() = m_minBoxHeight - margin;
+		for (unsigned int i = 1; i < 8; i += 2)
+			m_box[i].z() = m_maxBoxHeight + margin;
 	}
 }
 

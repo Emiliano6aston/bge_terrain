@@ -1243,7 +1243,6 @@ void KX_KetsjiEngine::RenderFrame(KX_Scene* scene, KX_Camera* cam)
 	SG_SetActiveStage(SG_STAGE_RENDER);
 	// render debug info for terrain and update visible flags
 	scene->RenderTerrainChunksMeshes(cam, m_rasterizer);
-	scene->DrawDebugTerrainNode();
 
 #ifdef WITH_PYTHON
 	PHY_SetActiveEnvironment(scene->GetPhysicsEnvironment());
@@ -1255,6 +1254,8 @@ void KX_KetsjiEngine::RenderFrame(KX_Scene* scene, KX_Camera* cam)
 
 	//render all the font objects for this scene
 	scene->RenderFonts();
+
+	scene->DrawDebugTerrainNode();
 
 	if (scene->GetPhysicsEnvironment())
 		scene->GetPhysicsEnvironment()->DebugDrawWorld();
