@@ -232,15 +232,7 @@ void KX_ChunkNode::MarkCulled(KX_Camera* culledcam)
 
 MT_Point3 KX_ChunkNode::GetCenter() const
 {
-	float z = 0.0f;
-	if (m_chunk) {
-		z = (m_maxBoxHeight + m_minBoxHeight) / 2.0f;
-	}
-	else if (m_parentNode) {
-		z = (m_parentNode->GetMaxBoxHeight() + m_parentNode->GetMinBoxHeight()) / 2.0f;
-	}
-
-	return MT_Point3(m_realPos.x(), m_realPos.y(), z);
+	return MT_Point3(m_realPos.x(), m_realPos.y(), (m_maxBoxHeight + m_minBoxHeight) / 2.0f);
 }
 
 short KX_ChunkNode::IsCameraVisible(KX_Camera *cam)
