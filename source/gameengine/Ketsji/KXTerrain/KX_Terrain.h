@@ -83,6 +83,9 @@ private:
 	/// La hauteur minimal theorique du mesh d'un chunk.
 	float m_minHeight;
 
+	/// Le mode de déboguage des noeuds.
+	short m_debugMode;
+
 	/// Si vrai le terrain et déjà construit et les noeud principaux aussi.
 	bool m_construct;
 
@@ -115,7 +118,8 @@ public:
 			   unsigned short width,
 			   float cameraMaxDistance,
 			   float objectMaxDistance,
-			   float chunkSize);
+			   float chunkSize,
+			   short debugMode);
 	~KX_Terrain();
 
 	void Construct();

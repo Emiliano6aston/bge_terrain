@@ -257,6 +257,18 @@ void RNA_def_terrain(BlenderRNA *brna)
 	RNA_def_property_range(prop, 0, 16);
 	RNA_def_property_ui_text(prop, "Min Physics Level", "");
 
+	prop = RNA_def_property(srna, "debug_box", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_sdna(prop, NULL, "debugmode", DEBUG_BOX);
+	RNA_def_property_ui_text(prop, "Debug Node Box", "");
+
+	prop = RNA_def_property(srna, "debug_line", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_sdna(prop, NULL, "debugmode", DEBUG_LINE);
+	RNA_def_property_ui_text(prop, "Debug Node Line", "");
+
+	prop = RNA_def_property(srna, "debug_center", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_sdna(prop, NULL, "debugmode", DEBUG_CENTER);
+	RNA_def_property_ui_text(prop, "Debug Node Center", "");
+
 	rna_def_terrain_zone(brna);
 
 	prop = RNA_def_property(srna, "zones", PROP_COLLECTION, PROP_NONE);
