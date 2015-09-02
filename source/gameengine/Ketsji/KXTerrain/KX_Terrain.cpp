@@ -144,9 +144,9 @@ void KX_Terrain::RenderChunksMeshes(KX_Camera *cam, RAS_IRasterizer* rasty)
 
 void KX_Terrain::DrawDebugNode()
 {
-#ifdef DRAW_DEBUG
+// #ifdef DRAW_DEBUG
 	m_nodeTree->DrawDebugInfo(KX_ChunkNode::DEBUG_BOX);
-#endif // DRAW_DEBUG
+// #endif // DRAW_DEBUG
 }
 
 unsigned short KX_Terrain::GetSubdivision(float distance, bool iscamera) const
@@ -253,8 +253,8 @@ void KX_Terrain::AddTerrainZoneMesh(KX_TerrainZoneMesh *zoneMesh)
 	const float maxheight = zoneMesh->GetMaxHeight();
 	const float minheight = zoneMesh->GetMinHeight();
 
-	m_maxHeight += maxheight;
-	m_minHeight += minheight;
+	m_maxHeight += fabs(maxheight);
+	m_minHeight -= fabs(minheight);
 
 	if (maxheight < minheight) {
 		std::cout << "Warning : min height greater than max height !" << std::endl;
