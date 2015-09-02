@@ -33,6 +33,8 @@
 
 #include "PHY_IPhysicsController.h"
 
+#include "DNA_terrain_types.h"
+
 #include <stdio.h>
 
 #include "glew-mx.h"
@@ -324,12 +326,16 @@ void KX_ChunkNode::CalculateVisible(KX_Camera *culledcam, CListValue *objects)
 	m_onConstruct = false;
 }
 
-void KX_ChunkNode::DrawDebugInfo(DEBUG_DRAW_MODE mode)
+void KX_ChunkNode::DrawDebugInfo(short mode)
 {
-	if (mode == DEBUG_BOX/* && m_level == 9*/) {
-		MT_Point3 nodepos3d(GetCenter());
+	if (mode == 0) {
+		return;
+	}
 
-		glBegin(GL_LINES);
+	MT_Point3 nodepos3d(GetCenter());
+
+	glBegin(GL_LINES);
+		if (mode & DEBUG_LINE) {
 			glColor4f(1.0, 0.0, 0.0, 1.0);
 			glVertex3f(m_box[0].x(), m_box[0].y(), m_box[0].z());
 			glVertex3f(m_box[1].x(), m_box[1].y(), m_box[1].z());
@@ -357,7 +363,9 @@ void KX_ChunkNode::DrawDebugInfo(DEBUG_DRAW_MODE mode)
 			glVertex3f(m_box[4].x(), m_box[4].y(), m_box[4].z());
 			glVertex3f(m_box[2].x(), m_box[2].y(), m_box[2].z());
 			glVertex3f(m_box[6].x(), m_box[6].y(), m_box[6].z());
+		}
 
+		if (mode & DEBUG_CENTER) {
 			glColor4f(1.0, 0.0, 0.0, 1.0);
 			glVertex3f(nodepos3d.x(), nodepos3d.y(), nodepos3d.z());
 			glVertex3f(nodepos3d.x() + 1.0, nodepos3d.y(), nodepos3d.z());
@@ -367,8 +375,10 @@ void KX_ChunkNode::DrawDebugInfo(DEBUG_DRAW_MODE mode)
 			glColor4f(0.0, 0.0, 1.0, 1.0);
 			glVertex3f(nodepos3d.x(), nodepos3d.y(), nodepos3d.z());
 			glVertex3f(nodepos3d.x(), nodepos3d.y(), nodepos3d.z() + 1.0);
-		glEnd();
+		}
+	glEnd();
 
+	if (mode & DEBUG_BOX) {
 		glDisable(GL_CULL_FACE);
 		glDisable(GL_DEPTH_TEST);
 		GPU_set_material_alpha_blend(GPU_BLEND_ALPHA);
@@ -377,10 +387,10 @@ void KX_ChunkNode::DrawDebugInfo(DEBUG_DRAW_MODE mode)
 				glColor4f(0.0, 0.0, 0.0, 1.0);
 			}
 			else if (m_culledState == KX_Camera::INSIDE) {
-				glColor4f(0.0, 1.0, 0.0, 0.01);
+				glColor4f(0.0, 1.0, 0.0, 0.1);
 			}
 			else {
-				glColor4f(1.0, 0.0, 0.0, 0.01);
+				glColor4f(1.0, 0.0, 0.0, 0.1);
 			}
 
 			glVertex3f(m_box[0].x(), m_box[0].y(), m_box[0].z());
