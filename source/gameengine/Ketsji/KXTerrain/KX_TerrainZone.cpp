@@ -86,7 +86,7 @@ KX_TerrainZoneMesh::~KX_TerrainZoneMesh()
 		BKE_image_release_ibuf(m_zoneInfo->image, m_buf, NULL);
 }
 
-float KX_TerrainZoneMesh::GetMaxHeight() const
+float KX_TerrainZoneMesh::GetMaxHeight(float origmaxheight) const
 {
 	float maxheight = 0.0;
 
@@ -102,20 +102,16 @@ float KX_TerrainZoneMesh::GetMaxHeight() const
 
 	// bruit de perlin
 	if (m_zoneInfo->flag & TERRAIN_ZONE_PERLIN_NOISE) {
-		if (m_zoneInfo->noiseheight > 0.0) {
-			maxheight += m_zoneInfo->noiseheight;
-		}
+		maxheight += max_ff(m_zoneInfo->noiseheight, 0.0f);
 	}
 	if (m_zoneInfo->flag & TERRAIN_ZONE_IMAGE) {
-		if (m_zoneInfo->imageheight > 0.0f) {
-			maxheight += m_zoneInfo->imageheight;
-		}
+		maxheight += max_ff(m_zoneInfo->imageheight, 0.0f);
 	}
 
-	return maxheight;
+	return max_ff(origmaxheight, maxheight);
 }
 
-float KX_TerrainZoneMesh::GetMinHeight() const
+float KX_TerrainZoneMesh::GetMinHeight(float origminheight) const
 {
 	float minheight = 0.0;
 
@@ -131,17 +127,13 @@ float KX_TerrainZoneMesh::GetMinHeight() const
 
 	// bruit de perlin
 	if (m_zoneInfo->flag & TERRAIN_ZONE_PERLIN_NOISE) {
-		if (m_zoneInfo->noiseheight < 0.0) {
-			minheight += m_zoneInfo->noiseheight;
-		}
+		minheight += min_ff(m_zoneInfo->noiseheight, 0.0f);
 	}
 	if (m_zoneInfo->flag & TERRAIN_ZONE_IMAGE) {
-		if (m_zoneInfo->imageheight < 0.0f) {
-			minheight += m_zoneInfo->imageheight;
-		}
+		minheight += min_ff(m_zoneInfo->imageheight, 0.0f);
 	}
 
-	return minheight;
+	return min_ff(origminheight, minheight);
 }
 
 float KX_TerrainZoneMesh::GetClampedHeight(const float orgheight, const float x, const float y, const float *v1, const float *v2, const float *v3) const
