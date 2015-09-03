@@ -27,12 +27,12 @@
 #include <map>
 #include <list>
 #include <vector>
+
 #include "MT_Transform.h"
+
 #include "KX_ChunkNode.h" // for Point2D
 #include "KX_TerrainZone.h"
 #include "KX_GameObject.h"
-
-#define STATS // Active les informations de debug de temps et de memoire.
 
 class RAS_IRasterizer;
 class RAS_MaterialBucket;
@@ -85,6 +85,8 @@ private:
 
 	/// Le mode de déboguage des noeuds.
 	short m_debugMode;
+	/// Le nombre de frames entre chaque affichages de temps.
+	unsigned short m_debugTimeFrame;
 
 	/// Si vrai le terrain et déjà construit et les noeud principaux aussi.
 	bool m_construct;
@@ -119,7 +121,8 @@ public:
 			   float cameraMaxDistance,
 			   float objectMaxDistance,
 			   float chunkSize,
-			   short debugMode);
+			   short debugMode,
+			   unsigned short debugTimeFrame);
 	~KX_Terrain();
 
 	void Construct();
@@ -178,6 +181,11 @@ public:
 	inline Material *GetBlenderMaterial() const
 	{
 		return m_material;
+	}
+
+	inline short GetDebugMode() const
+	{
+		return m_debugMode;
 	}
 
 	/** le nombre de subdivision par rapport à une distance
