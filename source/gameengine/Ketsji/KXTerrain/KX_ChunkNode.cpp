@@ -120,8 +120,8 @@ void KX_ChunkNode::ConstructNodes()
 
 void KX_ChunkNode::DestructNodes()
 {
-	if (m_onConstructSubNodes == 1) {
-		DEBUG("destruct sub nodes just after construction");
+	if (m_terrain->GetDebugMode() & DEBUG_WARNINGS && m_onConstructSubNodes == 1) {
+		DEBUG("Warning : destruct sub nodes just after construction");
 	}
 
 	if (m_nodeList) {
@@ -336,7 +336,7 @@ void KX_ChunkNode::DrawDebugInfo(short mode)
 	MT_Point3 nodepos3d(GetCenter());
 
 	glBegin(GL_LINES);
-		if (mode & DEBUG_LINE) {
+		if (mode & DEBUG_DRAW_LINES) {
 			glColor4f(1.0, 0.0, 0.0, 1.0);
 			glVertex3f(m_box[0].x(), m_box[0].y(), m_box[0].z());
 			glVertex3f(m_box[1].x(), m_box[1].y(), m_box[1].z());
@@ -366,7 +366,7 @@ void KX_ChunkNode::DrawDebugInfo(short mode)
 			glVertex3f(m_box[6].x(), m_box[6].y(), m_box[6].z());
 		}
 
-		if (mode & DEBUG_CENTER) {
+		if (mode & DEBUG_DRAW_CENTERS) {
 			glColor4f(1.0, 0.0, 0.0, 1.0);
 			glVertex3f(nodepos3d.x(), nodepos3d.y(), nodepos3d.z());
 			glVertex3f(nodepos3d.x() + 1.0, nodepos3d.y(), nodepos3d.z());
@@ -379,7 +379,7 @@ void KX_ChunkNode::DrawDebugInfo(short mode)
 		}
 	glEnd();
 
-	if (mode & DEBUG_BOX) {
+	if (mode & DEBUG_DRAW_BOXES) {
 		glDisable(GL_CULL_FACE);
 		glDisable(GL_DEPTH_TEST);
 		GPU_set_material_alpha_blend(GPU_BLEND_ALPHA);

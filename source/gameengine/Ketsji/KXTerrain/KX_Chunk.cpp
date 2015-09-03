@@ -22,6 +22,7 @@
 #include "MT_assert.h"
 
 #include "DNA_material_types.h"
+#include "DNA_terrain_types.h"
 
 #include <stdio.h>
 
@@ -552,14 +553,10 @@ void KX_Chunk::SetNormal(Vertex *vertexCenter) const
 
 void KX_Chunk::AddMeshPolygonVertexes(Vertex *v1, Vertex *v2, Vertex *v3, bool reverse)
 {
-#ifdef STATS
 	double starttime;
 	double endtime;
-#endif
 
-#ifdef STATS
 	starttime = KX_GetActiveEngine()->GetRealTime();
-#endif
 
 	RAS_Polygon* poly = m_meshObj->AddPolygon(m_bucket, 3);
 
@@ -567,11 +564,9 @@ void KX_Chunk::AddMeshPolygonVertexes(Vertex *v1, Vertex *v2, Vertex *v3, bool r
 	poly->SetCollider(true);
 	poly->SetTwoside(true);
 
-#ifdef STATS
 	endtime = KX_GetActiveEngine()->GetRealTime();
 	polyAddingTime += endtime - starttime;
 	starttime = KX_GetActiveEngine()->GetRealTime();
-#endif
 
 	const MT_Vector4 tangent(0.0f, 0.0f, 0.0f, 0.0f);
 
@@ -599,19 +594,15 @@ void KX_Chunk::AddMeshPolygonVertexes(Vertex *v1, Vertex *v2, Vertex *v3, bool r
 		m_meshObj->AddPolygonVertex(poly, 2, v3->vertIndex);
 	}
 
-#ifdef STATS
 	endtime = KX_GetActiveEngine()->GetRealTime();
 	vertexAddingTime += endtime - starttime;
 	starttime = KX_GetActiveEngine()->GetRealTime();
-#endif
 }
 
 void KX_Chunk::ConstructVertexes()
 {
-#ifdef STATS
 	double starttime;
 	double endtime;
-#endif
 
 	/* Schéma global de l'organisation des faces dans le chunk
 	 * Attention la colonne "BACK" est inversé avec la colonne "FRONT"
@@ -640,9 +631,7 @@ void KX_Chunk::ConstructVertexes()
 	 * u = unique, vertice independant
 	 */
 
-#ifdef STATS
 	starttime = KX_GetActiveEngine()->GetRealTime();
-#endif
 
 	/* On met à zero le numéro actuelle de vertices, à chaque fois que l'on ajoute un vertice
 	 * cette variable est incrementé de 1, puis on la reutilise pour allouer le tableau de vertices
@@ -704,21 +693,17 @@ void KX_Chunk::ConstructVertexes()
 		}
 	}
 
-#ifdef STATS
 	endtime = KX_GetActiveEngine()->GetRealTime();
 	vertexCreatingTime += endtime - starttime;
 	starttime = KX_GetActiveEngine()->GetRealTime();
-#endif
 
 	for (unsigned short columnIndex = 1; columnIndex < POLY_COUNT; ++columnIndex) {
 		for (unsigned short vertexIndex = 1; vertexIndex < POLY_COUNT; ++vertexIndex)
 			SetNormal(m_center[columnIndex - 1][vertexIndex - 1]);
 	}
 
-#ifdef STATS
 	endtime = KX_GetActiveEngine()->GetRealTime();
 	normalComputingTime += endtime - starttime;
-#endif
 }
 
 /* On accede au vertice dans le chunk voisin le plus proche et alignée
@@ -737,8 +722,11 @@ void KX_Chunk::GetCoorespondingVertexesFromChunk(KX_ChunkNode *jointNode, Vertex
 	 */
 	Vertex *externVertex = jointChunk->GetVertexByTerrainRelativePosition(terrainVertexPos.x, terrainVertexPos.y);
 
+	bool debugErrors = m_node->GetTerrain()->GetDebugMode() & DEBUG_ERRORS;
 	if (!externVertex) {
-		DEBUG("Error : none extern coresponding vertex");
+		if (debugErrors) {
+			DEBUG("Error : none extern coresponding vertex");
+		}
 		return;
 	}
 
@@ -748,13 +736,17 @@ void KX_Chunk::GetCoorespondingVertexesFromChunk(KX_ChunkNode *jointNode, Vertex
 	if (externVertex->vertexInfo->pos[0] != origVertex->vertexInfo->pos[0] || 
 		externVertex->vertexInfo->pos[1] != origVertex->vertexInfo->pos[1])
 	{
-		DEBUG("Error : wrong extern coresponding vertex");
+		if (debugErrors) {
+			DEBUG("Error : wrong extern coresponding vertex");
+		}
 		return;
 	}
 
 	if (coInternVertex) {
 		if (!externVertex) {
-			DEBUG("Error : can't compute intern vertex");
+			if (debugErrors) {
+				DEBUG("Error : can't compute intern vertex");
+			}
 			return;
 		}
 
@@ -784,7 +776,6 @@ void KX_Chunk::GetCoorespondingVertexesFromChunk(KX_ChunkNode *jointNode, Vertex
 	}
 }
 
-#if 1
 void KX_Chunk::ComputeColumnJointVertexNormal(COLUMN_TYPE columnType, bool reverse)
 {
 	// Passage du vertice au noeud, 4 = nombre de noeuds adjacents par une ligne.
@@ -847,16 +838,25 @@ void KX_Chunk::ComputeColumnJointVertexNormal(COLUMN_TYPE columnType, bool rever
 			vertex->normal[2] = 1.0f;
 			continue;
 		}
+
+		bool debugErrors = m_node->GetTerrain()->GetDebugMode() & DEBUG_ERRORS;
+
 		if (std::abs(jointNode->GetLevel() - m_node->GetLevel()) > 2) {
-			DEBUG("Error : more than to level difference between to joint nodes (joint node)");
+			if (debugErrors) {
+				DEBUG("Error : more than to level difference between to joint nodes (joint node)");
+			}
 			continue;
 		}
 		if (frontNode && std::abs(frontNode->GetLevel() - m_node->GetLevel()) > 2) {
-			DEBUG("Error : more than to level difference between to joint nodes (front node)");
+			if (debugErrors) {
+				DEBUG("Error : more than to level difference between to joint nodes (front node)");
+			}
 			continue;
 		}
 		if (backNode && std::abs(backNode->GetLevel() - m_node->GetLevel()) > 2) {
-			DEBUG("Error : more than to level difference between to joint nodes (back node)");
+			if (debugErrors) {
+				DEBUG("Error : more than to level difference between to joint nodes (back node)");
+			}
 			continue;
 		}
 
@@ -1064,7 +1064,6 @@ void KX_Chunk::ComputeJointVertexesNormal()
 		}
 	}
 }
-#endif
 
 void KX_Chunk::InvalidateJointVertexesAndIndexes()
 {
@@ -1256,27 +1255,21 @@ void KX_Chunk::UpdateMesh()
 
 void KX_Chunk::EndUpdateMesh()
 {
-#ifdef STATS
 	double starttime;
 	double endtime;
-#endif
 
 	if (m_onConstruct) {
 		// Recreation du mesh.
 		DestructMesh();
 		ConstructMesh();
 
-#ifdef STATS
 		starttime = KX_GetActiveEngine()->GetRealTime();
-#endif
 
 		// Calcule des normales.
 		ComputeJointVertexesNormal();
 
-#ifdef STATS
 		endtime = KX_GetActiveEngine()->GetRealTime();
 		normalComputingTime += endtime - starttime;
-#endif
 
 		// Construction des polygones.
 		ConstructPolygones();
@@ -1304,17 +1297,13 @@ void KX_Chunk::EndUpdateMesh()
 			ms->m_clientObj = NULL;
 		}
 
-#ifdef STATS
 		starttime = KX_GetActiveEngine()->GetRealTime();
-#endif
 
 		// On créer la forme physique du chunk.
 		ConstructPhysicsController();
 
-#ifdef STATS
 		endtime = KX_GetActiveEngine()->GetRealTime();
 		physicsCreatingTime += endtime - starttime;
-#endif
 		m_onConstruct = false;
 	}
 }

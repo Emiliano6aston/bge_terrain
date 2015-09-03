@@ -257,17 +257,34 @@ void RNA_def_terrain(BlenderRNA *brna)
 	RNA_def_property_range(prop, 0, 16);
 	RNA_def_property_ui_text(prop, "Min Physics Level", "");
 
-	prop = RNA_def_property(srna, "debug_box", PROP_BOOLEAN, PROP_NONE);
-	RNA_def_property_boolean_sdna(prop, NULL, "debugmode", DEBUG_BOX);
-	RNA_def_property_ui_text(prop, "Debug Node Box", "");
+	prop = RNA_def_property(srna, "debug_draw_boxes", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_sdna(prop, NULL, "debugmode", DEBUG_DRAW_BOXES);
+	RNA_def_property_ui_text(prop, "Debug Node Boxes", "");
 
-	prop = RNA_def_property(srna, "debug_line", PROP_BOOLEAN, PROP_NONE);
-	RNA_def_property_boolean_sdna(prop, NULL, "debugmode", DEBUG_LINE);
-	RNA_def_property_ui_text(prop, "Debug Node Line", "");
+	prop = RNA_def_property(srna, "debug_draw_lines", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_sdna(prop, NULL, "debugmode", DEBUG_DRAW_LINES);
+	RNA_def_property_ui_text(prop, "Debug Node Lines", "");
 
-	prop = RNA_def_property(srna, "debug_center", PROP_BOOLEAN, PROP_NONE);
-	RNA_def_property_boolean_sdna(prop, NULL, "debugmode", DEBUG_CENTER);
-	RNA_def_property_ui_text(prop, "Debug Node Center", "");
+	prop = RNA_def_property(srna, "debug_draw_centers", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_sdna(prop, NULL, "debugmode", DEBUG_DRAW_CENTERS);
+	RNA_def_property_ui_text(prop, "Debug Node Centers", "");
+
+	prop = RNA_def_property(srna, "debug_warnings", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_sdna(prop, NULL, "debugmode", DEBUG_WARNINGS);
+	RNA_def_property_ui_text(prop, "Debug Warnings", "");
+
+	prop = RNA_def_property(srna, "debug_errors", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_sdna(prop, NULL, "debugmode", DEBUG_ERRORS);
+	RNA_def_property_ui_text(prop, "Debug Errors", "");
+
+	prop = RNA_def_property(srna, "debug_time", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_sdna(prop, NULL, "debugmode", DEBUG_TIME);
+	RNA_def_property_ui_text(prop, "Debug Time", "");
+
+	prop = RNA_def_property(srna, "debug_time_frame", PROP_INT, PROP_NONE);
+	RNA_def_property_int_sdna(prop, NULL, "debugtimeframe");
+	RNA_def_property_range(prop, 0, 100000);
+	RNA_def_property_ui_text(prop, "Debug Time Frame", "");
 
 	rna_def_terrain_zone(brna);
 

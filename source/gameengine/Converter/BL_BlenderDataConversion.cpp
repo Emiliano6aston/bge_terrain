@@ -1795,7 +1795,8 @@ static KX_Terrain *convert_terrain(Terrain *terrain, KX_Scene* scene, KX_Blender
 										   terrain->cameradistance,
 										   terrain->objectdistance,
 										   terrain->chunksize,
-										   terrain->debugmode);
+										   terrain->debugmode,
+										   terrain->debugtimeframe);
 
 	// Si on n'initialise pas les masques et groupes de collisions, les collisions peuvent être aléatoire.
 	kxterrain->SetUserCollisionMask(0xffff);
