@@ -82,6 +82,7 @@ private:
 	/// Doit ont recreer la boite ?
 	bool m_requestCreateBox;
 	bool m_onConstruct;
+	short m_onConstructSubNodes;
 	/// Le noeud est il visible ?
 	short m_culledState;
 
