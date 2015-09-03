@@ -246,13 +246,10 @@ void KX_Terrain::AddTerrainZoneMesh(KX_TerrainZoneMesh *zoneMesh)
 {
 	m_zoneMeshList.push_back(zoneMesh);
 
-	const float maxheight = zoneMesh->GetMaxHeight();
-	const float minheight = zoneMesh->GetMinHeight();
+	m_maxHeight = zoneMesh->GetMaxHeight(m_maxHeight);
+	m_minHeight = zoneMesh->GetMinHeight(m_minHeight);
 
-	m_maxHeight += fabs(maxheight);
-	m_minHeight -= fabs(minheight);
-
-	if (maxheight < minheight) {
+	if (m_maxHeight < m_minHeight) {
 		std::cout << "Warning : min height greater than max height !" << std::endl;
 	}
 }
