@@ -113,12 +113,17 @@ KX_ChunkNode::~KX_ChunkNode()
 void KX_ChunkNode::ConstructNodes()
 {
 	if (!m_nodeList) {
+		m_onConstructSubNodes = 2;
 		m_nodeList = m_terrain->NewNodeList(this, m_relativePos.x, m_relativePos.y, m_level);
 	}
 }
 
 void KX_ChunkNode::DestructNodes()
 {
+	if (m_onConstructSubNodes == 1) {
+		DEBUG("destruct sub nodes just after construction");
+	}
+
 	if (m_nodeList) {
 		for (unsigned short i = 0; i < 4; ++i)
 			delete m_nodeList[i];
@@ -316,6 +321,10 @@ void KX_ChunkNode::CalculateVisible(KX_Camera *culledcam, CListValue *objects)
 	 * une sphere pour le frustum culling.
 	 */
 	m_onConstruct = false;
+
+	if (m_onConstructSubNodes > 0) {
+		--m_onConstructSubNodes;
+	}
 }
 
 void KX_ChunkNode::DrawDebugInfo(short mode)
