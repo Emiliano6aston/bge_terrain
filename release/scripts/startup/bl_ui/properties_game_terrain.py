@@ -111,9 +111,15 @@ class TERRAIN_PT_game_terrain_debug(TerrainButtonsPanel, Panel):
 
         row = layout.row()
         col = row.column()
-        col.prop(terrain, "debug_box")
-        col.prop(terrain, "debug_line")
-        col.prop(terrain, "debug_center")
+        col.prop(terrain, "debug_draw_boxes")
+        col.prop(terrain, "debug_draw_lines")
+        col.prop(terrain, "debug_draw_centers")
+
+        col = row.column()
+        col.prop(terrain, "debug_warnings")
+        col.prop(terrain, "debug_errors")
+        col.prop(terrain, "debug_time")
+        col.prop(terrain, "debug_time_frame")
 
 class TERRAIN_UL_zoneslots(UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):

@@ -46,7 +46,8 @@ KX_Terrain::KX_Terrain(void *sgReplicationInfo,
 					   float cameraMaxDistance,
 					   float objectMaxDistance,
 					   float chunkSize,
-					   short debugMode)
+					   short debugMode,
+					   unsigned short debugTimeFrame)
 	:KX_GameObject(sgReplicationInfo, callbacks),
 	m_bucket(bucket),
 	m_material(material),
@@ -60,6 +61,7 @@ KX_Terrain::KX_Terrain(void *sgReplicationInfo,
 	m_maxHeight(0.0f),
 	m_minHeight(0.0f),
 	m_debugMode(debugMode),
+	m_debugTimeFrame(debugTimeFrame),
 	m_construct(false),
 	m_frame(0)
 {
@@ -122,15 +124,15 @@ void KX_Terrain::UpdateChunksMeshes()
 		(*it)->EndUpdateMesh();
 	}
 
-#ifdef STATS
-	++m_frame;
+	if (m_debugMode & DEBUG_TIME) {
+		++m_frame;
 
-	if (m_frame > 60) {
-		KX_Chunk::PrintTime();
-		KX_Chunk::ResetTime();
-		m_frame = 0;
+		if (m_frame > m_debugTimeFrame) {
+			KX_Chunk::PrintTime();
+			KX_Chunk::ResetTime();
+			m_frame = 0;
+		}
 	}
-#endif
 }
 
 void KX_Terrain::RenderChunksMeshes(KX_Camera *cam, RAS_IRasterizer* rasty)
@@ -207,24 +209,16 @@ KX_ChunkNode **KX_Terrain::NewNodeList(KX_ChunkNode *parentNode, int x, int y, u
 
 KX_Chunk* KX_Terrain::AddChunk(KX_ChunkNode* node)
 {
-#ifdef STATS
-	double starttime;
-	double endtime;
-#endif
-
-#ifdef STATS
-	starttime = KX_GetActiveEngine()->GetRealTime();
-#endif
+	double starttime = KX_GetActiveEngine()->GetRealTime();
 
 	KX_Chunk *chunk = new KX_Chunk(node, m_bucket);
 
 	////////////////////////// AJOUT DANS LA LISTE ///////////////////////////
 	m_chunkList.push_back(chunk);
 
-#ifdef STATS
-	endtime = KX_GetActiveEngine()->GetRealTime();
+	double endtime = KX_GetActiveEngine()->GetRealTime();
+
 	KX_Chunk::chunkCreationTime += endtime - starttime;
-#endif
 
 	return chunk;
 }
