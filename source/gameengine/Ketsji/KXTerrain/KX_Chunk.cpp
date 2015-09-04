@@ -962,7 +962,45 @@ void KX_Chunk::ComputeColumnJointVertexNormal(COLUMN_TYPE columnType, bool rever
 				GetCoorespondingVertexesFromChunk(node, vertex, columnType, coVertexes + 3, NULL);
 		}
 
-		if (quadVertexes[0] && quadVertexes[1] && quadVertexes[2] && quadVertexes[3]) {
+		// On cherche les nombre de vertices trouvés.
+		unsigned short vertexesFound = 0;
+		for (unsigned short i = 0; i < 4; ++i) {
+			if (quadVertexes[i]) {
+				++vertexesFound;
+			}
+		}
+
+		if (vertexesFound < 2) {
+			vertex->normal[0] = 0.0f;
+			vertex->normal[1] = 0.0f;
+			vertex->normal[2] = 1.0f;
+		}
+		else if (vertexesFound == 2 || vertexesFound == 3) {
+			vertex->validNormal = true;
+
+			// Si on a que 2 vertices on ajoute le vertice du centre.
+			if (vertexesFound == 2) {
+				quad[0][0] = vertex->vertexInfo->pos[0];
+				quad[0][1] = vertex->vertexInfo->pos[1];
+				quad[0][2] = vertex->vertexInfo->height;
+			}
+
+			unsigned short j = 0;
+			for (unsigned short i = 0; i < 4; ++i) {
+				if (quadVertexes[i]) {
+					quad[j][0] = quadVertexes[i]->vertexInfo->pos[0];
+					quad[j][1] = quadVertexes[i]->vertexInfo->pos[1];
+					quad[j][2] = quadVertexes[i]->vertexInfo->height;
+					++j;
+				}
+			}
+
+			if (reverse)
+				normal_tri_v3(vertex->normal, quad[0], quad[1], quad[2]);
+			else
+				normal_tri_v3(vertex->normal, quad[2], quad[1], quad[0]);
+		}
+		else if (vertexesFound == 4) {
 			vertex->validNormal = true;
 
 			for (unsigned short i = 0; i < 4; ++i) {
@@ -975,22 +1013,18 @@ void KX_Chunk::ComputeColumnJointVertexNormal(COLUMN_TYPE columnType, bool rever
 				normal_quad_v3(vertex->normal, quad[0], quad[1], quad[2], quad[3]);
 			else
 				normal_quad_v3(vertex->normal, quad[3], quad[2], quad[1], quad[0]);
-
-			for (unsigned short i = 0; i < 4; ++i) {
-				Vertex *coVertex = coVertexes[i];
-				if (!coVertex)
-					continue;
-
-				coVertex->normal[0] = vertex->normal[0];
-				coVertex->normal[1] = vertex->normal[1];
-				coVertex->normal[2] = vertex->normal[2];
-				coVertex->validNormal = true;
-			}
 		}
-		else {
-			vertex->normal[0] = 0.0f;
-			vertex->normal[1] = 0.0f;
-			vertex->normal[2] = 1.0f;
+
+		// On copie la normale et l'état de la normale dans tous les vertices coorespondant.
+		for (unsigned short i = 0; i < 4; ++i) {
+			Vertex *coVertex = coVertexes[i];
+			if (!coVertex)
+				continue;
+
+			coVertex->normal[0] = vertex->normal[0];
+			coVertex->normal[1] = vertex->normal[1];
+			coVertex->normal[2] = vertex->normal[2];
+			coVertex->validNormal = vertex->validNormal;
 		}
 	}
 }
