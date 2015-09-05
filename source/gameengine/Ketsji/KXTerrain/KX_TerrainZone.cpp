@@ -63,15 +63,10 @@ KX_TerrainZoneMesh::KX_TerrainZoneMesh(KX_Terrain *terrain, TerrainZone *zoneInf
 				continue;
 			}
 
-			if (vert.co[0] < m_box[0])
-				m_box[0] = vert.co[0];
-			if (vert.co[0] > m_box[1])
-				m_box[1] = vert.co[0];
-
-			if (vert.co[1] < m_box[2])
-				m_box[2] = vert.co[1];
-			if (vert.co[1] > m_box[3])
-				m_box[3] = vert.co[1];
+			m_box[0] = min_ff(m_box[0], vert.co[0]);
+			m_box[1] = max_ff(m_box[1], vert.co[0]);
+			m_box[2] = min_ff(m_box[2], vert.co[1]);
+			m_box[3] = max_ff(m_box[3], vert.co[1]);
 		}
 	}
 	else
