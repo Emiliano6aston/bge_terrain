@@ -218,14 +218,14 @@ float KX_TerrainZoneMesh::GetMeshColorInterp(const float x, const float y, const
 			const float *scale = blendobj->size;
 			const float influence = m_zoneInfo->objectinfluence;
 
-			const float point[2] = {fabs(x - position[0]), fabs(y - position[1])};
+			const float point[2] = {(float)fabs(x - position[0]), (float)fabs(y - position[1])};
 			const float radius[2] = {scale[0] * influence, scale[1] * influence};
 
 			if (point[0] < radius[0] && point[1] < radius[1]) {
 				const float pointlength = len_v2(point);
 				static const float xaxis[2] = {1.0f, 0.0f};
 				const float angle = angle_v2v2(xaxis, point);
-				const float max[2] = {cos(angle) * radius[0], sin(angle) * radius[1]};
+				const float max[2] = {cosf(angle) * radius[0], sinf(angle) * radius[1]};
 				const float maxlength = len_v2(max);
 
 				float objinterp = (maxlength - pointlength) / maxlength;

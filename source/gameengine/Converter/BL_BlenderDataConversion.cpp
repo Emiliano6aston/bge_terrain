@@ -1795,6 +1795,7 @@ static KX_Terrain *convert_terrain(Terrain *terrain, KX_Scene* scene, KX_Blender
 										   terrain->cameradistance,
 										   terrain->objectdistance,
 										   terrain->chunksize,
+										   terrain->marginfactor,
 										   terrain->debugmode,
 										   terrain->debugtimeframe);
 

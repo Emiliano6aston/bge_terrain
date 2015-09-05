@@ -76,6 +76,8 @@ class TERRAIN_PT_game_terrain_chunk(TerrainButtonsPanel, Panel):
         row = layout.row()
         row.column().prop(terrain, "camera_distance")
         row.column().prop(terrain, "object_distance")
+        row = layout.row()
+        row.column().prop(terrain, "margin_factor")
 
 class TERRAIN_PT_game_terrain_mesh(TerrainButtonsPanel, Panel):
     bl_label = "Chunk Mesh"
