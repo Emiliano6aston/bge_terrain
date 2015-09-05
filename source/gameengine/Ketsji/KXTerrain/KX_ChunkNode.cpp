@@ -79,7 +79,7 @@ KX_ChunkNode::KX_ChunkNode(KX_ChunkNode *parentNode,
 	/* Le décalage pour que le noeud parent se subdivise avant ses noeuds
 	 * enfant evitant ainsi d'enorme création de chunk silmutanement.
 	 */
-	m_radiusGap = MT_Point3(size * relativesize, size * relativesize, 0.0f).length();
+	m_radiusMargin = MT_Point3(size * relativesize, size * relativesize, 0.0f).length();
 
 	// la coordonnée reel du chunk
 	const float realX = x * size;
@@ -187,7 +187,7 @@ bool KX_ChunkNode::NeedCreateNodes(CListValue *objects, KX_Camera *culledcam) co
 
 		const float objradius = object->GetSGNode()->Radius();
 		float distance = GetCenter().distance(object->NodeGetWorldPosition()) - objradius;
-		distance -= m_radius + (iscamera ? m_radiusGap * 2.0f : 2.0f);
+		distance -= m_radius + (iscamera ? m_radiusMargin * m_terrain->GetMarginFactor() : m_radius);
 
 		needcreatenode = (m_terrain->GetSubdivision(distance, iscamera) > m_level);
 		if (needcreatenode)

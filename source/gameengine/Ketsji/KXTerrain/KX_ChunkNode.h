@@ -69,7 +69,7 @@ private:
 	/// Le rayon du noeud.
 	float m_radius;
 	/// La marge du rayon du noeud.
-	float m_radiusGap;
+	float m_radiusMargin;
 
 	/// La boite englobant le noeud pour le frustum culling.
 	MT_Point3 m_box[8];
