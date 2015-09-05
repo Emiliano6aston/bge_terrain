@@ -77,6 +77,7 @@ Terrain *add_terrain(Main *bmain, const char *name)
 	terrain->cameradistance = 500.0;
 	terrain->objectdistance = 0.0;
 	terrain->chunksize = 30.0;
+	terrain->marginfactor = 2.0f;
 	terrain->minphysicslevel = 0;
 	terrain->active_zoneindex = 0;
 
@@ -183,6 +184,7 @@ void BKE_terrain_zone_add(Terrain *terrain)
 	zone->uvchannel = 2;
 	zone->color = 1.0f;
 	zone->colordividor = 1.0f;
+	zone->objectinfluence = 1.0f;
 	zone->flag = TERRAIN_ZONE_ACTIVE;
 
 	BLI_addtail(&terrain->zones, zone);

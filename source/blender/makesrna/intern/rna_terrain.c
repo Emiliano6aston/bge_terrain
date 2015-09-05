@@ -265,6 +265,11 @@ void RNA_def_terrain(BlenderRNA *brna)
 	RNA_def_property_range(prop, 0.0, FLT_MAX);
 	RNA_def_property_ui_text(prop, "Chunk Size", "");
 
+	prop = RNA_def_property(srna, "margin_factor", PROP_FLOAT, PROP_NONE);
+	RNA_def_property_float_sdna(prop, NULL, "marginfactor");
+	RNA_def_property_range(prop, 1.0f, FLT_MAX);
+	RNA_def_property_ui_text(prop, "Margin Factor", "");
+
 	prop = RNA_def_property(srna, "material", PROP_POINTER, PROP_NONE);
 	RNA_def_property_pointer_sdna(prop, NULL, "material");
 	RNA_def_property_struct_type(prop, "Material");

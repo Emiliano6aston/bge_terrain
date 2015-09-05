@@ -79,6 +79,9 @@ typedef struct Terrain {
 	float cameradistance;
 	float objectdistance;
 	float chunksize;
+	float marginfactor;
+
+	int pad;
 
 	int debugmode;
 	int debugtimeframe;
