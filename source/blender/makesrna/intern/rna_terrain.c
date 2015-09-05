@@ -152,6 +152,25 @@ static void rna_def_terrain_zone(BlenderRNA *brna)
 	RNA_def_property_range(prop, -FLT_MAX, FLT_MAX);
 	RNA_def_property_ui_text(prop, "Image Height", "");
 
+	prop = RNA_def_property(srna, "use_object", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_sdna(prop, NULL, "flag", TERRAIN_ZONE_USE_OBJECT);
+	RNA_def_property_ui_text(prop, "Use Objects", "");
+
+	prop = RNA_def_property(srna, "use_clamp_object", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_sdna(prop, NULL, "flag", TERRAIN_ZONE_CLAMP_OBJECT);
+	RNA_def_property_ui_text(prop, "Use Clamp Objects", "");
+
+	prop = RNA_def_property(srna, "group_object", PROP_POINTER, PROP_NONE);
+	RNA_def_property_pointer_sdna(prop, NULL, "groupobject");
+	RNA_def_property_struct_type(prop, "Group");
+	RNA_def_property_flag(prop, PROP_EDITABLE);
+	RNA_def_property_ui_text(prop, "Group Object", "");
+
+	prop = RNA_def_property(srna, "object_influence", PROP_FLOAT, PROP_NONE);
+	RNA_def_property_float_sdna(prop, NULL, "objectinfluence");
+	RNA_def_property_range(prop, 0.0f, FLT_MAX);
+	RNA_def_property_ui_text(prop, "Object Influence", "");
+
 	prop = RNA_def_property(srna, "use_uv_texture_color", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "flag", TERRAIN_ZONE_USE_UV_TEXTURE_COLOR);
 	RNA_def_property_ui_text(prop, "Use UV Texture Color", "");

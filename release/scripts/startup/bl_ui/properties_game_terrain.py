@@ -78,7 +78,7 @@ class TERRAIN_PT_game_terrain_chunk(TerrainButtonsPanel, Panel):
         row.column().prop(terrain, "object_distance")
 
 class TERRAIN_PT_game_terrain_mesh(TerrainButtonsPanel, Panel):
-    bl_label = "Mesh"
+    bl_label = "Chunk Mesh"
     COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_GAME'}
 
     @classmethod
@@ -154,7 +154,7 @@ class TERRAIN_PT_game_terrain_zones(TerrainButtonsPanel, Panel):
         col.operator("terrain.zone_move", text="", icon='TRIA_DOWN').direction = 'DOWN'
 
 class TERRAIN_PT_game_terrain_zones_mesh(TerrainButtonsPanel, Panel):
-    bl_label = "Zone Mesh"
+    bl_label = "Mesh"
     COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_GAME'}
 
     def draw_header(self, context):
@@ -179,6 +179,33 @@ class TERRAIN_PT_game_terrain_zones_mesh(TerrainButtonsPanel, Panel):
                 row = layout.row()
                 row.column().prop(zone, "mesh")
                 row.column().prop(zone, "use_mesh_vertex_color_interp")
+
+class TERRAIN_PT_game_terrain_zones_object(TerrainButtonsPanel, Panel):
+    bl_label = "Objects"
+    COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_GAME'}
+
+    def draw_header(self, context):
+        scene = context.scene
+        terrain = scene.terrain
+        zone = terrain.zones.active_zone
+        if zone:
+            self.layout.prop(zone, "use_object", text="")
+
+    def draw(self, context):
+        layout = self.layout
+
+        scene = context.scene
+        terrain = scene.terrain
+        row = layout.row()
+        
+        if terrain:
+            zone = terrain.zones.active_zone
+
+            if zone:
+                layout.active = zone.use_object
+                row = layout.row()
+                row.column().prop(zone, "group_object")
+                row.column().prop(zone, "object_influence")
 
 class TERRAIN_PT_game_terrain_zones_heights(TerrainButtonsPanel, Panel):
     bl_label = "Heights"
@@ -214,7 +241,7 @@ class TERRAIN_PT_game_terrain_zones_heights(TerrainButtonsPanel, Panel):
                 row.column().prop(zone, "image_height")
 
 class TERRAIN_PT_game_terrain_zones_clamp(TerrainButtonsPanel, Panel):
-    bl_label = "Zone Clamp"
+    bl_label = "Clamp"
     COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_GAME'}
 
     def draw_header(self, context):
@@ -238,6 +265,7 @@ class TERRAIN_PT_game_terrain_zones_clamp(TerrainButtonsPanel, Panel):
                 layout.active = zone.use_clamp
                 row = layout.row()
                 row.column().prop(zone, "use_clamp_mesh")
+                row.column().prop(zone, "use_clamp_object")
 
                 row = layout.row()
                 row.active = not zone.use_clamp_mesh
