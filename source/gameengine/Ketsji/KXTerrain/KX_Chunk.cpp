@@ -422,16 +422,14 @@ KX_Chunk::Vertex *KX_Chunk::NewVertex(unsigned short relx, unsigned short rely)
 	VertexZoneInfo *info = terrain->GetVertexInfo(nodepos.x() + vertx, nodepos.y() + verty);
 	const float vertz = info->height;
 
-	if (!m_requestCreateBox) {
-		if (vertz > m_maxVertexHeight)
-			m_maxVertexHeight = vertz;
-		if (vertz < m_minVertexHeight)
-			m_minVertexHeight = vertz;
-	}
-	else {
+	if (m_requestCreateBox) {
 		m_maxVertexHeight = vertz;
 		m_minVertexHeight = vertz;
 		m_requestCreateBox = false;
+	}
+	else {
+		m_maxVertexHeight = max_ff(m_maxVertexHeight, vertz);
+		m_minVertexHeight = min_ff(m_minVertexHeight, vertz);
 	}
 
 	Vertex *vertex = new Vertex(info, relx, rely, vertx, verty, m_originVertexIndex++);
