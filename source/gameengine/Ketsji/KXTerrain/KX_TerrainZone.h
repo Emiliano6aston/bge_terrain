@@ -121,7 +121,7 @@ public:
 	 * \param v3 The firth vertex of the face.
 	 * \return The interpolation on this position.
 	 */
-	float GetMeshColorInterp(const float *point, const unsigned int faceindex, const MVert &v1, const MVert &v2, const MVert &v3) const;
+	float GetMeshColorInterp(const float x, const float y, const int faceindex, const float *v1, const float *v2, const float *v3) const;
 	float GetNoiseHeight(const float x, const float y) const;
 	float GetImageHeight(const float x, const float y) const;
 
