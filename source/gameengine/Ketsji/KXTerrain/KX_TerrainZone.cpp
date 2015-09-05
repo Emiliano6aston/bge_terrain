@@ -89,6 +89,10 @@ KX_TerrainZoneMesh::~KX_TerrainZoneMesh()
 
 float KX_TerrainZoneMesh::GetMaxHeight(float origmaxheight) const
 {
+	if (!(m_zoneInfo->flag & TERRAIN_ZONE_ACTIVE)) {
+		return origmaxheight;
+	}
+
 	float maxheight = 0.0;
 
 	// clampage
@@ -114,6 +118,10 @@ float KX_TerrainZoneMesh::GetMaxHeight(float origmaxheight) const
 
 float KX_TerrainZoneMesh::GetMinHeight(float origminheight) const
 {
+	if (!(m_zoneInfo->flag & TERRAIN_ZONE_ACTIVE)) {
+		return origminheight;
+	}
+
 	float minheight = 0.0;
 
 	// clampage
