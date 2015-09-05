@@ -23,18 +23,24 @@
 
 #include "KX_TerrainZone.h"
 #include "KX_Terrain.h"
+
 #include "DNA_mesh_types.h"
 #include "DNA_terrain_types.h"
-#include <iostream>
+#include "DNA_group_types.h"
+
 #include "BLI_noise.h"
 #include "BLI_utildefines.h"
+
 #include "BKE_image.h"
+
 #include "IMB_imbuf_types.h"
 
 extern "C" {
 	#include "IMB_imbuf.h"
 	#include "BLI_math.h"
 }
+
+#include <iostream>
 
 KX_TerrainZoneMesh::KX_TerrainZoneMesh(KX_Terrain *terrain, TerrainZone *zoneInfo, Mesh *mesh)
 	:m_terrain(terrain),
@@ -163,11 +169,11 @@ float KX_TerrainZoneMesh::GetClampedHeight(const float orgheight, const float x,
 	return height;
 }
 
-float KX_TerrainZoneMesh::GetMeshColorInterp(const float *point, const unsigned int faceindex, const MVert &v1, const MVert &v2, const MVert &v3) const
+float KX_TerrainZoneMesh::GetMeshColorInterp(const float x, const float y, const int faceindex, const float *v1, const float *v2, const float *v3) const
 {
 	float interp = 1.0f;
 
-	if (m_zoneInfo->flag & TERRAIN_ZONE_MESH_VERTEX_COLOR_INTERP) {
+	if ((m_zoneInfo->flag & TERRAIN_ZONE_MESH_VERTEX_COLOR_INTERP && m_derivedMesh) || faceindex != -1) {
 		MCol *mcol = (MCol *)m_derivedMesh->getTessFaceDataArray(m_derivedMesh, CD_MCOL);
 
 		// couleur du remier vertice
@@ -192,9 +198,39 @@ float KX_TerrainZoneMesh::GetMeshColorInterp(const float *point, const unsigned 
 		float weight[3];
 		float color[3];
 
-		barycentric_weights_v2(v1.co, v2.co, v3.co, point, weight);
+		const float point[2] = {x, y};
+		barycentric_weights_v2(v1, v2, v3, point, weight);
 		interp_v3_v3v3v3(color, c1, c2, c3, weight);
 		interp = color[0];
+	}
+	else if (m_zoneInfo->flag & TERRAIN_ZONE_USE_OBJECT && m_zoneInfo->groupobject) {
+		Group *group = m_zoneInfo->groupobject;
+		interp = 0.0f;
+		unsigned short objindex = 1;
+		for (GroupObject *groupobj = (GroupObject *)group->gobject.first;
+			 groupobj; groupobj = groupobj->next, ++objindex)
+		{
+			Object *blendobj = groupobj->ob;
+			const float *position = blendobj->loc;
+			const float *scale = blendobj->size;
+			const float influence = m_zoneInfo->objectinfluence;
+
+			const float point[2] = {fabs(x - position[0]), fabs(y - position[1])};
+			const float radius[2] = {scale[0] * influence, scale[1] * influence};
+
+			if (point[0] < radius[0] && point[1] < radius[1]) {
+				const float pointlength = len_v2(point);
+				static const float xaxis[2] = {1.0f, 0.0f};
+				const float angle = angle_v2v2(xaxis, point);
+				const float max[2] = {cos(angle) * radius[0], sin(angle) * radius[1]};
+				const float maxlength = len_v2(max);
+
+				float objinterp = (maxlength - pointlength) / maxlength;
+				CLAMP(objinterp, 0.0f, 1.0f);
+
+				interp = max_ff(interp, objinterp);
+			}
+		}
 	}
 
 	return interp;
@@ -263,7 +299,7 @@ void KX_TerrainZoneMesh::GetVertexInfo(const float x, const float y, VertexZoneI
 				const int result = isect_point_tri_v2(point, v1.co, v2.co, v3.co);
 				// Si le point est bien dans un des triangles
 				if (result == 1) {
-					interp = GetMeshColorInterp(point, i, v1, v2, v3);
+					interp = GetMeshColorInterp(x, y, i, v1.co, v2.co, v3.co);
 					hit = true;
 					// La difference entre la hauteur precedente et une hauteur clampée.
 					deltaheight += GetClampedHeight(r_info->height, x, y, v1.co, v2.co, v3.co);
@@ -285,10 +321,12 @@ void KX_TerrainZoneMesh::GetVertexInfo(const float x, const float y, VertexZoneI
 		}
 	}
 	else {
+		interp = GetMeshColorInterp(x, y, -1, NULL, NULL, NULL);
 		deltaheight += GetClampedHeight(r_info->height, x, y, NULL, NULL, NULL);
 		deltaheight += m_zoneInfo->offset;
 		deltaheight += GetNoiseHeight(x, y);
 		deltaheight += GetImageHeight(x, y);
+		deltaheight *= interp;
 	}
 
 	r_info->height += deltaheight;

@@ -54,11 +54,16 @@ typedef struct TerrainZone {
 	struct Image *image;
 	float imageheight;
 
+	int pad2;
+
+	struct Group *groupobject;
+	float objectinfluence;
+
 	int uvchannel;
 	float color;
 	float colordividor;
 
-	int pad2;
+	int pad3;
 
 	int flag;
 } TerrainZone;
@@ -93,6 +98,8 @@ typedef struct Terrain {
 #define TERRAIN_ZONE_USE_HEIGHT_COLOR			(1 << 7)
 #define TERRAIN_ZONE_DIVIDE_COLOR				(1 << 8) /* Used only with TERRAIN_ZONE_USE_HEIGHT_COLOR */
 #define TERRAIN_ZONE_ACTIVE						(1 << 9)
+#define TERRAIN_ZONE_USE_OBJECT					(1 << 10)
+#define TERRAIN_ZONE_CLAMP_OBJECT				(1 << 11)
 
 #define DEBUG_DRAW_BOXES	(1 << 0)
 #define DEBUG_DRAW_LINES	(1 << 1)

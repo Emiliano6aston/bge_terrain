@@ -3898,6 +3898,7 @@ static void lib_link_terrain(FileData *fd, Main *main)
 			for (zone = terrain->zones.first; zone; zone = zone->next) {
 				zone->mesh = newlibadr_us(fd, terrain->id.lib, zone->mesh);
 				zone->image = newlibadr_us(fd, terrain->id.lib, zone->image);
+				zone->groupobject = newlibadr_us(fd, terrain->id.lib, zone->groupobject);
 			}
 			terrain->id.flag -= LIB_NEED_LINK;
 		}
