@@ -77,6 +77,9 @@ private:
 	/// La largeur du mesh d'un chunk.
 	float m_chunkSize;
 
+	/// Le facteur de la marge du rayon d'un noeud.
+	float m_marginFactor;
+
 	/// La hauteur maximale theorique du mesh d'un chunk.
 	float m_maxHeight;
 
@@ -121,6 +124,7 @@ public:
 			   float cameraMaxDistance,
 			   float objectMaxDistance,
 			   float chunkSize,
+			   float marginFactor,
 			   short debugMode,
 			   unsigned short debugTimeFrame);
 	~KX_Terrain();
@@ -166,6 +170,11 @@ public:
 	inline float GetChunkSize() const
 	{
 		return m_chunkSize;
+	}
+	/// Le facteur de la marge du rayon d'un noeud.
+	inline float GetMarginFactor() const
+	{
+		return m_marginFactor;
 	}
 	/// La hauteur maximale
 	inline float GetMaxHeight() const
