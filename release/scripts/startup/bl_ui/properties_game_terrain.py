@@ -51,7 +51,7 @@ class TERRAIN_PT_game_context_terrain(TerrainButtonsPanel, Panel):
             split.template_ID(space, "pin_id")
 
 class TERRAIN_PT_game_terrain_chunk(TerrainButtonsPanel, Panel):
-    bl_label = "Chunk"
+    bl_label = "Nodes"
     COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_GAME'}
 
     @classmethod
@@ -66,21 +66,18 @@ class TERRAIN_PT_game_terrain_chunk(TerrainButtonsPanel, Panel):
         split = layout.split()
 
         row = layout.row()
-        row.column().prop(terrain, "max_level")
-        row.column().prop(terrain, "min_physics_level")
+        col = row.column()
+        col.prop(terrain, "max_level")
+        col.prop(terrain, "min_physics_level")
+        col.prop(terrain, "width")
 
-        row = layout.row()
-        row.column().prop(terrain, "width")
-        row.column().prop(terrain, "chunk_size")
-
-        row = layout.row()
-        row.column().prop(terrain, "camera_distance")
-        row.column().prop(terrain, "object_distance")
-        row = layout.row()
-        row.column().prop(terrain, "margin_factor")
+        col = row.column()
+        col.prop(terrain, "camera_distance")
+        col.prop(terrain, "object_distance")
+        col.prop(terrain, "margin_factor")
 
 class TERRAIN_PT_game_terrain_mesh(TerrainButtonsPanel, Panel):
-    bl_label = "Chunk Mesh"
+    bl_label = "Chunks"
     COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_GAME'}
 
     @classmethod
@@ -94,8 +91,11 @@ class TERRAIN_PT_game_terrain_mesh(TerrainButtonsPanel, Panel):
         terrain = context.terrain
 
         row = layout.row()
+        col = row.column()
+        col.prop(terrain, "chunk_size")
+        col.prop(terrain, "vertex_subdivision")
+
         row.column().prop(terrain, "material")
-        row.column().prop(terrain, "vertex_subdivision")
 
 class TERRAIN_PT_game_terrain_debug(TerrainButtonsPanel, Panel):
     bl_label = "Debug"
@@ -156,15 +156,13 @@ class TERRAIN_PT_game_terrain_zones(TerrainButtonsPanel, Panel):
         col.operator("terrain.zone_move", text="", icon='TRIA_DOWN').direction = 'DOWN'
 
 class TERRAIN_PT_game_terrain_zones_mesh(TerrainButtonsPanel, Panel):
-    bl_label = "Mesh"
+    bl_label = "Influence"
     COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_GAME'}
 
-    def draw_header(self, context):
+    @classmethod
+    def poll(cls, context):
         scene = context.scene
-        terrain = scene.terrain
-        zone = terrain.zones.active_zone
-        if zone:
-            self.layout.prop(zone, "use_mesh", text="")
+        return (scene.terrain and scene.terrain.zones.active_zone)
 
     def draw(self, context):
         layout = self.layout
@@ -177,41 +175,30 @@ class TERRAIN_PT_game_terrain_zones_mesh(TerrainButtonsPanel, Panel):
             zone = terrain.zones.active_zone
 
             if zone:
-                layout.active = zone.use_mesh
                 row = layout.row()
+                row.prop(zone, "use_mesh")
+
+                row = layout.row()
+                row.active = zone.use_mesh
                 row.column().prop(zone, "mesh")
                 row.column().prop(zone, "use_mesh_vertex_color_interp")
 
-class TERRAIN_PT_game_terrain_zones_object(TerrainButtonsPanel, Panel):
-    bl_label = "Objects"
-    COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_GAME'}
-
-    def draw_header(self, context):
-        scene = context.scene
-        terrain = scene.terrain
-        zone = terrain.zones.active_zone
-        if zone:
-            self.layout.prop(zone, "use_object", text="")
-
-    def draw(self, context):
-        layout = self.layout
-
-        scene = context.scene
-        terrain = scene.terrain
-        row = layout.row()
-        
-        if terrain:
-            zone = terrain.zones.active_zone
-
-            if zone:
-                layout.active = zone.use_object
                 row = layout.row()
+                row.prop(zone, "use_object")
+
+                row = layout.row()
+                row.active = zone.use_object
                 row.column().prop(zone, "group_object")
                 row.column().prop(zone, "object_influence")
 
 class TERRAIN_PT_game_terrain_zones_heights(TerrainButtonsPanel, Panel):
     bl_label = "Heights"
     COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_GAME'}
+
+    @classmethod
+    def poll(cls, context):
+        scene = context.scene
+        return (scene.terrain and scene.terrain.zones.active_zone)
 
     def draw(self, context):
         layout = self.layout
@@ -224,10 +211,10 @@ class TERRAIN_PT_game_terrain_zones_heights(TerrainButtonsPanel, Panel):
             
             if zone:
                 row = layout.row()
-                row.column().prop(zone, "offset")
+                row.prop(zone, "offset")
 
                 row = layout.row()
-                row.column().prop(zone, "use_noise")
+                row.prop(zone, "use_noise")
 
                 row = layout.row()
                 row.active = zone.use_noise
@@ -235,7 +222,7 @@ class TERRAIN_PT_game_terrain_zones_heights(TerrainButtonsPanel, Panel):
                 row.column().prop(zone, "noise_height")
 
                 row = layout.row()
-                row.column().prop(zone, "use_image")
+                row.prop(zone, "use_image")
 
                 row = layout.row()
                 row.active = zone.use_image
@@ -245,6 +232,11 @@ class TERRAIN_PT_game_terrain_zones_heights(TerrainButtonsPanel, Panel):
 class TERRAIN_PT_game_terrain_zones_clamp(TerrainButtonsPanel, Panel):
     bl_label = "Clamp"
     COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_GAME'}
+
+    @classmethod
+    def poll(cls, context):
+        scene = context.scene
+        return (scene.terrain and scene.terrain.zones.active_zone)
 
     def draw_header(self, context):
         scene = context.scene
@@ -270,13 +262,18 @@ class TERRAIN_PT_game_terrain_zones_clamp(TerrainButtonsPanel, Panel):
                 row.column().prop(zone, "use_clamp_object")
 
                 row = layout.row()
-                row.active = not zone.use_clamp_mesh
+                row.active = not (zone.use_clamp_mesh or zone.use_clamp_object)
                 row.column().prop(zone, "clamp_start")
                 row.column().prop(zone, "clamp_end")
 
 class TERRAIN_PT_game_terrain_zones_vertex_uv(TerrainButtonsPanel, Panel):
     bl_label = "Vertex UV"
     COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_GAME'}
+
+    @classmethod
+    def poll(cls, context):
+        scene = context.scene
+        return (scene.terrain and scene.terrain.zones.active_zone)
 
     def draw_header(self, context):
         scene = context.scene
@@ -298,7 +295,7 @@ class TERRAIN_PT_game_terrain_zones_vertex_uv(TerrainButtonsPanel, Panel):
             if zone:
                 layout.active = zone.use_uv_texture_color
                 row = layout.row()
-                row.column().prop(zone, "uv_channel")
+                row.prop(zone, "uv_channel")
 
                 row = layout.row()
                 row.column().prop(zone, "use_height_color")
