@@ -224,7 +224,8 @@ float KX_TerrainZoneMesh::GetMeshColorInterp(const float x, const float y, const
 			if (point[0] < radius[0] && point[1] < radius[1]) {
 				const float pointlength = len_v2(point);
 				static const float xaxis[2] = {1.0f, 0.0f};
-				const float angle = angle_v2v2(xaxis, point);
+				const float unscaledpoint[2] = {point[0] / radius[0], point[1] / radius[1]};
+				const float angle = angle_v2v2(xaxis, unscaledpoint);
 				const float max[2] = {cosf(angle) * radius[0], sinf(angle) * radius[1]};
 				const float maxlength = len_v2(max);
 
