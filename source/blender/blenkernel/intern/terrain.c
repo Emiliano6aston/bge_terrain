@@ -79,6 +79,8 @@ Terrain *add_terrain(Main *bmain, const char *name)
 	terrain->chunksize = 10.0;
 	terrain->marginfactor = 2.0f;
 	terrain->minphysicslevel = 0;
+	terrain->debugtimeframe = 100;
+	terrain->cacherefreshtime = 100;
 	terrain->active_zoneindex = 0;
 
 	return terrain;
@@ -185,6 +187,7 @@ void BKE_terrain_zone_add(Terrain *terrain)
 	zone->uvchannel = 2;
 	zone->color = 1.0f;
 	zone->colordividor = 1.0f;
+	zone->groupobject = NULL;
 	zone->objectinfluence = 1.0f;
 	zone->flag = TERRAIN_ZONE_ACTIVE;
 

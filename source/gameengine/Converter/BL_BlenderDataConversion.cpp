@@ -1788,7 +1788,9 @@ static KX_Terrain *convert_terrain(Terrain *terrain, KX_Scene* scene, KX_Blender
 										   terrain->chunksize,
 										   terrain->marginfactor,
 										   terrain->debugmode,
-										   terrain->debugtimeframe);
+										   terrain->debugtimeframe,
+										   terrain->flag & TERRAIN_USE_CACHE,
+										   terrain->cacherefreshtime);
 
 	// Si on n'initialise pas les masques et groupes de collisions, les collisions peuvent être aléatoire.
 	kxterrain->SetUserCollisionMask(0xffff);

@@ -123,6 +123,30 @@ class TERRAIN_PT_game_terrain_debug(TerrainButtonsPanel, Panel):
         col.prop(terrain, "debug_time")
         col.prop(terrain, "debug_time_frame")
 
+class TERRAIN_PT_game_terrain_cache(TerrainButtonsPanel, Panel):
+    bl_label = "Cache"
+    COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_GAME'}
+
+    @classmethod
+    def poll(cls, context):
+        scene = context.scene
+        return (scene.terrain)
+
+    def draw_header(self, context):
+        scene = context.scene
+        terrain = scene.terrain
+        if terrain:
+            self.layout.prop(terrain, "use_cache", text="")
+
+    def draw(self, context):
+        layout = self.layout
+
+        terrain = context.terrain
+
+        layout.active = terrain.use_cache
+        row = layout.row()
+        row.prop(terrain, "cache_refresh_time")
+
 class TERRAIN_UL_zoneslots(UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         if self.layout_type in {'DEFAULT', 'COMPACT'}:
