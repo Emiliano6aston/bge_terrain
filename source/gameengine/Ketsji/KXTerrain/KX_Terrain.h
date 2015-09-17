@@ -37,7 +37,8 @@
 class RAS_IRasterizer;
 class RAS_MaterialBucket;
 class CListValue;
-class Material;
+struct Material;
+class KX_ChunkRootCache;
 
 class KX_Terrain : public KX_GameObject
 {
@@ -97,7 +98,7 @@ private:
 	/** Un petit compteur de frame utilisé pour eviter d'afficher
 	 * le messages de debug a chaque frame.
 	 */
-	unsigned short m_frame;
+	unsigned short m_debugFrame;
 
 	/// Le noeud principal du terrain.
 	KX_ChunkNode *m_nodeTree;
@@ -111,6 +112,17 @@ private:
 	KX_ChunkList m_euthanasyChunkList;
 
 	std::vector<KX_TerrainZoneMesh *> m_zoneMeshList;
+
+	/// Utilisation d'un cache pour la création des vertices.
+	bool m_useCache;
+
+	/// Tant maximum de vie pour un noeud de cache sans activité, en frame.
+	unsigned short m_cacheRefreshTime;
+
+	unsigned short m_cacheFrame;
+
+	// Le cache des vertices.
+	KX_ChunkRootCache *m_chunkRootCache;
 
 public:
 	KX_Terrain(void *sgReplicationInfo,
@@ -126,7 +138,9 @@ public:
 			   float chunkSize,
 			   float marginFactor,
 			   short debugMode,
-			   unsigned short debugTimeFrame);
+			   unsigned short debugTimeFrame,
+			   bool useCache,
+			   unsigned short cacheRefreshTime);
 	~KX_Terrain();
 
 	void Construct();
@@ -207,7 +221,8 @@ public:
 	/** La position en 3D d'un vertice. on renvoie une coordonnée et non une 
 	 * hauteur car on pourrait imaginer modifier la position en x et y.
 	 */
-	VertexZoneInfo *GetVertexInfo(float x, float y) const;
+	VertexZoneInfo *GetVertexInfo(int x, int y) const;
+	VertexZoneInfo *NewVertexInfo(int x, int y) const;
 
 	KX_ChunkNode **NewNodeList(KX_ChunkNode *parentNode, int x, int y, unsigned short level);
 	KX_Chunk *AddChunk(KX_ChunkNode *node);

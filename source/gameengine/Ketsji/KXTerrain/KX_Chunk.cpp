@@ -404,8 +404,6 @@ void KX_Chunk::ConstructPhysicsController()
 KX_Chunk::Vertex *KX_Chunk::NewVertex(unsigned short relx, unsigned short rely)
 {
 	KX_Terrain *terrain = m_node->GetTerrain();
-	// la position du noeud parent du chunk
-	const MT_Point2& nodepos = m_node->GetRealPos();
 	//La taille "réelle" du chunk
 	const float size = terrain->GetChunkSize();
 
@@ -415,11 +413,9 @@ KX_Chunk::Vertex *KX_Chunk::NewVertex(unsigned short relx, unsigned short rely)
 	// la motie de la largeur du chunk
 	const float width = size / 2 * relativesize;
 
-	const float vertx = relx * interval - width;
-	const float verty = rely * interval - width;
-
+	const KX_ChunkNode::Point2D terrainVertexPos = GetTerrainRelativeVertexPosition(relx, rely);
 	// toutes les informations sur le vertice dut au zone : la hauteur, sa couleur
-	VertexZoneInfo *info = terrain->GetVertexInfo(nodepos.x() + vertx, nodepos.y() + verty);
+	VertexZoneInfo *info = terrain->GetVertexInfo(terrainVertexPos.x, terrainVertexPos.y);
 	const float vertz = info->height;
 
 	if (m_requestCreateBox) {
@@ -431,6 +427,9 @@ KX_Chunk::Vertex *KX_Chunk::NewVertex(unsigned short relx, unsigned short rely)
 		m_maxVertexHeight = max_ff(m_maxVertexHeight, vertz);
 		m_minVertexHeight = min_ff(m_minVertexHeight, vertz);
 	}
+
+	const float vertx = relx * interval - width;
+	const float verty = rely * interval - width;
 
 	Vertex *vertex = new Vertex(info, relx, rely, vertx, verty, m_originVertexIndex++);
 	return vertex;
