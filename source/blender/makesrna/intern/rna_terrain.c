@@ -380,6 +380,15 @@ void RNA_def_terrain(BlenderRNA *brna)
 	RNA_def_property_range(prop, 0, 100000);
 	RNA_def_property_ui_text(prop, "Debug Time Frame", "");
 
+	prop = RNA_def_property(srna, "use_cache", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_sdna(prop, NULL, "flag", TERRAIN_USE_CACHE);
+	RNA_def_property_ui_text(prop, "Use Cache", "");
+
+	prop = RNA_def_property(srna, "cache_refresh_time", PROP_INT, PROP_NONE);
+	RNA_def_property_int_sdna(prop, NULL, "cacherefreshtime");
+	RNA_def_property_range(prop, 0, 100000);
+	RNA_def_property_ui_text(prop, "Cache Refresh Time", "");
+
 	rna_def_terrain_zone(brna);
 
 	prop = RNA_def_property(srna, "zones", PROP_COLLECTION, PROP_NONE);
