@@ -23,6 +23,7 @@
  
 #include "KX_Terrain.h"
 #include "KX_Chunk.h"
+#include "KX_ChunkCache.h"
 
 #include "KX_Camera.h"
 #include "KX_PythonInit.h"
@@ -48,7 +49,9 @@ KX_Terrain::KX_Terrain(void *sgReplicationInfo,
 					   float chunkSize,
 					   float marginFactor,
 					   short debugMode,
-					   unsigned short debugTimeFrame)
+					   unsigned short debugTimeFrame,
+					   bool useCache,
+					   unsigned short cacheRefreshTime)
 	:KX_GameObject(sgReplicationInfo, callbacks),
 	m_bucket(bucket),
 	m_material(material),
@@ -65,7 +68,10 @@ KX_Terrain::KX_Terrain(void *sgReplicationInfo,
 	m_debugMode(debugMode),
 	m_debugTimeFrame(debugTimeFrame),
 	m_construct(false),
-	m_frame(0)
+	m_debugFrame(0),
+	m_useCache(useCache),
+	m_cacheRefreshTime(cacheRefreshTime),
+	m_cacheFrame(0)
 {
 	unsigned int realmaxlevel = 0;
 	for (unsigned int i = 1; i < m_width; i *= 2) {
@@ -76,6 +82,8 @@ KX_Terrain::KX_Terrain(void *sgReplicationInfo,
 		std::cout << "Warning: wrong max chunk level, it should be : " << realmaxlevel << std::endl;
 		m_maxChunkLevel = realmaxlevel;
 	}
+
+	m_chunkRootCache = new KX_ChunkRootCache(m_width * POLY_COUNT, this);
 }
 
 KX_Terrain::~KX_Terrain()
@@ -91,6 +99,7 @@ void KX_Terrain::Construct()
 	DEBUG("Construct terrain");
 
 	m_nodeTree = new KX_ChunkNode(NULL, 0, 0, m_width, 1, this);
+	m_chunkRootCache->Construct();
 	m_construct = true;
 }
 
@@ -100,6 +109,9 @@ void KX_Terrain::Destruct()
 	// destruction du noeud principal
 	if (m_nodeTree)
 		delete m_nodeTree;
+
+	m_chunkRootCache->Destruct();
+	delete m_chunkRootCache;
 
 	ScheduleEuthanasyChunks();
 }
@@ -127,13 +139,20 @@ void KX_Terrain::UpdateChunksMeshes()
 	}
 
 	if (m_debugMode & DEBUG_TIME) {
-		++m_frame;
-
-		if (m_frame > m_debugTimeFrame) {
+		if (m_debugFrame > m_debugTimeFrame) {
 			KX_Chunk::PrintTime();
 			KX_Chunk::ResetTime();
-			m_frame = 0;
+			m_debugFrame = 0;
 		}
+		++m_debugFrame;
+	}
+
+	if (m_useCache) {
+		if (m_cacheFrame > m_cacheRefreshTime) {
+			m_chunkRootCache->Refresh();
+			m_cacheFrame = 0;
+		}
+		++m_cacheFrame;
 	}
 }
 
@@ -176,19 +195,39 @@ KX_ChunkNode *KX_Terrain::GetNodeRelativePosition(float x, float y)
 	return node;
 }
 
-VertexZoneInfo *KX_Terrain::GetVertexInfo(float x, float y) const
+
+VertexZoneInfo *KX_Terrain::GetVertexInfo(int x, int y) const
+{
+	VertexZoneInfo *vertexInfo;
+
+	if (m_useCache) {
+		vertexInfo = m_chunkRootCache->GetVertexZoneInfo(x, y);
+		vertexInfo->AddRef();
+	}
+	else {
+		vertexInfo = NewVertexInfo(x, y);
+	}
+
+	return vertexInfo;
+}
+
+VertexZoneInfo *KX_Terrain::NewVertexInfo(int x, int y) const
 {
 	VertexZoneInfo *info = new VertexZoneInfo();
 
-	// set vertex 2d position
-	info->pos[0] = x;
-	info->pos[1] = y;
+	const float interval = m_chunkSize / POLY_COUNT;
+	const float fx = x * interval;
+	const float fy = y * interval;
 
-	info->m_uvs[0].x() = x;
-	info->m_uvs[0].y() = y;
+	// set vertex 2d position
+	info->pos[0] = fx;
+	info->pos[1] = fy;
+
+	info->m_uvs[0].x() = fx;
+	info->m_uvs[0].y() = fy;
 
 	for (unsigned short i = 0; i < m_zoneMeshList.size(); ++i)
-		m_zoneMeshList[i]->GetVertexInfo(x, y, info);
+		m_zoneMeshList[i]->GetVertexInfo(fx, fy, info);
 
 	return info;
 }

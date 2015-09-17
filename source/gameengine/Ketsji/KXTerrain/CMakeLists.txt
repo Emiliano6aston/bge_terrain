@@ -47,12 +47,14 @@ set(INC_SYS
 
 set(SRC
 	KX_Chunk.cpp
+	KX_ChunkCache.cpp
 	KX_ChunkNode.cpp
 	KX_Terrain.cpp
 	KX_TerrainZone.cpp
 	KX_ChunkMotionState.cpp
 
 	KX_Chunk.h
+	KX_ChunkCache.h
 	KX_ChunkNode.h
 	KX_Terrain.h
 	KX_TerrainZone.h

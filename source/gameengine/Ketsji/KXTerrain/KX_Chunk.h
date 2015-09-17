@@ -24,6 +24,9 @@
 #ifndef __KX_CHUNK_H__
 #define __KX_CHUNK_H__
 
+#include "SG_QList.h"
+#include "KX_ChunkNode.h"
+
 #define VERTEX_COUNT 5
 #define VERTEX_COUNT_INTERN (VERTEX_COUNT - 2)
 

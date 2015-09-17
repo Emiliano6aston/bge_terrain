@@ -47,7 +47,7 @@ public:
 	float pos[2];
 	/// count of chunk vertexes which use it.
 	unsigned char refcount;
-	/** Tous les cannal d'UVs.
+	/** Tous les cannaux d'UVs.
 	 * Le premier cannal et utilisé pour l'UV du vertice
 	 * et les autres pour la couleur des textures.
 	 */
@@ -63,9 +63,13 @@ public:
 		}
 	}
 
+	~VertexZoneInfo()
+	{
+	}
+
 	void AddRef()
 	{
-		refcount++;
+		++refcount;
 	}
 	void Release()
 	{

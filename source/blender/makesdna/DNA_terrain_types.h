@@ -97,10 +97,16 @@ typedef struct Terrain {
 	int debugmode;
 	int debugtimeframe;
 
+	int flag;
+	int cacherefreshtime;
+
 	int minphysicslevel;
 	int active_zoneindex;
+
 	ListBase zones;
 } Terrain;
+
+#define TERRAIN_USE_CACHE	(1 << 0)
 
 #define TERRAIN_ZONE_MESH						(1 << 0)
 #define TERRAIN_ZONE_PERLIN_NOISE				(1 << 1)
