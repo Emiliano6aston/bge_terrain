@@ -242,7 +242,7 @@ void KX_ChunkNode::MarkCulled(KX_Camera* culledcam)
 
 MT_Point3 KX_ChunkNode::GetCenter() const
 {
-	return MT_Point3(m_realPos.x(), m_realPos.y(), (m_maxBoxHeight + m_minBoxHeight) / 2.0f);
+	return MT_Point3(m_realPos.x(), m_realPos.y(), (m_maxBoxHeightOptimized + m_minBoxHeightOptimized) / 2.0f);
 }
 
 short KX_ChunkNode::IsCameraVisible(KX_Camera *cam)
@@ -438,6 +438,8 @@ void KX_ChunkNode::ResetFrustumBoxHeights()
 {
 	m_maxBoxHeight = 0.0f;
 	m_minBoxHeight = 0.0f;
+	m_maxBoxHeightOptimized = 0.0f;
+	m_minBoxHeightOptimized = 0.0f;
 	m_requestCreateBox = true;
 }
 
@@ -454,16 +456,20 @@ void KX_ChunkNode::ExtendFrustumBoxHeights(float max, float min)
 	if (m_requestCreateBox) {
 		m_maxBoxHeight = correctmax;
 		m_minBoxHeight = correctmin;
+		m_maxBoxHeightOptimized = max;
+		m_minBoxHeightOptimized = min;
 		m_boxModified = true;
 		m_requestCreateBox = false;
 	}
 	else {
 		if (correctmax > m_maxBoxHeight) {
 			m_maxBoxHeight = correctmax;
+			m_maxBoxHeightOptimized = max;
 			m_boxModified = true;
 		}
 		if (correctmin < m_minBoxHeight) {
 			m_minBoxHeight = correctmin;
+			m_minBoxHeightOptimized = min;
 			m_boxModified = true;
 		}
 	}
