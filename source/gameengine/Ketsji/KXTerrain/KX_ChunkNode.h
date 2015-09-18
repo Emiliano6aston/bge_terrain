@@ -79,6 +79,8 @@ private:
 	float m_maxBoxHeight;
 	/// La hauteur minimal de la boite.
 	float m_minBoxHeight;
+	float m_minBoxHeightOptimized;
+	float m_maxBoxHeightOptimized;
 	/// Doit ont recreer la boite ?
 	bool m_requestCreateBox;
 	bool m_onConstruct;
