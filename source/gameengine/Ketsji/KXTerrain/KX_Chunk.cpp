@@ -192,6 +192,7 @@ struct KX_Chunk::Vertex
 		valid(true),
 		validNormal(false)
 	{
+		info->AddRef();
 		relativePos[0] = relx;
 		relativePos[1] = rely;
 
@@ -389,6 +390,8 @@ void KX_Chunk::ConstructPhysicsController()
 
 		// Puis on l'ajoute dans l'environnement physique.
 		phyEnv->AddCcdPhysicsController(phyCtrl);
+
+		shapeInfo->Release();
 	}
 	else {
 		/* Sinon si le controlleur physique existe déjà on remplace juste
@@ -430,8 +433,9 @@ KX_Chunk::Vertex *KX_Chunk::NewVertex(unsigned short relx, unsigned short rely)
 
 	const float vertx = relx * interval - width;
 	const float verty = rely * interval - width;
-
 	Vertex *vertex = new Vertex(info, relx, rely, vertx, verty, m_originVertexIndex++);
+	info->Release();
+
 	return vertex;
 }
 

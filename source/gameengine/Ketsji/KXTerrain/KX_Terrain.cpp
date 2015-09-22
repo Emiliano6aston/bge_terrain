@@ -73,6 +73,8 @@ KX_Terrain::KX_Terrain(void *sgReplicationInfo,
 	m_cacheRefreshTime(cacheRefreshTime),
 	m_cacheFrame(0)
 {
+	SetName("Terrain");
+
 	unsigned int realmaxlevel = 0;
 	for (unsigned int i = 1; i < m_width; i *= 2) {
 		++realmaxlevel;
