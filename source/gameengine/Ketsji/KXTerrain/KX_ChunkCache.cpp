@@ -114,7 +114,11 @@ void KX_ChunkCache::ConstructSubChunkCache()
 void KX_ChunkCache::DestructSubChunkCache()
 {
 	if (m_subChunkCache) {
-		delete m_subChunkCache;
+		delete m_subChunkCache[0];
+		delete m_subChunkCache[1];
+		delete m_subChunkCache[2];
+		delete m_subChunkCache[3];
+		free(m_subChunkCache);
 		m_subChunkCache = NULL;
 	}
 }
