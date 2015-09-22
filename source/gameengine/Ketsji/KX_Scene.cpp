@@ -258,8 +258,9 @@ KX_Scene::~KX_Scene()
 	// reference might be hanging and causing late release of objects
 	RemoveAllDebugProperties();
 
-	if (m_terrain)
-		m_terrain->Release();
+	if (m_terrain) {
+		RemoveObject(m_terrain);
+	}
 
 	while (GetRootParentList()->GetCount() > 0) 
 	{
