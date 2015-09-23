@@ -74,9 +74,9 @@ Terrain *add_terrain(Main *bmain, const char *name)
 	terrain->maxlevel = 6;
 	terrain->width = 64;
 	terrain->vertexsubdivision = 4;
-	terrain->cameradistance = 500.0;
-	terrain->objectdistance = 0.0;
-	terrain->chunksize = 30.0;
+	terrain->cameradistance = 100.0;
+	terrain->objectdistance = 100.0;
+	terrain->chunksize = 10.0;
 	terrain->marginfactor = 2.0f;
 	terrain->minphysicslevel = 0;
 	terrain->active_zoneindex = 0;
