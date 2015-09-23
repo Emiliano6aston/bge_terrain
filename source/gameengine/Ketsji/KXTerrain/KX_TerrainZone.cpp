@@ -27,6 +27,7 @@
 #include "DNA_mesh_types.h"
 #include "DNA_terrain_types.h"
 #include "DNA_group_types.h"
+#include "DNA_texture_types.h"
 
 #include "BLI_noise.h"
 #include "BLI_utildefines.h"
@@ -245,7 +246,30 @@ float KX_TerrainZoneMesh::GetNoiseHeight(const float x, const float y) const
 	float height = 0.0f;
 
 	if (m_zoneInfo->flag & TERRAIN_ZONE_PERLIN_NOISE) {
-		height = (BLI_hnoise(m_zoneInfo->resolution, x, y, 0.0f) * m_zoneInfo->noiseheight);
+		float scaledx = x / m_zoneInfo->resolution;
+		float scaledy = y / m_zoneInfo->resolution;
+
+		switch (m_zoneInfo->musgravetype) {
+			case TEX_MFRACTAL:
+				height = mg_MultiFractal(scaledx, scaledy, 0.0f, m_zoneInfo->H, m_zoneInfo->lacunarity, m_zoneInfo->octaves, m_zoneInfo->noisebasis);
+				break;
+			case TEX_RIDGEDMF:
+				height = mg_RidgedMultiFractal(scaledx, scaledy, 0.0f, m_zoneInfo->H, m_zoneInfo->lacunarity, m_zoneInfo->octaves,
+											   m_zoneInfo->musgraveoffset, m_zoneInfo->gain, m_zoneInfo->noisebasis);
+				break;
+			case TEX_HYBRIDMF:
+				height = mg_HybridMultiFractal(scaledx, scaledy, 0.0f, m_zoneInfo->H, m_zoneInfo->lacunarity, m_zoneInfo->octaves,
+											   m_zoneInfo->musgraveoffset, m_zoneInfo->gain, m_zoneInfo->noisebasis);
+				break;
+			case TEX_FBM:
+				height = mg_fBm(scaledx, scaledy, 0.0f, m_zoneInfo->H, m_zoneInfo->lacunarity, m_zoneInfo->octaves, m_zoneInfo->noisebasis);
+				break;
+			case TEX_HTERRAIN:
+				height = mg_HeteroTerrain(scaledx, scaledy, 0.0f, m_zoneInfo->H, m_zoneInfo->lacunarity, m_zoneInfo->octaves,
+										  m_zoneInfo->musgraveoffset, m_zoneInfo->noisebasis);
+				break;
+		}
+		height *= m_zoneInfo->noiseheight;
 	}
 
 	return height;
