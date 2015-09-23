@@ -85,7 +85,7 @@ KX_Terrain::KX_Terrain(void *sgReplicationInfo,
 		m_maxChunkLevel = realmaxlevel;
 	}
 
-	m_chunkRootCache = new KX_ChunkRootCache(m_width * POLY_COUNT, this);
+	m_chunkRootCache = new KX_ChunkRootCache(m_width * (POLY_COUNT / 2), this);
 }
 
 KX_Terrain::~KX_Terrain()
@@ -217,7 +217,7 @@ VertexZoneInfo *KX_Terrain::NewVertexInfo(int x, int y) const
 {
 	VertexZoneInfo *info = new VertexZoneInfo();
 
-	const float interval = m_chunkSize / POLY_COUNT;
+	const float interval = m_chunkSize / POLY_COUNT * 2.0f;
 	const float fx = x * interval;
 	const float fy = y * interval;
 
