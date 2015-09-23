@@ -218,8 +218,23 @@ class TERRAIN_PT_game_terrain_zones_heights(TerrainButtonsPanel, Panel):
 
                 row = layout.row()
                 row.active = zone.use_noise
-                row.column().prop(zone, "resolution")
-                row.column().prop(zone, "noise_height")
+
+                col = row.column()
+                col.prop(zone, "noise_basis")
+                col.prop(zone, "musgrave_type")
+
+                row = layout.row()
+                row.active = zone.use_noise
+                col = row.column()
+                col.prop(zone, "resolution")
+                col.prop(zone, "noise_height")
+                col.prop(zone, "octaves")
+
+                col = row.column()
+                col.prop(zone, "dimension_max")
+                col.prop(zone, "lacunarity")
+                col.prop(zone, "gain")
+                col.prop(zone, "musgrave_offset")
 
                 row = layout.row()
                 row.prop(zone, "use_image")
