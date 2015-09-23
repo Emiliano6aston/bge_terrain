@@ -43,13 +43,24 @@ typedef struct TerrainZone {
 
 	float offset;
 
+
+	int noisebasis;
+	int musgravetype;
+
 	float noiseheight;
 	float resolution;
+	int octaves;
+	float lacunarity;
+	float gain;
+	float musgraveoffset;
+	float H;
+
+	int pad;
 
 	float clampstart;
 	float clampend;
 
-	int pad;
+	int pad1;
 
 	struct Image *image;
 	float imageheight;

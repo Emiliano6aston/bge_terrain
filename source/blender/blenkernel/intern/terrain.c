@@ -177,6 +177,7 @@ void BKE_terrain_zone_add(Terrain *terrain)
 	zone->noiseheight = 10.0;
 	zone->offset = 0.0;
 	zone->resolution = 100.0;
+	zone->octaves = 1;
 	zone->clampstart = 0.0;
 	zone->clampend = 0.0;
 	zone->image = NULL;
