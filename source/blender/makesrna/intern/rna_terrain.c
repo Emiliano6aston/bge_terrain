@@ -33,6 +33,7 @@
 
 #include "rna_internal.h"
 
+#include "DNA_texture_types.h"
 #include "DNA_terrain_types.h"
 
 #include "WM_types.h"
@@ -66,6 +67,40 @@ static void rna_Terrain_active_zone_index_set(PointerRNA *ptr, int value)
 }
 
 #else
+
+static EnumPropertyItem prop_noise_basis_items[] = {
+	{TEX_BLENDER, "BLENDER_ORIGINAL", 0, "Blender Original",
+	              "Noise algorithm - Blender original: Smooth interpolated noise"},
+	{TEX_STDPERLIN, "ORIGINAL_PERLIN", 0, "Original Perlin",
+	                "Noise algorithm - Original Perlin: Smooth interpolated noise"},
+	{TEX_NEWPERLIN, "IMPROVED_PERLIN", 0, "Improved Perlin",
+	                "Noise algorithm - Improved Perlin: Smooth interpolated noise"},
+	{TEX_VORONOI_F1, "VORONOI_F1", 0, "Voronoi F1",
+	                 "Noise algorithm - Voronoi F1: Returns distance to the closest feature point"},
+	{TEX_VORONOI_F2, "VORONOI_F2", 0, "Voronoi F2",
+	                 "Noise algorithm - Voronoi F2: Returns distance to the 2nd closest feature point"},
+	{TEX_VORONOI_F3, "VORONOI_F3", 0, "Voronoi F3",
+	                 "Noise algorithm - Voronoi F3: Returns distance to the 3rd closest feature point"},
+	{TEX_VORONOI_F4, "VORONOI_F4", 0, "Voronoi F4",
+	                 "Noise algorithm - Voronoi F4: Returns distance to the 4th closest feature point"},
+	{TEX_VORONOI_F2F1, "VORONOI_F2_F1", 0, "Voronoi F2-F1", "Noise algorithm - Voronoi F1-F2"},
+	{TEX_VORONOI_CRACKLE, "VORONOI_CRACKLE", 0, "Voronoi Crackle",
+	                      "Noise algorithm - Voronoi Crackle: Voronoi tessellation with sharp edges"},
+	{TEX_CELLNOISE, "CELL_NOISE", 0, "Cell Noise",
+	                "Noise algorithm - Cell Noise: Square cell tessellation"},
+	{0, NULL, 0, NULL, NULL}
+};
+
+static EnumPropertyItem prop_musgrave_type[] = {
+	{TEX_MFRACTAL, "MULTIFRACTAL", 0, "Multifractal", "Use Perlin noise as a basis"},
+	{TEX_RIDGEDMF, "RIDGED_MULTIFRACTAL", 0, "Ridged Multifractal",
+	               "Use Perlin noise with inflection as a basis"},
+	{TEX_HYBRIDMF, "HYBRID_MULTIFRACTAL", 0, "Hybrid Multifractal",
+	               "Use Perlin noise as a basis, with extended controls"},
+	{TEX_FBM, "FBM", 0, "fBM", "Fractal Brownian Motion, use Brownian noise as a basis"},
+	{TEX_HTERRAIN, "HETERO_TERRAIN", 0, "Hetero Terrain", "Similar to multifractal"},
+	{0, NULL, 0, NULL, NULL}
+};
 
 static void rna_def_terrain_zone(BlenderRNA *brna)
 {
@@ -118,6 +153,41 @@ static void rna_def_terrain_zone(BlenderRNA *brna)
 	RNA_def_property_float_sdna(prop, NULL, "resolution");
 	RNA_def_property_range(prop, 0.0, FLT_MAX);
 	RNA_def_property_ui_text(prop, "Resolution", "");
+
+	prop = RNA_def_property(srna, "octaves", PROP_INT, PROP_NONE);
+	RNA_def_property_int_sdna(prop, NULL, "octaves");
+	RNA_def_property_range(prop, 1, 100);
+	RNA_def_property_ui_text(prop, "Octaves", "");
+
+	prop = RNA_def_property(srna, "lacunarity", PROP_FLOAT, PROP_NONE);
+	RNA_def_property_float_sdna(prop, NULL, "lacunarity");
+	RNA_def_property_range(prop, 0, 6);
+	RNA_def_property_ui_text(prop, "Lacunarity", "Gap between successive frequencies");
+
+	prop = RNA_def_property(srna, "gain", PROP_FLOAT, PROP_NONE);
+	RNA_def_property_float_sdna(prop, NULL, "gain");
+	RNA_def_property_range(prop, 0, 6);
+	RNA_def_property_ui_text(prop, "Gain", "The gain multiplier");
+
+	prop = RNA_def_property(srna, "dimension_max", PROP_FLOAT, PROP_NONE);
+	RNA_def_property_float_sdna(prop, NULL, "H");
+	RNA_def_property_range(prop, 0.0001, 2);
+	RNA_def_property_ui_text(prop, "Highest Dimension", "Highest fractal dimension");
+
+	prop = RNA_def_property(srna, "musgrave_offset", PROP_FLOAT, PROP_NONE);
+	RNA_def_property_float_sdna(prop, NULL, "musgraveoffset");
+	RNA_def_property_range(prop, 0, 6);
+	RNA_def_property_ui_text(prop, "Offset", "The fractal offset");
+
+	prop = RNA_def_property(srna, "noise_basis", PROP_ENUM, PROP_NONE);
+	RNA_def_property_enum_sdna(prop, NULL, "noisebasis");
+	RNA_def_property_enum_items(prop, prop_noise_basis_items);
+	RNA_def_property_ui_text(prop, "Noise Basis", "Noise basis used for turbulence");
+
+	prop = RNA_def_property(srna, "musgrave_type", PROP_ENUM, PROP_NONE);
+	RNA_def_property_enum_sdna(prop, NULL, "musgravetype");
+	RNA_def_property_enum_items(prop, prop_musgrave_type);
+	RNA_def_property_ui_text(prop, "Musgrave Type", "Fractal noise algorithm");
 
 	prop = RNA_def_property(srna, "use_clamp", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "flag", TERRAIN_ZONE_CLAMP);
