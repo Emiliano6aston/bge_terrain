@@ -29,6 +29,10 @@
 #define DEBUG(msg) std::cout << msg << std::endl;
 #define DEBUG_HEADER(msg) DEBUG("====================== " << msg << " ======================");
 
+/* ATTENTION :
+ * Une unité de position d'un noeud = 2 unités de vertices.
+ */
+
 unsigned int KX_Chunk::m_chunkActive = 0;
 unsigned int KX_Chunk::meshRecreation = 0;
 double KX_Chunk::chunkCreationTime = 0.0;
@@ -469,44 +473,42 @@ KX_Chunk::Vertex *KX_Chunk::GetVertexByChunkRelativePosition(unsigned short x, u
 KX_Chunk::Vertex *KX_Chunk::GetVertexByTerrainRelativePosition(int x, int y) const
 {
 	const unsigned short size = m_node->GetRelativeSize();
-	// l'espace entre 2 vertice et toujours de 1 * size
-	const unsigned short interval = size / 2.0f;
+	const unsigned short halfsize = size / 2;
 
 	/* Le facteur pour passer de la position d'un noeud à celle d'un vertice absolue,
 	 * 2 = la taille minimun d'un noeud.
 	 */
-	const float scale = POLY_COUNT / 2.0f;
+	const float scale = ((float)POLY_COUNT) / 2.0f;
 
 	const KX_ChunkNode::Point2D nodepos = m_node->GetRelativePos();
 
 	// le bas du chunk par rapport au terrain * 2 pour les vertices
-	const int bottomx = nodepos.x * scale - POLY_COUNT * interval / 2.0f;
-	const int bottomy = nodepos.y * scale - POLY_COUNT * interval / 2.0f;
+	const int bottomx = nodepos.x * scale - size;
+	const int bottomy = nodepos.y * scale - size;
 
-	const unsigned short diffx = x - bottomx;
-	const unsigned short diffy = y - bottomy;
+	const unsigned short diffx = (x - bottomx) / halfsize;
+	const unsigned short diffy = (y - bottomy) / halfsize;
 
-	return GetVertexByChunkRelativePosition(diffx / interval, diffy / interval);
+	return GetVertexByChunkRelativePosition(diffx, diffy);
 }
 
 KX_ChunkNode::Point2D KX_Chunk::GetTerrainRelativeVertexPosition(unsigned short x, unsigned short y) const
 {
 	const unsigned short size = m_node->GetRelativeSize();
-	// l'espace entre 2 vertice et toujours de 1 * size
-	const unsigned short interval = size / 2.0f;
+	const unsigned short halfsize = size / 2;
 
 	/* Le facteur pour passer de la position d'un noeud à celle d'un vertice absolue,
 	 * 2 = la taille minimun d'un noeud.
 	 */
-	const float scale = POLY_COUNT / 2.0f;
+	const float scale = ((float)POLY_COUNT) / 2.0f;
 
 	const KX_ChunkNode::Point2D nodepos = m_node->GetRelativePos();
 
 	// le bas du chunk par rapport au terrain * 2 pour les vertices
-	const int bottomx = nodepos.x * scale - POLY_COUNT * interval / 2.0f;
-	const int bottomy = nodepos.y * scale - POLY_COUNT * interval / 2.0f;
+	const int bottomx = nodepos.x * scale - size;
+	const int bottomy = nodepos.y * scale - size;
 
-	return KX_ChunkNode::Point2D(bottomx + x * interval, bottomy + y * interval);
+	return KX_ChunkNode::Point2D(bottomx + x * halfsize, bottomy + y * halfsize);
 }
 
 /* On calcule la normale approximative d'un vertice. Pour cela on
@@ -1025,6 +1027,7 @@ void KX_Chunk::ComputeColumnJointVertexNormal(COLUMN_TYPE columnType, bool rever
 			coVertex->normal[0] = vertex->normal[0];
 			coVertex->normal[1] = vertex->normal[1];
 			coVertex->normal[2] = vertex->normal[2];
+
 			coVertex->validNormal = vertex->validNormal;
 		}
 	}
