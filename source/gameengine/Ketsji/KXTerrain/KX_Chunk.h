@@ -104,6 +104,8 @@ private:
 	float m_minVertexHeight;
 	bool m_requestCreateBox;
 
+	KX_ChunkNode *m_parentJointNodes[4];
+
 	/// Les dernières jointures.
 	unsigned short m_lastHasJoint[4]; // TODO renommer et utiliser 1 comme valeur par default
 	/* Tous les noeuds autour, jusqu'a 6 par côté dont 2 adjacents par un point, soit 16 noeuds.
@@ -111,6 +113,11 @@ private:
 	 * et de gauche a droite pour le colonnes de haut et bas.
 	 */
 	KX_ChunkNode *m_jointNode[4][6];
+
+	/* La position des noeuds de jointure, on les stoque
+	 * pour optimizer.
+	 */
+	float m_jointNodePosition[4][2];
 
 	/** Indice utilisé lors de la construction des vertices pour avoir un indice
 	 * unique de vertice.
@@ -124,6 +131,7 @@ private:
 
 	void ConstructVertexes();
 	void ComputeJointVertexesNormal();
+	void GetJointColumnNodes();
 	void ComputeColumnJointVertexNormal(COLUMN_TYPE columnType, bool reverse);
 	Vertex *GetVertexByChunkRelativePosition(unsigned short x, unsigned short y) const;
 	Vertex *GetVertexByTerrainRelativePosition(int x, int y) const;
