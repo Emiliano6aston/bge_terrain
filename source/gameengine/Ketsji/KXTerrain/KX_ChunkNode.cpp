@@ -500,8 +500,10 @@ KX_ChunkNode *KX_ChunkNode::GetNodeRelativePosition(float x, float y)
 	// La motié de la largeur.
 	const unsigned short relativewidth = m_relativeSize / 2;
 
-	/* Si le noeud et invisble on considére qu'il ne doit pas être utilisable
-	 * Cela arrvie que pour les chunk physique des objets cachés.
+	/* Si le noeud est invisble on ne doit pas l'utiliser car il peut y
+	 * avoir de grandes differences de niveau entre un noeud et son noeud
+	 * adjacent invisible, ce qui peut causer des problèmes lors de la
+	 * création des jointures d'un chunk.
 	 */
 	if(m_culledState != KX_Camera::OUTSIDE &&
 	  (m_relativePos.x - relativewidth) < x && x < (m_relativePos.x + relativewidth) &&
@@ -520,6 +522,67 @@ KX_ChunkNode *KX_ChunkNode::GetNodeRelativePosition(float x, float y)
 		}
 	}
 	return NULL;
+}
+
+KX_ChunkNode *KX_ChunkNode::GetAdjacentParentNode(short x, short y) const
+{
+	const unsigned short halfrelativesize = m_relativeSize / 2;
+	const unsigned int halfterrainwidth = m_terrain->GetWidth() / 2;
+
+	KX_ChunkNode *parent = m_parentNode;
+
+	if (x != 0) {
+		int nodelevelposX = (m_relativePos.x - halfrelativesize + halfterrainwidth) / 2;
+		if (x == -1) {
+			nodelevelposX -= halfrelativesize;
+		}
+
+		if (nodelevelposX < 0 || nodelevelposX > (halfterrainwidth - m_relativeSize)) {
+			return NULL;
+		}
+
+		unsigned short size = m_relativeSize;
+
+		// Tant que non ne vas pas au dessus du noeud tronc.
+		while (parent) {
+			// Si i % s == s - 1 ça signifie qu'il faut passer au niveau superieur.
+			if ((nodelevelposX % size) == (size - halfrelativesize) && parent->GetParentNode()) {
+				// On accede au parent du dernier noeud parent.
+				parent = parent->GetParentNode();
+				size *= 2;
+			}
+			else {
+				break;
+			}
+		}
+	}
+	else if (y != 0) {
+		int nodelevelposY = (m_relativePos.y - halfrelativesize + halfterrainwidth) / 2;
+		if (y == -1) {
+			nodelevelposY -= halfrelativesize;
+		}
+
+		if (nodelevelposY < 0 || nodelevelposY > (halfterrainwidth - m_relativeSize)) {
+			return NULL;
+		}
+
+		unsigned short size = m_relativeSize;
+
+		// Tant que non ne vas pas au dessus du noeud tronc.
+		while (parent) {
+			// Si i % s == s - 1 ça signifie qu'il faut passer au niveau superieur.
+			if ((nodelevelposY % size) == (size - halfrelativesize) && parent->GetParentNode()) {
+				// On accede au parent du dernier noeud parent.
+				parent = parent->GetParentNode();
+				size *= 2;
+			}
+			else {
+				break;
+			}
+		}
+	}
+
+	return parent;
 }
 
 bool operator<(const KX_ChunkNode::Point2D& pos1, const KX_ChunkNode::Point2D& pos2)

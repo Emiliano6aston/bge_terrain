@@ -59,7 +59,7 @@ private:
 	 * chunk pour retrouver la position réelle.
 	 */
 	const Point2D m_relativePos;
-	/// La taille relative du noeud la plus petite taille est 1.
+	/// La taille relative du noeud la plus petite taille est 2.
 	const unsigned short m_relativeSize;
 	/// La position réelle du noeud.
 	MT_Point2 m_realPos;
@@ -136,6 +136,12 @@ public:
 
 	KX_ChunkNode *GetNodeRelativePosition(float x, float y);
 
+	/** Renvoie le noeud parent du noeud adjacent qu'on veut trouver.
+	 * \param x Le position du en x noeud ajecent par rapport a ce noeud : -1 / 0 / 1.
+	 * \param y Comme l'argument x mais pour en y.
+	 */
+	KX_ChunkNode *GetAdjacentParentNode(short x, short y) const;
+
 	inline KX_Terrain *GetTerrain() const
 	{
 		return m_terrain;
@@ -180,6 +186,11 @@ public:
 	inline float GetMaxBoxHeight() const
 	{
 		return m_maxBoxHeight;
+	}
+
+	inline KX_ChunkNode *GetParentNode() const
+	{
+		return m_parentNode;
 	}
 
 	static unsigned int m_activeNode;
