@@ -285,10 +285,12 @@ KX_Chunk::KX_Chunk(KX_ChunkNode *node, RAS_MaterialBucket *bucket)
 	m_hasVertexes(false),
 	m_onConstruct(false)
 {
-	m_lastHasJoint[COLUMN_LEFT] = false;
-	m_lastHasJoint[COLUMN_RIGHT] = false;
-	m_lastHasJoint[COLUMN_FRONT] = false;
-	m_lastHasJoint[COLUMN_BACK] = false;
+	for (unsigned short columnIndex = COLUMN_LEFT; columnIndex <= COLUMN_BACK; ++columnIndex) {
+		// Initialisation des niveaux de jointure.
+		m_lastHasJoint[columnIndex] = 0;
+		// Initialisation des proxys de noeuds de jointures.
+		m_jointNodeProxy[columnIndex] = NULL;
+	}
 
 	m_chunkActive++;
 
@@ -301,12 +303,13 @@ KX_Chunk::KX_Chunk(KX_ChunkNode *node, RAS_MaterialBucket *bucket)
 	m_meshMatrix[2] = 0.0f; m_meshMatrix[6] = 0.0f; m_meshMatrix[10] = 1.0f; m_meshMatrix[14] = 0.0f;
 	m_meshMatrix[3] = 0.0f; m_meshMatrix[7] = 0.0f; m_meshMatrix[11] = 0.0f; m_meshMatrix[15] = 1.0f;
 
-
+	// Initialisation des noeuds parent de ce noeud et du noeud de adjacent.
 	m_parentJointNodes[COLUMN_LEFT] = m_node->GetAdjacentParentNode(-1, 0);
 	m_parentJointNodes[COLUMN_RIGHT] = m_node->GetAdjacentParentNode(1, 0);
 	m_parentJointNodes[COLUMN_FRONT] = m_node->GetAdjacentParentNode(0, -1);
 	m_parentJointNodes[COLUMN_BACK] = m_node->GetAdjacentParentNode(0, 1);
 
+	// Initialisation de la position de 4 noeud adjacent.
 	m_jointNodePosition[COLUMN_LEFT][0] = relativePos.x - halfrelativesize - 1;
 	m_jointNodePosition[COLUMN_RIGHT][0] = relativePos.x + halfrelativesize + 1;
 	m_jointNodePosition[COLUMN_FRONT][0] = relativePos.x;
@@ -1083,89 +1086,6 @@ void KX_Chunk::ComputeJointVertexesNormal()
 	}
 }
 
-void KX_Chunk::GetJointColumnNodes()
-{
-	KX_Terrain* terrain = m_node->GetTerrain();
-
-	const KX_ChunkNode::Point2D& nodepos = m_node->GetRelativePos();
-	const float relativesize = m_node->GetRelativeSize();
-	// La largeur du noeud parent.
-	const float halfrelativesize = relativesize / 2.0f;
-
-	float jointNodesPositions[4][4][2];
-
-	for (unsigned short nodeIndex = 0; nodeIndex < 4; ++nodeIndex) {
-		{
-			const float y = nodepos.y - halfrelativesize + (halfrelativesize / 2.0f * nodeIndex) + halfrelativesize / 4.0f;
-			{
-				const float x = nodepos.x - (halfrelativesize * 1.25);
-				jointNodesPositions[COLUMN_LEFT][nodeIndex][0] = x;
-				jointNodesPositions[COLUMN_LEFT][nodeIndex][1] = y;
-			}
-			{
-				const float x = nodepos.x + (halfrelativesize * 1.25);
-				jointNodesPositions[COLUMN_RIGHT][nodeIndex][0] = x;
-				jointNodesPositions[COLUMN_RIGHT][nodeIndex][1] = y;
-			}
-		}
-
-		// De bas en haut.
-		{
-			const float x = nodepos.x - halfrelativesize + (halfrelativesize / 2.0f * nodeIndex) + halfrelativesize / 4.0f;
-			{
-				const float y = nodepos.y - (halfrelativesize * 1.25);
-				jointNodesPositions[COLUMN_FRONT][nodeIndex][0] = x;
-				jointNodesPositions[COLUMN_FRONT][nodeIndex][1] = y;
-			}
-			{
-				const float y = nodepos.y + (halfrelativesize * 1.25);
-				jointNodesPositions[COLUMN_BACK][nodeIndex][0] = x;
-				jointNodesPositions[COLUMN_BACK][nodeIndex][1] = y;
-			}
-		}
-	}
-
-	for (unsigned short columnIndex = COLUMN_LEFT; columnIndex <= COLUMN_BACK; ++columnIndex) {
-		for (unsigned short nodeIndex = 0; nodeIndex < 4; ++nodeIndex) {
-			// Le parent du noeud de ce chunk et du futur noeud adjacent.
-			KX_ChunkNode *parent = m_parentJointNodes[columnIndex];
-
-			// Il peut ne pas avoir de noeud parent si le noeud et sur le bord du terrain.
-			if (!parent) {
-				m_jointNode[columnIndex][nodeIndex + 1] = NULL;
-				continue;
-			}
-
-			KX_ChunkNode *jointNode = m_jointNode[columnIndex][nodeIndex + 1] = parent->GetNodeRelativePosition(
-				jointNodesPositions[columnIndex][nodeIndex][0],
-				jointNodesPositions[columnIndex][nodeIndex][1]);
-
-			/* Si le noeud adjacent est plus grand que le noeud de ce chunk, 
-			 * alors ce noeud est adjacent a toute la colonne.
-			 */
-			if (jointNode && jointNode->GetRelativeSize() >= relativesize) {
-				m_jointNode[columnIndex][1] = m_jointNode[columnIndex][2] = jointNode;
-				m_jointNode[columnIndex][3] = m_jointNode[columnIndex][4] = jointNode;
-				break;
-			}
-		}
-	}
-	// les noeuds speciaux de coins.
-	{
-		m_jointNode[COLUMN_LEFT][0] = m_jointNode[COLUMN_FRONT][0] = terrain->GetNodeRelativePosition(
-			nodepos.x - (halfrelativesize * 1.25), nodepos.y - (halfrelativesize * 1.25));
-
-		m_jointNode[COLUMN_RIGHT][0] = m_jointNode[COLUMN_FRONT][5] = terrain->GetNodeRelativePosition(
-			nodepos.x + (halfrelativesize * 1.25), nodepos.y - (halfrelativesize * 1.25));
-
-		m_jointNode[COLUMN_BACK][0] = m_jointNode[COLUMN_LEFT][5] = terrain->GetNodeRelativePosition(
-			nodepos.x - (halfrelativesize * 1.25), nodepos.y + (halfrelativesize * 1.25));
-
-		m_jointNode[COLUMN_RIGHT][5] = m_jointNode[COLUMN_BACK][5] = terrain->GetNodeRelativePosition(
-			nodepos.x + (halfrelativesize * 1.25), nodepos.y + (halfrelativesize * 1.25));
-	}
-}
-
 void KX_Chunk::InvalidateJointVertexesAndIndexes()
 {
 	for (unsigned short vertexIndex = 0; vertexIndex < VERTEX_COUNT; ++vertexIndex) {
@@ -1299,12 +1219,103 @@ void KX_Chunk::ConstructJointColumnPolygones(JointColumn *column, bool reverse)
 	}
 }
 
-/** Cette fonction trouve les niveaux de jointures et demande la reconstruction du mesh
- * si besoin.
+
+/** Cette fonction trouve tous les noeuds adjacent au noeud de ce chunk.
  */
-void KX_Chunk::UpdateMesh()
+void KX_Chunk::GetJointColumnNodes()
 {
-	// Les noeuds de jointure ont changé ?
+	KX_Terrain* terrain = m_node->GetTerrain();
+
+	const KX_ChunkNode::Point2D& nodepos = m_node->GetRelativePos();
+	const float relativesize = m_node->GetRelativeSize();
+	// La moitié de la taille du noeud parent.
+	const float halfrelativesize = relativesize / 2.0f;
+
+	// Les positions des noeuds adjacents, 4 par colonne.
+	float jointNodesPositions[4][4][2];
+
+	// On calcule la position de ces 16 noeuds.
+	for (unsigned short nodeIndex = 0; nodeIndex < 4; ++nodeIndex) {
+		// De gauche a droite.
+		{
+			const float y = nodepos.y - halfrelativesize + (halfrelativesize / 2.0f * nodeIndex) + halfrelativesize / 4.0f;
+			{
+				const float x = nodepos.x - (halfrelativesize * 1.25);
+				jointNodesPositions[COLUMN_LEFT][nodeIndex][0] = x;
+				jointNodesPositions[COLUMN_LEFT][nodeIndex][1] = y;
+			}
+			{
+				const float x = nodepos.x + (halfrelativesize * 1.25);
+				jointNodesPositions[COLUMN_RIGHT][nodeIndex][0] = x;
+				jointNodesPositions[COLUMN_RIGHT][nodeIndex][1] = y;
+			}
+		}
+
+		// De bas en haut.
+		{
+			const float x = nodepos.x - halfrelativesize + (halfrelativesize / 2.0f * nodeIndex) + halfrelativesize / 4.0f;
+			{
+				const float y = nodepos.y - (halfrelativesize * 1.25);
+				jointNodesPositions[COLUMN_FRONT][nodeIndex][0] = x;
+				jointNodesPositions[COLUMN_FRONT][nodeIndex][1] = y;
+			}
+			{
+				const float y = nodepos.y + (halfrelativesize * 1.25);
+				jointNodesPositions[COLUMN_BACK][nodeIndex][0] = x;
+				jointNodesPositions[COLUMN_BACK][nodeIndex][1] = y;
+			}
+		}
+	}
+
+	for (unsigned short columnIndex = COLUMN_LEFT; columnIndex <= COLUMN_BACK; ++columnIndex) {
+		for (unsigned short nodeIndex = 0; nodeIndex < 4; ++nodeIndex) {
+			// Le parent du noeud de ce chunk et du futur noeud adjacent.
+			KX_ChunkNode *parent = m_parentJointNodes[columnIndex];
+
+			// Il peut ne pas avoir de noeud parent si le noeud et sur le bord du terrain.
+			if (!parent) {
+				m_jointNode[columnIndex][nodeIndex + 1] = NULL;
+				continue;
+			}
+
+			KX_ChunkNode *jointNode = m_jointNode[columnIndex][nodeIndex + 1] = parent->GetNodeRelativePosition(
+				jointNodesPositions[columnIndex][nodeIndex][0],
+				jointNodesPositions[columnIndex][nodeIndex][1]);
+
+			/* Si le noeud adjacent est plus grand que le noeud de ce chunk, 
+			 * alors ce noeud est adjacent a toute la colonne.
+			 */
+			if (jointNode && jointNode->GetRelativeSize() >= relativesize) {
+				m_jointNode[columnIndex][1] = m_jointNode[columnIndex][2] = jointNode;
+				m_jointNode[columnIndex][3] = m_jointNode[columnIndex][4] = jointNode;
+				break;
+			}
+		}
+	}
+	// Les noeuds speciaux de coins.
+	{
+		// Coin bas-gauche.
+		m_jointNode[COLUMN_LEFT][0] = m_jointNode[COLUMN_FRONT][0] = terrain->GetNodeRelativePosition(
+			nodepos.x - (halfrelativesize * 1.25), nodepos.y - (halfrelativesize * 1.25));
+		// Coin bas-droite.
+		m_jointNode[COLUMN_RIGHT][0] = m_jointNode[COLUMN_FRONT][5] = terrain->GetNodeRelativePosition(
+			nodepos.x + (halfrelativesize * 1.25), nodepos.y - (halfrelativesize * 1.25));
+		// Coin haut-gauche.
+		m_jointNode[COLUMN_BACK][0] = m_jointNode[COLUMN_LEFT][5] = terrain->GetNodeRelativePosition(
+			nodepos.x - (halfrelativesize * 1.25), nodepos.y + (halfrelativesize * 1.25));
+		// Coin haut-droite.
+		m_jointNode[COLUMN_RIGHT][5] = m_jointNode[COLUMN_BACK][5] = terrain->GetNodeRelativePosition(
+			nodepos.x + (halfrelativesize * 1.25), nodepos.y + (halfrelativesize * 1.25));
+	}
+}
+
+/** On trouve les noeuds de jointure et les niveaux de jointure, 
+ * De plus on renvoie si les niveaux de jointure ont changé par 
+ * rapport à la frame precédente.
+ */
+bool KX_Chunk::GetJointNodesChanged()
+{
+	// Les noeuds de jointure ont-ils changé ?
 	bool jointChanged = false;
 	for (unsigned short columnIndex = COLUMN_LEFT; columnIndex <= COLUMN_BACK; ++columnIndex) {
 		// On accede au parent du noeud adjacent.
@@ -1313,18 +1324,44 @@ void KX_Chunk::UpdateMesh()
 			continue;
 		}
 
-		// Puis on cherche ce noeud adjacent.
-		KX_ChunkNode *jointNode = parent->GetNodeRelativePosition(m_jointNodePosition[columnIndex][0], m_jointNodePosition[columnIndex][1]);
+		KX_ChunkNodeProxy *jointNodeProxy = m_jointNodeProxy[columnIndex];
+		// Si le proxy existe et n'est pas modifié on passe à la colonne suivante.
+		if (jointNodeProxy && !jointNodeProxy->IsModified()) {
+			continue;
+		}
 
-		const unsigned short jointLevel = jointNode ? (m_node->GetLevel() - jointNode->GetLevel()) : 0;
+		// Sinon on cherche le noeud adjacent.
+		KX_ChunkNode *jointNode = parent->GetNodeRelativePosition(m_jointNodePosition[columnIndex][0], m_jointNodePosition[columnIndex][1]);
+		if (!jointNode) {
+			continue;
+		}
+
+		const unsigned short jointLevel = m_node->GetLevel() - jointNode->GetLevel();
 		// Si le niveau de jointure a changé on met jointChanged a vrai et copions le niveau. 
 		if (jointLevel != m_lastHasJoint[columnIndex]) {
 			jointChanged = true;
 			m_lastHasJoint[columnIndex] = jointLevel;
 		}
+
+		// On supprime l'ancient proxy.
+		if (jointNodeProxy) {
+			jointNodeProxy->Release();
+		}
+
+		// Puis on le remplace par le nouveau si le noeud existe.
+		jointNodeProxy = jointNode->GetProxy();
+		jointNodeProxy->AddRef();
+		m_jointNodeProxy[columnIndex] = jointNodeProxy;
 	}
 
-	if (jointChanged || !m_meshObj) {
+	return jointChanged;
+}
+
+/** Demande la reconstruction du mesh si le niveaux de jointure on changés.
+ */
+void KX_Chunk::UpdateMesh()
+{
+	if (GetJointNodesChanged() || !m_meshObj) {
 		m_onConstruct = true;
 		meshRecreation++;
 

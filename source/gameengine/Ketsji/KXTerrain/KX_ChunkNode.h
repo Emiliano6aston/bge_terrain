@@ -31,6 +31,7 @@ class KX_Terrain;
 class KX_Camera;
 class CListValue;
 class KX_Chunk;
+class KX_ChunkNodeProxy;
 
 /** Cette classe ne fait que gérer la visibilité des chunks, leur création et destruction.
  * On ce base sur un QuadTree pour la recherche et la création mais les chunks qui sont comme des noeuds
@@ -84,6 +85,10 @@ private:
 	/// Le noeud est il visible ?
 	short m_culledState;
 
+	/** Le proxy de ce noeud utilisé par les chunk pour savoir si ce
+	 * noeud a était modifié (sudivisé ou detruit).
+	 */
+	KX_ChunkNodeProxy *m_proxy;
 	/// Tableau de 4 sous noeuds.
 	KX_ChunkNode **m_nodeList;
 	/// Le chunk ou objet avec mesh et physique.
@@ -166,6 +171,11 @@ public:
 	{
 		return m_culledState;
 	}
+
+	inline KX_ChunkNodeProxy *GetProxy() const
+	{
+		return m_proxy;
+	}
 	inline KX_Chunk *GetChunk() const
 	{
 		return m_chunk; 
@@ -196,5 +206,46 @@ public:
 
 bool operator<(const KX_ChunkNode::Point2D& pos1, const KX_ChunkNode::Point2D& pos2);
 std::ostream &operator<< (std::ostream &stream, const KX_ChunkNode::Point2D &pos);
+
+/** Proxy utilisé par les chunks pour savoir si un noeud adjacent et toujours
+ * valide ou si il faut le rechercher.
+ */
+class KX_ChunkNodeProxy
+{
+private:
+	unsigned int m_refCount;
+	bool m_modified;
+	KX_ChunkNode *m_node;
+
+public:
+	KX_ChunkNodeProxy(KX_ChunkNode *node);
+	~KX_ChunkNodeProxy();
+
+	inline void AddRef()
+	{
+		++m_refCount;
+	}
+	inline void Release()
+	{
+		--m_refCount;
+		if (m_refCount == 0) {
+			delete this;
+		}
+	}
+
+	inline bool IsModified() const
+	{
+		return m_modified;
+	}
+	inline void SetModified(bool modified)
+	{
+		m_modified = modified;
+	}
+
+	inline KX_ChunkNode *GetNode() const
+	{
+		return m_node;
+	}
+};
 
 #endif // __KX_CHUNK_NODE_H__

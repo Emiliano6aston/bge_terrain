@@ -34,6 +34,7 @@
 #define POLY_COUNT_INTERN (VERTEX_COUNT_INTERN - 1)
 
 class KX_ChunkNode;
+class KX_ChunkNodeProxy;
 class RAS_MeshObject;
 class RAS_MaterialBucket;
 class RAS_IRasterizer;
@@ -119,6 +120,9 @@ private:
 	 */
 	float m_jointNodePosition[4][2];
 
+	/// Les proxys de 4 noeuds adjacents.
+	KX_ChunkNodeProxy *m_jointNodeProxy[4];
+
 	/** Indice utilisé lors de la construction des vertices pour avoir un indice
 	 * unique de vertice.
 	 */
@@ -131,7 +135,6 @@ private:
 
 	void ConstructVertexes();
 	void ComputeJointVertexesNormal();
-	void GetJointColumnNodes();
 	void ComputeColumnJointVertexNormal(COLUMN_TYPE columnType, bool reverse);
 	Vertex *GetVertexByChunkRelativePosition(unsigned short x, unsigned short y) const;
 	Vertex *GetVertexByTerrainRelativePosition(int x, int y) const;
@@ -148,6 +151,10 @@ private:
 	void AddMeshPolygonVertexes(Vertex *v1, Vertex *v2, Vertex *v3, bool reverse);
 
 	void SetNormal(Vertex *vertexCenter) const;
+
+	/// \section Gestion des noeuds de jointures.
+	void GetJointColumnNodes();
+	bool GetJointNodesChanged();
 
 public:
 	KX_Chunk(KX_ChunkNode *node, RAS_MaterialBucket *m_bucket);
