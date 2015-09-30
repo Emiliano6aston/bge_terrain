@@ -104,6 +104,9 @@ KX_ChunkNode::KX_ChunkNode(KX_ChunkNode *parentNode,
 	m_box[5] = MT_Point3(max[0], min[1], max[2]);
 	m_box[6] = MT_Point3(max[0], max[1], min[2]);
 	m_box[7] = max;
+
+	// Initialisation du proxy, on ne fait pas de AddRef car m_refCount est a 1 par defaut.
+	m_proxy = new KX_ChunkNodeProxy(this);
 }
 
 KX_ChunkNode::~KX_ChunkNode()
@@ -111,6 +114,10 @@ KX_ChunkNode::~KX_ChunkNode()
 	DestructNodes();
 	DestructChunk();
 	--m_activeNode;
+
+	// Le noeud est modifié, car c'est une desubdivision du noeud parent.
+	m_proxy->SetModified(true);
+	m_proxy->Release();
 }
 
 void KX_ChunkNode::ConstructNodes()
@@ -118,6 +125,9 @@ void KX_ChunkNode::ConstructNodes()
 	if (!m_nodeList) {
 		m_onConstructSubNodes = 2;
 		m_nodeList = m_terrain->NewNodeList(this, m_relativePos.x, m_relativePos.y, m_level);
+
+		// Subdivision : le noeud est modifié.
+		m_proxy->SetModified(true);
 	}
 }
 
@@ -260,6 +270,9 @@ short KX_ChunkNode::IsCameraVisible(KX_Camera *cam)
 
 void KX_ChunkNode::CalculateVisible(KX_Camera *culledcam, CListValue *objects)
 {
+	// Renitialisation du proxy, on annule l'état modifié (si vrai).
+	m_proxy->SetModified(false);
+
 	/* On reconstruit la boite si elle est modifiée par une création
 	 * de chunk à la dernière mise à jour.
 	 */
@@ -594,5 +607,16 @@ std::ostream &operator<< (std::ostream &stream, const KX_ChunkNode::Point2D &pos
 {
 	stream << "(x : " << pos.x << ", y : " << pos.y << ")";
 	return stream;
+}
+
+KX_ChunkNodeProxy::KX_ChunkNodeProxy(KX_ChunkNode *node)
+	:m_refCount(1),
+	m_modified(false),
+	m_node(node)
+{
+}
+
+KX_ChunkNodeProxy::~KX_ChunkNodeProxy()
+{
 }
 
