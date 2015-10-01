@@ -1148,6 +1148,11 @@ int KX_Scene::NewRemoveObject(class CValue* gameobj)
 		m_active_camera = NULL;
 	}
 
+	if (newobj == m_terrain) {
+		ret = newobj->Release();
+		m_terrain = NULL;
+	}
+
 	/* currently does nothing, keep in case we need to Unregister something */
 #if 0
 	if (m_sceneConverter)
