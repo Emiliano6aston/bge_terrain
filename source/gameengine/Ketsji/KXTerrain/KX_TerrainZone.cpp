@@ -78,6 +78,13 @@ KX_TerrainZoneMesh::KX_TerrainZoneMesh(KX_Terrain *terrain, TerrainZone *zoneInf
 		// On genère l'image avec une precision de 32 bits.
 		IMB_float_from_rect(m_buf);
 	}
+
+	const float w = powf(m_zoneInfo->lacunarity, -m_zoneInfo->H);
+
+	m_fractalMaxHeight = 1.0f;
+	for (unsigned short i = 0; i < m_zoneInfo->octaves; ++i) {
+		m_fractalMaxHeight *= (powf(w, i) + 1.0f);
+	}
 }
 
 KX_TerrainZoneMesh::~KX_TerrainZoneMesh()
@@ -269,7 +276,7 @@ float KX_TerrainZoneMesh::GetNoiseHeight(const float x, const float y) const
 										  m_zoneInfo->musgraveoffset, m_zoneInfo->noisebasis);
 				break;
 		}
-		height *= m_zoneInfo->noiseheight;
+		height *= (m_zoneInfo->noiseheight / m_fractalMaxHeight);
 	}
 
 	return height;
