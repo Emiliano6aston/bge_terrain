@@ -88,6 +88,8 @@ private:
 	TerrainZone *m_zoneInfo;
 	/// The box used to optimize.
 	float m_box[4];
+	/// La hauteur maximale de la fractale.
+	float m_fractalMaxHeight;
 	/// The mesh.
 	DerivedMesh *m_derivedMesh;
 	/// L'image utilisé pour les hauteur (optionelle)
