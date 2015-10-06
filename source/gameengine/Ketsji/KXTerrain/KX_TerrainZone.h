@@ -101,11 +101,6 @@ public:
 					   Mesh *mesh);
 	~KX_TerrainZoneMesh();
 
-	/// Return the maximum possible height.
-	float GetMaxHeight(float origmaxheight) const;
-	/// Return the minimum possible height.
-	float GetMinHeight(float origminheight) const;
-
 	/** Compute an height clamped.
 	 * \param orgheight The previous height.
 	 * \param interp The interpolation of the mesh on this point.
