@@ -63,8 +63,6 @@ KX_Terrain::KX_Terrain(void *sgReplicationInfo,
 	m_objectMaxDistance(objectMaxDistance),
 	m_chunkSize(chunkSize),
 	m_marginFactor(marginFactor),
-	m_maxHeight(0.0f),
-	m_minHeight(0.0f),
 	m_debugMode(debugMode),
 	m_debugTimeFrame(debugTimeFrame),
 	m_construct(false),
@@ -100,8 +98,8 @@ void KX_Terrain::Construct()
 {
 	DEBUG("Construct terrain");
 
-	m_nodeTree = new KX_ChunkNode(NULL, 0, 0, m_width, 1, this);
 	m_chunkRootCache->Construct();
+	m_nodeTree = new KX_ChunkNode(NULL, 0, 0, m_width, 1, this);
 	m_construct = true;
 }
 
@@ -289,11 +287,4 @@ void KX_Terrain::ScheduleEuthanasyChunks()
 void KX_Terrain::AddTerrainZoneMesh(KX_TerrainZoneMesh *zoneMesh)
 {
 	m_zoneMeshList.push_back(zoneMesh);
-
-	m_maxHeight = zoneMesh->GetMaxHeight(m_maxHeight);
-	m_minHeight = zoneMesh->GetMinHeight(m_minHeight);
-
-	if (m_maxHeight < m_minHeight) {
-		std::cout << "Warning : min height greater than max height !" << std::endl;
-	}
 }

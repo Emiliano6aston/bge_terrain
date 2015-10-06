@@ -79,10 +79,6 @@ private:
 	float m_maxBoxHeight;
 	/// La hauteur minimal de la boite.
 	float m_minBoxHeight;
-	float m_minBoxHeightOptimized;
-	float m_maxBoxHeightOptimized;
-	/// Doit ont recreer la boite ?
-	bool m_requestCreateBox;
 	bool m_onConstruct;
 	short m_onConstructSubNodes;
 	/// Le noeud est il visible ?
@@ -123,9 +119,6 @@ public:
 	/// Draw debug info for culling box
 	void DrawDebugInfo(short mode);
 
-	/// On remet à 0 les variables m_maxBoxHeight et m_minBoxHeight.
-	void ResetFrustumBoxHeights();
-
 	/** On verifie que les arguments max et min ne sont pas plus grand/petit 
 	 * que m_maxBoxHeight et m_minBoxHeight.
 	 */
@@ -133,6 +126,11 @@ public:
 
 	/// Reconstruction de la boite et du rayon.
 	void ReConstructFrustumBoxAndRadius();
+
+	/** Construction d'une boite de culling en fonction d'un echantillonnage
+	 * de vertices.
+	 */
+	void GetFrustumBoxHeightsSampling();
 
 	KX_ChunkNode *GetNodeRelativePosition(float x, float y);
 

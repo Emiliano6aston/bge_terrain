@@ -42,6 +42,7 @@
 #include "GPU_material.h"
 
 #include "BLI_utildefines.h"
+#include "BLI_math_base.h"
 
 #define DEBUG(msg) std::cout << msg << std::endl;
 
@@ -56,7 +57,7 @@ KX_ChunkNode::KX_ChunkNode(KX_ChunkNode *parentNode,
 	m_relativePos(Point2D(x, y)),
 	m_relativeSize(relativesize),
 	m_level(level),
-	m_boxModified(false),
+	m_boxModified(true),
 	m_onConstruct(true),
 	m_onConstructSubNodes(0),
 	m_culledState(KX_Camera::INSIDE),
@@ -66,16 +67,9 @@ KX_ChunkNode::KX_ChunkNode(KX_ChunkNode *parentNode,
 {
 	++m_activeNode;
 
-	// Met a zero les hauteurs de la boite de culling.
-	ResetFrustumBoxHeights();
-
 	// la taille et sa moitié du chunk
 	const float size = m_terrain->GetChunkSize();
 	const float halfwidth = size * relativesize / 2.0f;
-
-	// la taille maximale et minimale en hauteur de la boite de frustum culling
-	const float defaultMaxHeight = m_terrain->GetMaxHeight();
-	const float defaultMinHeight = m_terrain->GetMinHeight();
 
 	// le rayon du chunk sqrt(x² + y²)
 	m_radius = MT_Point3(halfwidth, halfwidth, 0.0f).length();
@@ -89,21 +83,22 @@ KX_ChunkNode::KX_ChunkNode(KX_ChunkNode *parentNode,
 	const float realY = y * size;
 	m_realPos = MT_Point2(realX, realY);
 
-	/* creation d'une boite temporaire maximale pour la creation
-	 * recursive des noeuds. Celle ci sera redimensionner plus tard pour
-	 * une meilleur optimization
-	 */
-	MT_Point3 min(realX - halfwidth, realY - halfwidth, defaultMinHeight);
-	MT_Point3 max(realX + halfwidth, realY + halfwidth, defaultMaxHeight);
+	// Creation d'une boite aplatit.
+	m_box[0] = MT_Point3(realX - halfwidth, realY - halfwidth, 0.0f);
+	m_box[1] = MT_Point3(realX - halfwidth, realY - halfwidth, 0.0f);
+	m_box[2] = MT_Point3(realX - halfwidth, realY + halfwidth, 0.0f);
+	m_box[3] = MT_Point3(realX - halfwidth, realY + halfwidth, 0.0f);
+	m_box[4] = MT_Point3(realX + halfwidth, realY - halfwidth, 0.0f);
+	m_box[5] = MT_Point3(realX + halfwidth, realY - halfwidth, 0.0f);
+	m_box[6] = MT_Point3(realX + halfwidth, realY + halfwidth, 0.0f);
+	m_box[7] = MT_Point3(realX + halfwidth, realY + halfwidth, 0.0f);
 
-	m_box[0] = min;
-	m_box[1] = MT_Point3(min[0], min[1], max[2]);
-	m_box[2] = MT_Point3(min[0], max[1], min[2]);
-	m_box[3] = MT_Point3(min[0], max[1], max[2]);
-	m_box[4] = MT_Point3(max[0], min[1], min[2]);
-	m_box[5] = MT_Point3(max[0], min[1], max[2]);
-	m_box[6] = MT_Point3(max[0], max[1], min[2]);
-	m_box[7] = max;
+	/* On calcule une boite de visibilité temporaire en procédant
+	 * a un echantillonnage de 5 vertice (coins + centre).
+	 */
+	GetFrustumBoxHeightsSampling();
+	// Puis on étire notre boite avec une certaine marge.
+	ReConstructFrustumBoxAndRadius();
 }
 
 KX_ChunkNode::~KX_ChunkNode()
@@ -243,7 +238,7 @@ void KX_ChunkNode::MarkCulled(KX_Camera* culledcam)
 
 MT_Point3 KX_ChunkNode::GetCenter() const
 {
-	return MT_Point3(m_realPos.x(), m_realPos.y(), (m_maxBoxHeightOptimized + m_minBoxHeightOptimized) / 2.0f);
+	return MT_Point3(m_realPos.x(), m_realPos.y(), (m_maxBoxHeight + m_minBoxHeight) / 2.0f);
 }
 
 short KX_ChunkNode::IsCameraVisible(KX_Camera *cam)
@@ -321,8 +316,6 @@ void KX_ChunkNode::CalculateVisible(KX_Camera *culledcam, CListValue *objects)
 		DisableChunkVisibility();
 	}
 
-	// Reinitialise les hauteurs de la boite de frustum culling.
-	ResetFrustumBoxHeights();
 	/* Le chunk n'est plus considére "en construction" et peut maintenant utiliser 
 	 * une sphere pour le frustum culling.
 	 */
@@ -435,44 +428,31 @@ void KX_ChunkNode::DrawDebugInfo(short mode)
 	}
 }
 
-void KX_ChunkNode::ResetFrustumBoxHeights()
+void KX_ChunkNode::ReConstructFrustumBoxAndRadius()
 {
-	m_maxBoxHeight = 0.0f;
-	m_minBoxHeight = 0.0f;
-	m_maxBoxHeightOptimized = 0.0f;
-	m_minBoxHeightOptimized = 0.0f;
-	m_requestCreateBox = true;
+	if (m_boxModified) {
+		m_boxModified = false;
+
+		const float factor = 1.0f - ((float)m_level - 1) / (m_terrain->GetMaxLevel() - 1);
+		const float margin = (m_maxBoxHeight - m_minBoxHeight) * factor;
+
+		// Redimensionnement de la boite.
+		for (unsigned int i = 0; i < 8; i += 2) {
+			m_box[i].z() = m_minBoxHeight - margin;
+			m_box[i + 1].z() = m_maxBoxHeight + margin;
+		}
+	}
 }
 
 void KX_ChunkNode::ExtendFrustumBoxHeights(float max, float min)
 {
-	const float invertlevel = 1.0f - ((float)m_level - 1) / (m_terrain->GetMaxLevel() - 1);
-
-	const float defaultMaxHeight = m_terrain->GetMaxHeight();
-	const float defaultMinHeight = m_terrain->GetMinHeight();
-
-	const float correctmax = max + (defaultMaxHeight - max) * invertlevel;
-	const float correctmin = min + (defaultMinHeight - min) * invertlevel;
-
-	if (m_requestCreateBox) {
-		m_maxBoxHeight = correctmax;
-		m_minBoxHeight = correctmin;
-		m_maxBoxHeightOptimized = max;
-		m_minBoxHeightOptimized = min;
+	if (max > m_maxBoxHeight) {
+		m_maxBoxHeight = max;
 		m_boxModified = true;
-		m_requestCreateBox = false;
 	}
-	else {
-		if (correctmax > m_maxBoxHeight) {
-			m_maxBoxHeight = correctmax;
-			m_maxBoxHeightOptimized = max;
-			m_boxModified = true;
-		}
-		if (correctmin < m_minBoxHeight) {
-			m_minBoxHeight = correctmin;
-			m_minBoxHeightOptimized = min;
-			m_boxModified = true;
-		}
+	else if (min < m_minBoxHeight) {
+		m_minBoxHeight = min;
+		m_boxModified = true;
 	}
 
 	if (m_parentNode) {
@@ -480,20 +460,43 @@ void KX_ChunkNode::ExtendFrustumBoxHeights(float max, float min)
 	}
 }
 
-void KX_ChunkNode::ReConstructFrustumBoxAndRadius()
+void KX_ChunkNode::GetFrustumBoxHeightsSampling()
 {
-	if (m_boxModified) {
-		m_boxModified = false;
+	static const short relativeVertexesPos[5][2] = {
+		{-POLY_COUNT / 2, -POLY_COUNT / 2}, // bas-gauche
+		{ POLY_COUNT / 2, -POLY_COUNT / 2}, // bas-droite
+		{-POLY_COUNT / 2,  POLY_COUNT / 2}, // haut-gauche
+		{ POLY_COUNT / 2,  POLY_COUNT / 2}, // haut-droite
+		{ 0,               0} // centre
+	};
 
-		const float margin = 0.0f; //(m_maxBoxHeight - m_minBoxHeight);
-		// Redimensionnement de la boite.
-		for (unsigned int i = 0; i < 7; i += 2)
-			m_box[i].z() = m_minBoxHeight - margin;
-		for (unsigned int i = 1; i < 8; i += 2)
-			m_box[i].z() = m_maxBoxHeight + margin;
+	// la motie de la largeur du chunk
+	const unsigned short halfrelativesize = m_relativeSize / 2;
+
+	/* Le facteur pour passer de la position d'un noeud à celle d'un vertice absolue,
+	 * 2 = la taille minimun d'un noeud.
+	 */
+	const unsigned short scale = POLY_COUNT / 2;
+
+	for (unsigned short i = 0; i < 5; ++i) {
+		// le bas du chunk par rapport au terrain * 2 pour les vertices
+		const int x = m_relativePos.x * scale + relativeVertexesPos[i][0] * halfrelativesize;
+		const int y = m_relativePos.y * scale + relativeVertexesPos[i][1] * halfrelativesize;
+
+		VertexZoneInfo *info = m_terrain->GetVertexInfo(x, y);
+		const float height = info->height;
+
+		if (i == 0) {
+			m_maxBoxHeight = m_minBoxHeight = height;
+		}
+		else {
+			m_minBoxHeight = min_ff(m_minBoxHeight, height);
+			m_maxBoxHeight = max_ff(m_maxBoxHeight, height);
+		}
+
+		info->Release();
 	}
 }
-
 
 KX_ChunkNode *KX_ChunkNode::GetNodeRelativePosition(float x, float y)
 {

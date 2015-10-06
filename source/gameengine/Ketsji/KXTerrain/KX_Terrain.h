@@ -81,12 +81,6 @@ private:
 	/// Le facteur de la marge du rayon d'un noeud.
 	float m_marginFactor;
 
-	/// La hauteur maximale theorique du mesh d'un chunk.
-	float m_maxHeight;
-
-	/// La hauteur minimal theorique du mesh d'un chunk.
-	float m_minHeight;
-
 	/// Le mode de déboguage des noeuds.
 	short m_debugMode;
 	/// Le nombre de frames entre chaque affichages de temps.
@@ -189,16 +183,6 @@ public:
 	inline float GetMarginFactor() const
 	{
 		return m_marginFactor;
-	}
-	/// La hauteur maximale
-	inline float GetMaxHeight() const
-	{
-		return m_maxHeight;
-	}
-	/// La hauteur minimale
-	inline float GetMinHeight() const
-	{
-		return m_minHeight;
 	}
 	/// Le materiaux blender.
 	inline Material *GetBlenderMaterial() const

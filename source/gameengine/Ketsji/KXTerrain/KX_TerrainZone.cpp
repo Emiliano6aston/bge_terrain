@@ -95,64 +95,6 @@ KX_TerrainZoneMesh::~KX_TerrainZoneMesh()
 		BKE_image_release_ibuf(m_zoneInfo->image, m_buf, NULL);
 }
 
-float KX_TerrainZoneMesh::GetMaxHeight(float origmaxheight) const
-{
-	if (!(m_zoneInfo->flag & TERRAIN_ZONE_ACTIVE)) {
-		return origmaxheight;
-	}
-
-	float maxheight = 0.0;
-
-	// clampage
-	if (m_zoneInfo->flag & TERRAIN_ZONE_CLAMP) {
-		maxheight += max_ff(m_zoneInfo->clampstart, m_zoneInfo->clampend);
-	}
-
-	// decalge a l'origine
-	if (m_zoneInfo->offset > 0.0) {
-		maxheight += m_zoneInfo->offset;
-	}
-
-	// bruit de perlin
-	if (m_zoneInfo->flag & TERRAIN_ZONE_PERLIN_NOISE) {
-		maxheight += max_ff(m_zoneInfo->noiseheight, 0.0f);
-	}
-	if (m_zoneInfo->flag & TERRAIN_ZONE_IMAGE) {
-		maxheight += max_ff(m_zoneInfo->imageheight, 0.0f);
-	}
-
-	return max_ff(origmaxheight, maxheight);
-}
-
-float KX_TerrainZoneMesh::GetMinHeight(float origminheight) const
-{
-	if (!(m_zoneInfo->flag & TERRAIN_ZONE_ACTIVE)) {
-		return origminheight;
-	}
-
-	float minheight = 0.0;
-
-	// clampage
-	if (m_zoneInfo->flag & TERRAIN_ZONE_CLAMP) {
-		minheight += min_ff(m_zoneInfo->clampstart, m_zoneInfo->clampend);
-	}
-
-	// decalge a l'origine
-	if (m_zoneInfo->offset < 0.0) {
-		minheight += m_zoneInfo->offset;
-	}
-
-	// bruit de perlin
-	if (m_zoneInfo->flag & TERRAIN_ZONE_PERLIN_NOISE) {
-		minheight += min_ff(m_zoneInfo->noiseheight, 0.0f);
-	}
-	if (m_zoneInfo->flag & TERRAIN_ZONE_IMAGE) {
-		minheight += min_ff(m_zoneInfo->imageheight, 0.0f);
-	}
-
-	return min_ff(origminheight, minheight);
-}
-
 float KX_TerrainZoneMesh::GetClampedHeight(const float orgheight, const float x, const float y, const float *v1, const float *v2, const float *v3) const
 {
 	float height = 0.0f;
