@@ -181,7 +181,7 @@ unsigned short KX_Terrain::GetSubdivision(float distance, bool iscamera) const
 	const float interval = maxdistance / m_maxChunkLevel;
 	for (unsigned short i = 0; i <= m_maxChunkLevel; ++i) {
 		const float leveldistance = i * interval;
-		if (leveldistance <= distance && distance < (leveldistance + interval)) {
+		if (distance < (interval * (i + 1))) {
 			return m_maxChunkLevel - i;
 		}
 	}

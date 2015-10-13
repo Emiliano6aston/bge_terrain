@@ -196,7 +196,6 @@ bool KX_ChunkNode::NeedCreateNodes(CListValue *objects, KX_Camera *culledcam) co
 		const float objradius = object->GetSGNode()->Radius();
 		float distance = GetCenter().distance(object->NodeGetWorldPosition()) - objradius;
 		distance -= m_radius + (iscamera ? m_radiusMargin * m_terrain->GetMarginFactor() : m_radius);
-		CLAMP_MIN(distance, 0.0f);
 
 		unsigned short newlevel = m_terrain->GetSubdivision(distance, iscamera);
 
