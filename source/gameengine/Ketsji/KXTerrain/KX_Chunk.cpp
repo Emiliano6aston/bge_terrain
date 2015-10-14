@@ -202,6 +202,10 @@ struct KX_Chunk::Vertex
 
 		absolutePos[0] = absx;
 		absolutePos[1] = absy;
+
+		normal[0] = 0.0f;
+		normal[1] = 0.0f;
+		normal[2] = -1.0f;
 	}
 
 	~Vertex()
@@ -209,70 +213,9 @@ struct KX_Chunk::Vertex
 		vertexInfo->Release();
 	}
 
-	void Invalidate()
+	void SetValid(bool v)
 	{
-		valid = false;
-	}
-
-	void Validate()
-	{
-		valid = true;
-	}
-};
-
-struct KX_Chunk::JointColumn
-{
-	/// Tous les vertices à l'exterieur du chunk.
-	Vertex *m_columnExterne[VERTEX_COUNT];
-	/// Tous les vertices une colonne avant l'exterieur.
-	Vertex *m_columnInterne[VERTEX_COUNT_INTERN];
-	/// Si vrai alors on supprime les vertices aux extrémité.
-	bool m_freeEndVertex;
-
-	JointColumn(bool freeEndVertex)
-		:m_freeEndVertex(freeEndVertex)
-	{
-	}
-
-	~JointColumn()
-	{
-		/** Si m_freeEndVertex et faux on itère que de 1 à POLY_COUNT
-		 * sinon de 0 a POLY_COUNT + 1.
-		 */
-		for (unsigned short i = (m_freeEndVertex ? 0 : 1);
-			 i < (POLY_COUNT + (m_freeEndVertex ? 1 : 0)); ++i) 
-		{
-			delete m_columnExterne[i];
-		}
-	}
-
-	void SetExternVertex(unsigned short index, Vertex *vertex)
-	{
-		m_columnExterne[index] = vertex;
-	}
-	void SetInternVertex(unsigned short index, Vertex *vertex)
-	{ 
-		m_columnInterne[index] = vertex;
-	}
-
-	Vertex *GetInternVertex(unsigned short index)
-	{
-		return m_columnInterne[index];
-	}
-	Vertex *GetExternVertex(unsigned short index)
-	{
-		return m_columnExterne[index];
-	}
-
-	/// Cherche le vertice suivant valide.
-	Vertex *GetNextValidExternVertex(unsigned short index)
-	{
-		for (++index; index < VERTEX_COUNT; ++index) {
-			Vertex *vertex = m_columnExterne[index];
-			if (vertex->valid)
-				return vertex;
-		}
-		return NULL;
+		valid = v;
 	}
 };
 
@@ -325,16 +268,11 @@ KX_Chunk::~KX_Chunk()
 	DestructMesh();
 
 	if (m_hasVertexes) {
-		for (unsigned short i = 0; i < VERTEX_COUNT_INTERN; ++i) {
-			for (unsigned short j = 0; j < VERTEX_COUNT_INTERN; ++j) {
-				delete m_center[i][j];
+		for (unsigned short i = 0; i < VERTEX_COUNT; ++i) {
+			for (unsigned short j = 0; j < VERTEX_COUNT; ++j) {
+				delete m_vertexes[i][j];
 			}
 		}
-
-		delete m_columns[0];
-		delete m_columns[1];
-		delete m_columns[2];
-		delete m_columns[3];
 	}
 
 	if (m_physicsController)
@@ -461,27 +399,12 @@ KX_Chunk::Vertex *KX_Chunk::NewVertex(unsigned short relx, unsigned short rely)
  * stockés dans un tableau à deux dimension pour les x et y.
  * C'est très utile pour le calcule des normales.
  */
-KX_Chunk::Vertex *KX_Chunk::GetVertexByChunkRelativePosition(unsigned short x, unsigned short y) const
+KX_Chunk::Vertex *KX_Chunk::GetVertexByChunkRelativePosition(short x, short y) const
 {
-	Vertex *vertex = NULL;
-
-	// Pour un vertice interne.
-	if ((0 < x && x < POLY_COUNT) &&
-		(0 < y && y < POLY_COUNT))
-	{
-		vertex = m_center[x - 1][y - 1];
+	if (x < 0 || y < 0 || x > POLY_COUNT || y > POLY_COUNT) {
+		return NULL;
 	}
-	// Sinon pour les colonnes
-	else if (x == 0)
-		vertex = m_columns[COLUMN_LEFT]->GetExternVertex(y);
-	else if (x == POLY_COUNT)
-		vertex = m_columns[COLUMN_RIGHT]->GetExternVertex(y);
-	else if (y == 0)
-		vertex = m_columns[COLUMN_FRONT]->GetExternVertex(x);
-	else if (y == POLY_COUNT)
-		vertex = m_columns[COLUMN_BACK]->GetExternVertex(x);
-
-	return vertex;
+	return m_vertexes[x][y];
 }
 
 KX_Chunk::Vertex *KX_Chunk::GetVertexByTerrainRelativePosition(int x, int y) const
@@ -658,55 +581,28 @@ void KX_Chunk::ConstructVertexes()
 
 	m_requestCreateBox = true;
 
-	for (unsigned short i = 0; i < 4; ++i)
-		m_columns[i] = new JointColumn((i < 2));
-
-	// on construit tous les vertices et on stocke leur numero dans des colonnes
-	for(unsigned short columnIndex = 1; columnIndex < POLY_COUNT; ++columnIndex) {
-		for(unsigned short vertexIndex = 1; vertexIndex < POLY_COUNT ; ++vertexIndex) {
+	/** On construit tous les vertices et on stocke leur numero dans des colonnes et 
+	 * dans le tableau de tous les vertices
+	 */
+	for(unsigned short columnIndex = 0; columnIndex < VERTEX_COUNT; ++columnIndex) {
+		for(unsigned short vertexIndex = 0; vertexIndex < VERTEX_COUNT ; ++vertexIndex) {
 			// on créer un vertice temporaire, ces donné seront reutilisé lors de la création des polygones
 			Vertex *vertex = NewVertex(columnIndex, vertexIndex);
-			m_center[columnIndex - 1][vertexIndex - 1] = vertex;
+			m_vertexes[columnIndex][vertexIndex] = vertex;
 
-			if (columnIndex == 1)
-				m_columns[COLUMN_LEFT]->SetInternVertex(vertexIndex - 1, vertex);
-			else if (columnIndex == VERTEX_COUNT_INTERN)
-				m_columns[COLUMN_RIGHT]->SetInternVertex(vertexIndex - 1, vertex);
+			if (columnIndex == 0) {
+				m_columns[COLUMN_LEFT][vertexIndex] = vertex;
+			}
+			else if (columnIndex == POLY_COUNT) {
+				m_columns[COLUMN_RIGHT][vertexIndex] = vertex;
+			}
 
-			if (vertexIndex == 1)
-				m_columns[COLUMN_FRONT]->SetInternVertex(columnIndex - 1, vertex);
-			else if (vertexIndex == VERTEX_COUNT_INTERN)
-				m_columns[COLUMN_BACK]->SetInternVertex(columnIndex - 1, vertex);
-		}
-	}
-
-	// construction des vertices externes de gauche et de droite
-	for (unsigned short vertexIndex = 0; vertexIndex < VERTEX_COUNT; ++vertexIndex) {
-		{ // colonne de gauche externe
-			Vertex* vertex = NewVertex(0, vertexIndex);
-			m_columns[COLUMN_LEFT]->SetExternVertex(vertexIndex, vertex);
-
-			if (vertexIndex == 0)
-				m_columns[COLUMN_FRONT]->SetExternVertex(0, vertex);
-			else if (vertexIndex == POLY_COUNT)
-				m_columns[COLUMN_BACK]->SetExternVertex(0, vertex);
-		}
-		{ // colonne de droite externe
-			Vertex *vertex = NewVertex(POLY_COUNT, vertexIndex);
-			m_columns[COLUMN_RIGHT]->SetExternVertex(vertexIndex, vertex);
-
-			if (vertexIndex == 0)
-				m_columns[COLUMN_FRONT]->SetExternVertex(POLY_COUNT, vertex);
-			else if (vertexIndex == POLY_COUNT)
-				m_columns[COLUMN_BACK]->SetExternVertex(POLY_COUNT, vertex);
-		}
-	}
-
-	for (unsigned short vertexIndex = 1; vertexIndex < POLY_COUNT; ++vertexIndex) {
-		for (unsigned short columnIndex = COLUMN_FRONT; columnIndex <= COLUMN_BACK; ++columnIndex) {
-			Vertex *vertex = NewVertex(vertexIndex, (columnIndex == COLUMN_FRONT) ? 0 : POLY_COUNT);
-			// le premier vertice de la colonne est déjà partagé donc on remplie ceux après
-			m_columns[columnIndex]->SetExternVertex(vertexIndex, vertex);
+			if (vertexIndex == 0) {
+				m_columns[COLUMN_BACK][columnIndex] = vertex;
+			}
+			else if (vertexIndex == POLY_COUNT) {
+				m_columns[COLUMN_FRONT][columnIndex] = vertex;
+			}
 		}
 	}
 
@@ -714,9 +610,10 @@ void KX_Chunk::ConstructVertexes()
 	vertexCreatingTime += endtime - starttime;
 	starttime = KX_GetActiveEngine()->GetRealTime();
 
-	for (unsigned short columnIndex = 1; columnIndex < POLY_COUNT; ++columnIndex) {
-		for (unsigned short vertexIndex = 1; vertexIndex < POLY_COUNT; ++vertexIndex)
-			SetNormal(m_center[columnIndex - 1][vertexIndex - 1]);
+	for (unsigned short columnIndex = 1; columnIndex < VERTEX_COUNT_INTERN; ++columnIndex) {
+		for (unsigned short vertexIndex = 1; vertexIndex < VERTEX_COUNT_INTERN; ++vertexIndex) {
+			SetNormal(m_vertexes[columnIndex][vertexIndex]);
+		}
 	}
 
 	endtime = KX_GetActiveEngine()->GetRealTime();
@@ -732,6 +629,9 @@ void KX_Chunk::GetCoorespondingVertexesFromChunk(KX_ChunkNode *jointNode, Vertex
 	// La position du vertice par rapport au terrain
 	KX_ChunkNode::Point2D terrainVertexPos = GetTerrainRelativeVertexPosition(origVertex->relativePos[0], origVertex->relativePos[1]);
 
+	if (GetVertexByTerrainRelativePosition(terrainVertexPos.x, terrainVertexPos.y) != origVertex) {
+		DEBUG("can't refind the same vertex by terrain position");
+	}
 	KX_Chunk *jointChunk = jointNode->GetChunk();
 	if (!jointChunk) {
 		return;
@@ -756,9 +656,12 @@ void KX_Chunk::GetCoorespondingVertexesFromChunk(KX_ChunkNode *jointNode, Vertex
 	if (externVertex->vertexInfo->pos[0] != origVertex->vertexInfo->pos[0] || 
 		externVertex->vertexInfo->pos[1] != origVertex->vertexInfo->pos[1])
 	{
-		if (debugErrors) {
-			DEBUG("Error : wrong extern coresponding vertex");
-		}
+// 		if (debugErrors) {
+			DEBUG("Error : wrong extern coresponding vertex, " << 
+				origVertex->vertexInfo->pos[0] << ", " << origVertex->vertexInfo->pos[1] << ", " <<
+				externVertex->vertexInfo->pos[0] << ", " << externVertex->vertexInfo->pos[1]
+			);
+// 		}
 		return;
 	}
 
@@ -823,9 +726,11 @@ void KX_Chunk::ComputeColumnJointVertexNormal(COLUMN_TYPE columnType, bool rever
 		 vertexIndex < ((columnType == COLUMN_LEFT || columnType == COLUMN_RIGHT) ? VERTEX_COUNT : POLY_COUNT);
 		 ++vertexIndex)
 	{
-		Vertex *vertex = m_columns[columnType]->GetExternVertex(vertexIndex);
-		if (!vertex->valid || vertex->validNormal)
+		Vertex *vertex = m_columns[columnType][vertexIndex];
+		/*if (!vertex->valid || vertex->validNormal) {
+			DEBUG("invalid vertex");
 			continue;
+		}*/
 
 		/* Le 1er et 2eme vertice utilise le même chunk.
 		 * 
@@ -1057,7 +962,7 @@ void KX_Chunk::UpdateColumnVertexesNormal(COLUMN_TYPE columnType)
 	}
 
 	for (unsigned short vertexIndex = 0; vertexIndex < VERTEX_COUNT; ++vertexIndex) {
-		Vertex *vertex = m_columns[columnType]->GetExternVertex(vertexIndex);
+		Vertex *vertex = m_columns[columnType][vertexIndex];
 		if (!vertex->valid)
 			continue;
 
@@ -1088,35 +993,23 @@ void KX_Chunk::ComputeJointVertexesNormal()
 
 void KX_Chunk::InvalidateJointVertexesAndIndexes()
 {
-	for (unsigned short vertexIndex = 0; vertexIndex < VERTEX_COUNT; ++vertexIndex) {
-		for (unsigned short columnIndex = COLUMN_LEFT; columnIndex <= COLUMN_RIGHT; ++columnIndex) {
-			Vertex* vertex = m_columns[columnIndex]->GetExternVertex(vertexIndex);
-			if (vertexIndex % GetColumnVertexInterval((COLUMN_TYPE)columnIndex))
-				vertex->Invalidate();
-			else
-				vertex->Validate();
+	// Invalidation des normales, de l'index ect.
+	for(unsigned short columnIndex = 0; columnIndex < VERTEX_COUNT; ++columnIndex) {
+		for(unsigned short vertexIndex = 0; vertexIndex < VERTEX_COUNT; ++vertexIndex) {
+			Vertex *vertex = m_vertexes[columnIndex][vertexIndex];
 			vertex->vertIndex = -1;
 			vertex->validNormal = false;
 		}
 	}
 
-	for (unsigned short vertexIndex = 1; vertexIndex < POLY_COUNT; ++vertexIndex) {
-		for (unsigned short columnIndex = COLUMN_FRONT; columnIndex <= COLUMN_BACK; ++columnIndex) {
-			Vertex* vertex = m_columns[columnIndex]->GetExternVertex(vertexIndex);
-			if (vertexIndex % GetColumnVertexInterval((COLUMN_TYPE)columnIndex))
-				vertex->Invalidate();
-			else
-				vertex->Validate();
-			vertex->vertIndex = -1;
-			vertex->validNormal = false;
-		}
-	}
-
-	for(unsigned short columnIndex = 0; columnIndex < VERTEX_COUNT_INTERN; ++columnIndex) {
-		for(unsigned short vertexIndex = 0; vertexIndex < VERTEX_COUNT_INTERN; ++vertexIndex) {
-			Vertex *vertex = m_center[columnIndex][vertexIndex];
-			vertex->vertIndex = -1;
-			vertex->validNormal = false;
+	// Invalidation de certain vertices de jointures.
+	for (unsigned short columnIndex = COLUMN_LEFT; columnIndex <= COLUMN_BACK; ++columnIndex) {
+		for (unsigned short vertexIndex = (columnIndex == COLUMN_LEFT || columnIndex == COLUMN_RIGHT) ? 0 : 1;
+			 vertexIndex < ((columnIndex == COLUMN_LEFT || columnIndex == COLUMN_RIGHT) ? VERTEX_COUNT : POLY_COUNT);
+			 ++vertexIndex)
+		{
+			Vertex *vertex = m_columns[columnIndex][vertexIndex];
+			vertex->SetValid(vertexIndex % GetColumnVertexInterval((COLUMN_TYPE)columnIndex));
 		}
 	}
 }
@@ -1127,23 +1020,13 @@ void KX_Chunk::ConstructPolygones()
 	m_meshObj->m_sharedvertex_map.resize(m_originVertexIndex);
 
 	// puis on construit les polygones pour le centre et les jointures
-	ConstructCenterColumnPolygones();
-
-	ConstructJointColumnPolygones(m_columns[COLUMN_LEFT], false);
-	ConstructJointColumnPolygones(m_columns[COLUMN_RIGHT], true);
-	ConstructJointColumnPolygones(m_columns[COLUMN_FRONT], true);
-	ConstructJointColumnPolygones(m_columns[COLUMN_BACK], false);
-}
-
-void KX_Chunk::ConstructCenterColumnPolygones()
-{
 	// on lit toutes les colonnes pour créer des faces
-	for (unsigned int columnIndex = 0; columnIndex < POLY_COUNT - 2; ++columnIndex) {
-		for (unsigned int vertexIndex = 0; vertexIndex < POLY_COUNT - 2; ++vertexIndex) {
-			Vertex *firstVertex = m_center[columnIndex][vertexIndex];
-			Vertex *secondVertex = m_center[columnIndex + 1][vertexIndex];
-			Vertex *thirdVertex = m_center[columnIndex + 1][vertexIndex + 1];
-			Vertex *fourthVertex = m_center[columnIndex][vertexIndex + 1];
+	for (unsigned int columnIndex = 0; columnIndex < POLY_COUNT; ++columnIndex) {
+		for (unsigned int vertexIndex = 0; vertexIndex < POLY_COUNT; ++vertexIndex) {
+			Vertex *firstVertex = m_vertexes[vertexIndex][columnIndex];
+			Vertex *secondVertex = m_vertexes[vertexIndex + 1][columnIndex];
+			Vertex *thirdVertex = m_vertexes[vertexIndex + 1][columnIndex + 1];
+			Vertex *fourthVertex = m_vertexes[vertexIndex][columnIndex + 1];
 
 			// création du premier triangle
 			AddMeshPolygonVertexes(firstVertex, secondVertex, thirdVertex, false);
@@ -1152,73 +1035,6 @@ void KX_Chunk::ConstructCenterColumnPolygones()
 		}
 	}
 }
-
-void KX_Chunk::ConstructJointColumnPolygones(JointColumn *column, bool reverse)
-{
-	/*     
-	 * 1)	   2)	   3)
-	 * 
-	 * 1       1--2    1--2
-	 * |\      | /     |\ |
-	 * | \     |/      | \|
-	 * 3--2    3       4--3
-	 */
-
-	for (unsigned short vertexIndex = 0; vertexIndex < POLY_COUNT; ++vertexIndex) {
-		bool firstTriangle = true;
-		bool secondTriangle = true;
-		Vertex *firstVertex, *secondVertex, *thirdVertex, *fourthVertex;
-
-		// les seuls points fixes
-		firstVertex = column->GetExternVertex(vertexIndex);
-		fourthVertex = column->GetExternVertex(vertexIndex + 1);
-
-		// Si le 4 ème vertice est invalide on passe au suivant.
-		if (!fourthVertex->valid)
-			fourthVertex = column->GetNextValidExternVertex(vertexIndex);
-
-		/* Dans le cas d'un début de colonne (cas 1) on ne construit
-		 * que le premier triangle et on déplace les vertices 2 et 3.
-		 */
-		if (vertexIndex == 0) {
-			secondVertex = column->GetInternVertex(0);
-			thirdVertex = fourthVertex;
-			secondTriangle = false;
-		}
-		/* Dans le cas contraire d'une fin de colonne (cas 2) on ne
-		 * construit que le premier triangle si il n'y a pas de jointure.
-		 */
-		else if (vertexIndex == (POLY_COUNT - 1)) {
-			// si il y a un joint on ne fait rien
-			if (!firstVertex->valid)
-				firstTriangle = false;
-
-			secondVertex = column->GetInternVertex(vertexIndex - 1);
-			thirdVertex = column->GetExternVertex(POLY_COUNT);
-			secondTriangle = false;
-		}
-		/* Et enfine dans le cas normale d'un milieu de colonne (cas 3)
-		 * on desactive le deuxième triangle que si il y a une jointure.
-		 */
-		else {
-			secondVertex = column->GetInternVertex(vertexIndex - 1);
-			thirdVertex = column->GetInternVertex(vertexIndex);
-			if (!firstVertex->valid) {
-				firstVertex = fourthVertex;
-				secondTriangle = false;
-			}
-		}
-
-		// création du premier triangle
-		if (firstTriangle)
-			AddMeshPolygonVertexes(firstVertex, secondVertex, thirdVertex, reverse);
-
-		// création du deuxieme triangle
-		if (secondTriangle)
-			AddMeshPolygonVertexes(firstVertex, thirdVertex, fourthVertex, reverse);
-	}
-}
-
 
 /** Cette fonction trouve tous les noeuds adjacent au noeud de ce chunk.
  */

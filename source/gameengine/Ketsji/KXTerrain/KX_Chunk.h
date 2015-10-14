@@ -66,7 +66,6 @@ public:
 	static void PrintTime();
 
 	struct Vertex;
-	struct JointColumn;
 
 	enum COLUMN_TYPE {
 		COLUMN_LEFT=0,
@@ -96,8 +95,8 @@ private:
 	bool m_visible;
 
 	/// on stocke les colonnes pour un reconstruction plus rapide
-	JointColumn *m_columns[4];
-	Vertex *m_center[VERTEX_COUNT_INTERN][VERTEX_COUNT_INTERN];
+	Vertex *m_columns[4][VERTEX_COUNT];
+	Vertex *m_vertexes[VERTEX_COUNT][VERTEX_COUNT];
 	bool m_hasVertexes;
 	bool m_onConstruct;
 
@@ -136,7 +135,7 @@ private:
 	void ConstructVertexes();
 	void ComputeJointVertexesNormal();
 	void ComputeColumnJointVertexNormal(COLUMN_TYPE columnType, bool reverse);
-	Vertex *GetVertexByChunkRelativePosition(unsigned short x, unsigned short y) const;
+	Vertex *GetVertexByChunkRelativePosition(short x, short y) const;
 	Vertex *GetVertexByTerrainRelativePosition(int x, int y) const;
 	KX_ChunkNode::Point2D GetTerrainRelativeVertexPosition(unsigned short x, unsigned short y) const;
 	void GetCoorespondingVertexesFromChunk(KX_ChunkNode *jointNode, Vertex *origVertex, COLUMN_TYPE columnType, 
@@ -146,8 +145,6 @@ private:
 	void InvalidateJointVertexesAndIndexes();
 
 	void ConstructPolygones();
-	void ConstructCenterColumnPolygones();
-	void ConstructJointColumnPolygones(JointColumn *column, bool reverse);
 	void AddMeshPolygonVertexes(Vertex *v1, Vertex *v2, Vertex *v3, bool reverse);
 
 	void SetNormal(Vertex *vertexCenter) const;
