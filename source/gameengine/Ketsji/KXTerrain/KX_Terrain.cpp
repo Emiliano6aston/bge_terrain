@@ -106,7 +106,7 @@ void KX_Terrain::Construct()
 void KX_Terrain::Destruct()
 {
 	DEBUG("Destruct terrain");
-	// destruction du noeud principal
+	// Main node destruction
 	if (m_nodeTree)
 		delete m_nodeTree;
 
@@ -158,7 +158,7 @@ void KX_Terrain::UpdateChunksMeshes()
 
 void KX_Terrain::RenderChunksMeshes(KX_Camera *cam, RAS_IRasterizer* rasty)
 {
-	// rendu du mesh
+	// Mesh render
 	for (KX_ChunkList::iterator it = m_chunkList.begin(); it != m_chunkList.end(); ++it) {
 		KX_Chunk *chunk = *it;
 		if (rasty->GetDrawingMode() == RAS_IRasterizer::KX_SHADOW) {
@@ -176,7 +176,7 @@ void KX_Terrain::DrawDebugNode()
 
 unsigned short KX_Terrain::GetSubdivision(float distance, bool iscamera) const
 {
-	// les objets non pas besoin d'une aussi grande subdivision que la camera
+	// Objects don't need a subdivision as high the the one needed for the camera
 	const float maxdistance = iscamera ? m_cameraMaxDistance : m_objectMaxDistance;
 	const float interval = maxdistance / m_maxChunkLevel;
 	for (unsigned short i = 0; i <= m_maxChunkLevel; ++i) {
@@ -236,9 +236,9 @@ KX_ChunkNode **KX_Terrain::NewNodeList(KX_ChunkNode *parentNode, int x, int y, u
 {
 	KX_ChunkNode **nodeList = (KX_ChunkNode **)malloc(4 * sizeof(KX_ChunkNode *));
 
-	// la taille relative d'un chunk, = 2 si le noeud et final
+	// Relative chunk size, = 2 if the node is final
 	const unsigned short relativesize = m_width / pow(2, level);
-	// la largeur du chunk 
+	// Chunk width
 	const unsigned short width = relativesize / 2;
 
 	nodeList[0] = new KX_ChunkNode(parentNode, x - width, y - width, relativesize, level + 1, this);
@@ -255,7 +255,7 @@ KX_Chunk* KX_Terrain::AddChunk(KX_ChunkNode* node)
 
 	KX_Chunk *chunk = new KX_Chunk(node, m_bucket);
 
-	////////////////////////// AJOUT DANS LA LISTE ///////////////////////////
+	////////////////////////// ADDING TO LIST ///////////////////////////
 	m_chunkList.push_back(chunk);
 
 	double endtime = KX_GetActiveEngine()->GetRealTime();
@@ -265,9 +265,7 @@ KX_Chunk* KX_Terrain::AddChunk(KX_ChunkNode* node)
 	return chunk;
 }
 
-/** Supprime le chunk de la liste des chunks actifs et l'ajoute dans une 
- * liste temporaire pour sa suppression.
- */
+/// Move chunk from active chunks list to a temporary list for its deletion.
 void KX_Terrain::RemoveChunk(KX_Chunk *chunk)
 {
 	m_chunkList.remove(chunk);
