@@ -43,23 +43,23 @@ class PHY_IPhysicsController;
 class KX_Chunk
 {
 public:
-	/// Variables utilisées pour faire des statistiques.
+	/// Variable used for statistics.
 
-	/// Le nombre de recréation de mesh par frame.
+	/// Number of mesh rebuilding per frame.
 	static unsigned int meshRecreation;
-	/// Le temps dépensé pour créer le chunk, sans création de mesh.
+	/// Time used to create a chunk, without building the mesh.
 	static double chunkCreationTime;
-	/// Le temps dépensé pour calculer les normales de tous les vertices.
+	/// Time used to calculate all vertices normals.
 	static double normalComputingTime;
-	/// Le temps dépensé pour ajouter les vertice dans le mesh final.
+	/// Time used to  add vertices to final mesh.
 	static double vertexAddingTime;
-	/// Le temps dépensé pour créer les vertices : allocation plus constructeur.
+	/// Time used to create vertices : allocation + building.
 	static double vertexCreatingTime;
-	/// Le temps dépensé pour ajouter les polygones, comprend aussi la recherche de vertices en doublons.
+	/// Time used to add polygons (also includes vetices duplicates search).
 	static double polyAddingTime;
-	/// Le temps dépensé pour créer le mesh physique.
+	/// Time used to create physical mesh.
 	static double physicsCreatingTime;
-	/// Le nombre de chunks actifs.
+	/// Number of active chunks.
 	static unsigned int m_chunkActive;
 
 	static void ResetTime();
@@ -77,25 +77,25 @@ public:
 	};
 
 private:
-	/// Le noeud parent.
+	/// Parent node.
 	KX_ChunkNode *m_node;
 
-	/// Le materiaux utilisé par le mesh, on le passe a la construction du mesh.
+	/// Mesh material passed to mesh building.
 	RAS_MaterialBucket *m_bucket;
-	/// Le mesh de construction.
+	/// builder mesh.
 	RAS_MeshObject *m_meshObj;
-	/// Le mesh slot
+	/// Mesh slot
 	SG_QList m_meshSlots;
-	/// La matrice de transformation du mesh.
+	/// Mesh transforms matrix.
 	double m_meshMatrix[16];
 
-	/// Le controlleur physique.
+	/// Physical controller.
 	PHY_IPhysicsController *m_physicsController;
 
-	/// Le chunk est visible ?
+	/// Is chunk visible ?
 	bool m_visible;
 
-	/// on stocke les colonnes pour un reconstruction plus rapide
+	/// Store data for a faster rebuilding
 	JointColumn *m_columns[4];
 	Vertex *m_center[VERTEX_COUNT_INTERN][VERTEX_COUNT_INTERN];
 	bool m_hasVertexes;
@@ -107,25 +107,21 @@ private:
 
 	KX_ChunkNode *m_parentJointNodes[4];
 
-	/// Les dernières jointures.
-	unsigned short m_lastHasJoint[4]; // TODO renommer et utiliser 1 comme valeur par default
-	/* Tous les noeuds autour, jusqu'a 6 par côté dont 2 adjacents par un point, soit 16 noeuds.
-	 * pour les colonnes de gauche et droite les chunks sont de haut en bas
-	 * et de gauche a droite pour le colonnes de haut et bas.
+	/// Last joints.
+	unsigned short m_lastHasJoint[4]; // TODO rename and use 1 as default value.
+	/* All surounding nodes, up to 6 per side (2 adjacent per point), 16 total nodes.
+	 * For left and right columns, chunks are from top to bottom and
+	 * for top and bottom columns from left to right.
 	 */
 	KX_ChunkNode *m_jointNode[4][6];
 
-	/* La position des noeuds de jointure, on les stoque
-	 * pour optimizer.
-	 */
+	// store joints nodes for code optimizations.
 	float m_jointNodePosition[4][2];
 
-	/// Les proxys de 4 noeuds adjacents.
+	/// 4 adjacent nodes proxies.
 	KX_ChunkNodeProxy *m_jointNodeProxy[4];
 
-	/** Indice utilisé lors de la construction des vertices pour avoir un indice
-	 * unique de vertice.
-	 */
+	/// Index used during vertices building, to have a uniue one per vertex
 	unsigned int m_originVertexIndex;
 
 	void ConstructMesh();
@@ -152,7 +148,7 @@ private:
 
 	void SetNormal(Vertex *vertexCenter) const;
 
-	/// \section Gestion des noeuds de jointures.
+	/// \section Nodes joints management.
 	void GetJointColumnNodes();
 	bool GetJointNodesChanged();
 
@@ -162,7 +158,7 @@ public:
 
 	void UpdateColumnVertexesNormal(COLUMN_TYPE columnType);
 
-	/// creation du mesh avec joint des vertices du chunk avec ceux d'à cotés si neccesaire
+	/// mesh building with adjacent chunk vertices merging if needed
 	void UpdateMesh();
 	void EndUpdateMesh();
 	void RenderMesh(RAS_IRasterizer *rasty, KX_Camera *cam);
