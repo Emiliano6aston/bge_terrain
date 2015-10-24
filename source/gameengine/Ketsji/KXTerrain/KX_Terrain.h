@@ -43,28 +43,24 @@ class KX_ChunkRootCache;
 class KX_Terrain : public KX_GameObject
 {
 private:
-	/// Le materiaux utilisé pour tous les meshs de chunks.
+	/// Material used for mesh chunks.
 	RAS_MaterialBucket *m_bucket;
 
-	/** Le materiaux blender utilisé pour la costruction des 
-	 * controlleurs physiques.
-	 */
+	/// Blender material used to build physical controllers.
 	Material *m_material;
 
-	/** Le nombre maximal de subdivision de noeud ou de niveaux dans 
-	 * le quad tree.
-	 */
+	/// Maximum node subdivision level used in the quad tree.
 	unsigned short m_maxChunkLevel;
 
-	/// Le niveu de subdivision minimum pour un chunk physique.
+	/// Minimum subdivision level for a physical chunk.
 	unsigned short m_minPhysicsLevel;
 
-	/** En theorie le nombre de vertices en largeur dans un chunk.
-	 * Non implementé.
+	/** Number of vertices widths in a chunk (In theory)
+	 * NOT IMPLEMENTED YET.
 	 */
 	unsigned short m_vertexSubdivision;
 
-	/// Le nombre de chunks en largeur dans le terrain.
+	/// Number of vertices widths in the terrain.
 	unsigned short m_width;
 
 	/** Tous les noeuds dans cette distance peuvent avoir un niveau
@@ -72,10 +68,10 @@ private:
 	 */
 	float m_cameraMaxDistance;
 
-	/// La même chose que m_cameraMaxDistance mais pour les objets physique.
+	/// Same as m_cameraMaxDistance except for physical objects.
 	float m_objectMaxDistance;
 
-	/// La largeur du mesh d'un chunk.
+	/// Mesh chunk width.
 	float m_chunkSize;
 
 	/// Le facteur de la marge du rayon d'un noeud.
@@ -83,15 +79,13 @@ private:
 
 	/// Le mode de déboguage des noeuds.
 	short m_debugMode;
-	/// Le nombre de frames entre chaque affichages de temps.
+	/// Number of skipped frames between each time debugging.
 	unsigned short m_debugTimeFrame;
 
 	/// Si vrai le terrain et déjà construit et les noeud principaux aussi.
 	bool m_construct;
 
-	/** Un petit compteur de frame utilisé pour eviter d'afficher
-	 * le messages de debug a chaque frame.
-	 */
+	/// Frames counter to prevent debug message appearing on each frame
 	unsigned short m_debugFrame;
 
 	/// Le noeud principal du terrain.
@@ -99,15 +93,15 @@ private:
 
 	typedef std::list<KX_Chunk *> KX_ChunkList;
 
-	/// La liste de tous les chunks actifs.
+	/// List of all active chunks.
 	KX_ChunkList m_chunkList;
 
-	/// La liste de tous les chunks à supprimer à la fin de la frame.
+	/// List of all chunks marked for deletion after the end of a frame.
 	KX_ChunkList m_euthanasyChunkList;
 
 	std::vector<KX_TerrainZoneMesh *> m_zoneMeshList;
 
-	/// Utilisation d'un cache pour la création des vertices.
+	/// Vertices creation cache.
 	bool m_useCache;
 
 	/// Tant maximum de vie pour un noeud de cache sans activité, en frame.
@@ -115,7 +109,7 @@ private:
 
 	unsigned short m_cacheFrame;
 
-	// Le cache des vertices.
+	// Vertices cache.
 	KX_ChunkRootCache *m_chunkRootCache;
 
 public:
@@ -145,27 +139,27 @@ public:
 	void RenderChunksMeshes(KX_Camera *cam, RAS_IRasterizer *rasty);
 	void DrawDebugNode();
 
-	/// Le niveau de subdivision maximal
+	/// Maximal subdivision level.
 	inline unsigned short GetMaxLevel() const
 	{
 		return m_maxChunkLevel;
 	}
-	/// Le niveu de subdivision minimum pour un chunk physique.
+	/// Minimum subdivision level for a physical chunk..
 	inline unsigned short GetMinPhysicsLevel() const
 	{
 		return m_minPhysicsLevel;
 	}
-	/// le nombre maximun de face en largeur dans un chunk
+	/// Maximum number of width faces per chunk.
 	inline unsigned short GetVertexSubdivision() const
 	{
 		return m_vertexSubdivision;
 	}
-	/// La largeur du terrain en echelle relative.
+	/// Relative terrain width.
 	inline unsigned short GetWidth() const
 	{
 		return m_width;
 	}
-	/// La distance maximal pour avoir un niveau de subdivision superieur à 1
+	/// Maximum distance to get a subdivision level higher than 1.
 	inline float GetCameraMaxDistance() const
 	{
 		return m_cameraMaxDistance;
@@ -174,7 +168,7 @@ public:
 	{
 		return m_objectMaxDistance;
 	}
-	/// La taille de tous les chunks
+	/// All the chunks sizes.
 	inline float GetChunkSize() const
 	{
 		return m_chunkSize;
@@ -184,7 +178,7 @@ public:
 	{
 		return m_marginFactor;
 	}
-	/// Le materiaux blender.
+	/// Blender material.
 	inline Material *GetBlenderMaterial() const
 	{
 		return m_material;
@@ -202,8 +196,8 @@ public:
 	unsigned short GetSubdivision(float distance, bool iscamera) const;
 	KX_ChunkNode *GetNodeRelativePosition(float x, float y);
 
-	/** La position en 3D d'un vertice. on renvoie une coordonnée et non une 
-	 * hauteur car on pourrait imaginer modifier la position en x et y.
+	/** 3D vertex position. We return a coord and not a height
+	 * as we could modify the position using x and y.
 	 */
 	VertexZoneInfo *GetVertexInfo(int x, int y) const;
 	VertexZoneInfo *NewVertexInfo(int x, int y) const;
