@@ -75,7 +75,7 @@ KX_TerrainZoneMesh::KX_TerrainZoneMesh(KX_Terrain *terrain, TerrainZone *zoneInf
 
 	m_buf = m_zoneInfo->image ? BKE_image_acquire_ibuf(m_zoneInfo->image, NULL, NULL) : NULL;
 	if (m_buf) {
-		// On genère l'image avec une precision de 32 bits.
+		// We generate an image with a 32 bits precision.
 		IMB_float_from_rect(m_buf);
 	}
 
@@ -129,19 +129,19 @@ float KX_TerrainZoneMesh::GetMeshColorInterp(const float x, const float y, const
 	if ((m_zoneInfo->flag & TERRAIN_ZONE_MESH_VERTEX_COLOR_INTERP && m_derivedMesh) || faceindex != -1) {
 		MCol *mcol = (MCol *)m_derivedMesh->getTessFaceDataArray(m_derivedMesh, CD_MCOL);
 
-		// couleur du remier vertice
+		// First vertex color
 		float c1[3] = {
 			(float)mcol[faceindex * 4].r / 255.0f, 
 			(float)mcol[faceindex * 4].g / 255.0f,
 			(float)mcol[faceindex * 4].b / 255.0f
 		};
-		// couleur du second vertice
+		// Second vertex color
 		float c2[3] = {
 			(float)mcol[faceindex * 4 + 1].r / 255.0f,
 			(float)mcol[faceindex * 4 + 1].g / 255.0f,
 			(float)mcol[faceindex * 4 + 1].b / 255.0f
 		};
-		// couleur du troisieme vertice
+		// Third vertex color
 		float c3[3] = {
 			(float)mcol[faceindex * 4 + 2].r / 255.0f,
 			(float)mcol[faceindex * 4 + 2].g / 255.0f,
@@ -247,7 +247,7 @@ float KX_TerrainZoneMesh::GetImageHeight(const float x, const float y) const
 	return height;
 }
 
-// Si ledit point est en contact, on renvoie la modif asociée à sa hauteur
+// If point is in contact, return the modification associated to its height
 void KX_TerrainZoneMesh::GetVertexInfo(const float x, const float y, VertexZoneInfo *r_info) const
 {
 	if (!(m_zoneInfo->flag & TERRAIN_ZONE_ACTIVE)) {
@@ -258,35 +258,35 @@ void KX_TerrainZoneMesh::GetVertexInfo(const float x, const float y, VertexZoneI
 	float interp = 1.0f;
 	bool hit = false;
 
-	// on utilise un mesh comme zone
+	// use a mesh as zone
 	if (m_zoneInfo->flag & TERRAIN_ZONE_MESH && m_zoneInfo->mesh) {
-		// en premier on verifie que le point est bien compris dans les maximum et minimun du mesh
+		// verify that the point is in between the minimum and maximum values of the mesh
 		if ((m_box[0] < x && x < m_box[1]) && (m_box[2] < y && y < m_box[3])) {
 			const unsigned int totface = m_derivedMesh->getNumTessFaces(m_derivedMesh);
 			MVert *mvert = m_derivedMesh->getVertArray(m_derivedMesh);
 			MFace *mface = m_derivedMesh->getTessFaceArray(m_derivedMesh);
 			const float point[2] = {x, y};
 
-			// On parcoure toutes les triangles
+			// loop through all the triangles
 			for (unsigned int i = 0; i < totface; ++i) {
 				const MVert &v1 = mvert[mface[i].v1];
 				const MVert &v2 = mvert[mface[i].v2];
 				const MVert &v3 = mvert[mface[i].v3];
 
 				const int result = isect_point_tri_v2(point, v1.co, v2.co, v3.co);
-				// Si le point est bien dans un des triangles
+				// If point is inside the triangle
 				if (result == 1) {
 					interp = GetMeshColorInterp(x, y, i, v1.co, v2.co, v3.co);
 					hit = true;
-					// La difference entre la hauteur precedente et une hauteur clampée.
+					// Delta between previous height and clamped height.
 					deltaheight += GetClampedHeight(r_info->height, x, y, v1.co, v2.co, v3.co);
-					// La hauteur par default.
+					// Default height.
 					deltaheight += m_zoneInfo->offset;
-					// La hauteur calculé avec un bruit de perlin.
+					// Height calculated using a perlin noise.
 					deltaheight += GetNoiseHeight(x, y);
-					// La hauteur dedui par une image.
+					// Height from an image map.
 					deltaheight += GetImageHeight(x, y);
-					// On fais l'interpolation de cette difference de hauteur.
+					// Interpolate all delta heights.
 					deltaheight *= interp;
 
 					break;
