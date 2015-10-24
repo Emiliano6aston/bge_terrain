@@ -33,13 +33,13 @@ class KX_Terrain;
 class KX_ChunkCache
 {
 private:
-	/* 
-	 * 5 vertices en x a un intervale de 1 en x et 2 en y.
-	 * 3 vertices en y a un intervale de 2 en y et 2 en x.
-	 * 
-	 * () = optionelle, seulement dans le cas d'un chunk de cache complètement
-	 * en bas et/ou a droite.
-	 * 
+	/*
+	 * 5 vertices on x with an internal of 1 on x and 2 on y.
+	 * 3 vertices on y with an internal of 2 on y and 2 on x.
+	 *
+	 * () = optinal, only if a cached chunk is totally
+	 * at the bottom and/or to the right.
+	 *
 	 *         (y0.2)         (y1.2)
 	 *           |               |
 	 *           |               |
@@ -59,18 +59,18 @@ private:
 	VertexZoneInfo **m_columnsY[2];
 
 	const unsigned short m_level;
-	/// La taille du chunk = décalage entre les vertices.
+	/// Chunk size = delta between vertices.
 	const unsigned short m_size;
 
 	KX_ChunkNode::Point2D m_pos;
 
-	/** Le nombre de vertices utilisés en X, entre
-	 * VERTEX_COUNT et (VERTEX_COUNT - 1)
+	/** The numbe of vertices used on X, between
+	 * VERTEX_COUNT and (VERTEX_COUNT - 1)
 	 */
 	const bool m_allVertexesX;
 
-	/** Le nombre de vertices utilisés en Y, entre
-	 * VERTEX_COUNT_INTERN et (VERTEX_COUNT_INTERN - 1)
+	/** The numbe of vertices used on Y, between
+	 * VERTEX_COUNT_INTERN and (VERTEX_COUNT_INTERN - 1)
 	 */
 	const bool m_allVertexesY;
 
@@ -78,7 +78,7 @@ private:
 
 	KX_Terrain *m_terrain;
 
-	/// Les 4 sous chunks de cache.
+	/// All 4 cache subchunks.
 	KX_ChunkCache **m_subChunkCache;
 
 	void ConstructSubChunkCache();
@@ -89,13 +89,13 @@ public:
 				  bool allvertexesx, bool allvertexesy, KX_Terrain *terrain);
 	virtual ~KX_ChunkCache();
 
-	/** Cherche un vertice coorespondant a cette position.
-	 * Cas :
-	 *     - Si le vertice est dans ce chunk :
-	 *         - Si le vertice existe on le renvoie.
-	 *         - Si le vertice n'existe pas on le crée et on le renvoie.
-	 *     - Si le vertice n'est pas compris dans ce chunk :
-	 *         - On subdivise le chunk en 4 sous chunks et on rappelle cette fonction.
+	/** Search for a vertex = to current position.
+	 * Case :
+	 *     - If the vertex is in the chunk:
+	 *         - return it (if it exists).
+	 *         - create and return it (if it does not exist).
+	 *     - If the vertex is outside of the chunk:
+	 *         - Subdivide the chunk as 4 subchunks and recall function.
 	 */
 	VertexZoneInfo *GetVertexZoneInfo(int x, int y);
 
@@ -111,7 +111,7 @@ private:
 
 	KX_Terrain *m_terrain;
 
-	/// Les 4 sous chunks de cache.
+	/// All 4 cache subchunks.
 	KX_ChunkCache *m_subChunkCache[4];
 
 public:
