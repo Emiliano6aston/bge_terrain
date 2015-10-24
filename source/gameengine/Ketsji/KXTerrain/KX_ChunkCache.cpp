@@ -134,10 +134,10 @@ VertexZoneInfo *KX_ChunkCache::GetVertexZoneInfo(int x, int y)
 
 	VertexZoneInfo *vertexInfo = NULL;
 
-	// Ceci permet de savoir si le noeud est fréquement utilisé.
+	// Helps to know if the node is frequently used.
 	++m_accesCount;
 
-	// Le vertice est hors du chunk.
+	// The vertex is outside of chunk.
 	if (relx < 0.0f || rely < 0.0f ||
 		relx > 4.0f || rely > 4.0f ||
 		(!m_allVertexesX && relx == 4.0f) ||
@@ -151,9 +151,7 @@ VertexZoneInfo *KX_ChunkCache::GetVertexZoneInfo(int x, int y)
 	const bool pairX = fmod(relx, 2.0f) == 0.0f;
 	const bool pairY = fmod(rely, 2.0f) == 0.0f;
 
-	/* Le vertice est entre les colonnes de ce chunk,
-	 * on doit donc subdiviser le noeud.
-	 */
+	// The vertex is between two columns, we then have to subdivide the node.
 	if (!alignedX || !alignedY) {
 		ConstructSubChunkCache();
 		for (unsigned short i = 0; i < 4; ++i) {
@@ -162,37 +160,36 @@ VertexZoneInfo *KX_ChunkCache::GetVertexZoneInfo(int x, int y)
 				return vertexInfo;
 			}
 		}
-		// Totalement improbable.
+		// Really impossible.
 		return NULL;
 	}
 
-	/* Le point est aligné sur les colonnes en X, donc
-	 * rely = 1 ou rely = 3.
-	 * Il suffit juste de trouver la bonne colonne en x et
-	 * d'acceder au vertice avec comme indice relx
+	/* The point is aligned to the columns by its X axis, then rely = 1 or rely = 3.
+	 * It is only needed to find the correct column in X
+	 * and to access the vertex with index as relx.
 	 */
 	if (!pairY) {
-		// rely / 2 donne 0 ou 1, car rely = 1 ou = 3.
+		// rely / 2 gives 0 or 1 since rely = 1 or = 3.
 		const unsigned short columnIndex = (int)(rely / 2.0f);
 		const unsigned short vertexIndex = (int)(relx);
 
 		vertexInfo = m_columnsX[columnIndex][vertexIndex];
-		// Le point n'a pas encore était créé.
+		// The point is not yet created.
 		if (!vertexInfo) {
 			m_columnsX[columnIndex][vertexIndex] = vertexInfo = m_terrain->NewVertexInfo(x, y);
 		}
 	}
-	/* Le point est aligné seulement sur les colonnes en Y, donc
-	 * relx = 1 ou relx = 3 mais rely != 1 ou rely != 3
-	 * Il suffit juste de prendre le vertice dans la bonne
-	 * colonne en y avec pour indice rely / 2.
+	/* The point is only aligned to the columns by its X axis, then
+	 * relx = 1 or relx = 3 but rely != 1 or rely != 3.
+	 * We only need need to pick the correct vertex in
+	 * the y column with an index of rely / 2.
 	 */
 	else if (!pairX) {
 		const unsigned short columnIndex = (int)(relx / 2.0f);
 		const unsigned short vertexIndex = (int)(rely / 2.0f);
 
 		vertexInfo = m_columnsY[columnIndex][vertexIndex];
-		// Le point n'a pas encore était créé.
+		// The point is not yet created.
 		if (!vertexInfo) {
 			m_columnsY[columnIndex][vertexIndex] = vertexInfo = m_terrain->NewVertexInfo(x, y);
 		}
@@ -225,7 +222,7 @@ void KX_ChunkRootCache::Construct()
 	const unsigned short interval = m_size / POLY_COUNT;
 	const unsigned short halfsize = m_size / 2;
 
-	// Le tronc du cache génére automatiquement tous ses points.
+	// The tree cache automatically generates the points.
 	for (unsigned short columnIndex = 0; columnIndex < VERTEX_COUNT; ++columnIndex) {
 		for (unsigned short vertexIndex = 0; vertexIndex < VERTEX_COUNT; ++vertexIndex) {
 			const int x = columnIndex * interval - halfsize;
@@ -265,9 +262,9 @@ VertexZoneInfo *KX_ChunkRootCache::GetVertexZoneInfo(int x, int y)
 
 	const unsigned short interval = m_size / POLY_COUNT;
 	const unsigned short halfsize = m_size / 2;
-	/* Si le vertice est sur cette grille relx et rely seront :
+	/* If the vertex is on the grid, relx and rely will be:
 	 * 0.0, 1.0, 2.0, 3.0
-	 * Sinon il le vertice est dans un grille d'un sous noeud.
+	 * Else the vertex is in a subnode grid.
 	 */
 	const float relx = ((float)(x + halfsize)) / interval;
 	const float rely = ((float)(y + halfsize)) / interval;
@@ -275,8 +272,8 @@ VertexZoneInfo *KX_ChunkRootCache::GetVertexZoneInfo(int x, int y)
 	const bool alignedX = fmod(relx, 1.0f) == 0.0f;
 	const bool alignedY = fmod(rely, 1.0f) == 0.0f;
 
-	/* Le vertice est entre les colonnes de ce chunk,
-	 * on doit donc subdiviser le noeud.
+	/* If vertex is in between the columns on that chunk,
+	 * we then need to subdivide the node.
 	 */
 	if (!alignedX || !alignedY) {
 		for (unsigned short i = 0; i < 4; ++i) {
@@ -285,7 +282,7 @@ VertexZoneInfo *KX_ChunkRootCache::GetVertexZoneInfo(int x, int y)
 				return vertexInfo;
 			}
 		}
-		// Totalement improbable.
+		// Really impossible.
 		return NULL;
 	}
 
