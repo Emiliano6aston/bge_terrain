@@ -119,7 +119,7 @@ public:
 							int origindex);
 
 	/* An other way to add polygons and vertexes, it assume that there is no equal vertex.
-	 * We get the vertex index by adding it via the function AddVertex and we set it index in
+	 * We get the vertex index by adding it via the function AddVertex and we set its index in
 	 * the poly via AddPolygonVertex.
 	 */
 
