@@ -45,11 +45,11 @@ public:
 	float height;
 	/// Vertex 2d coord
 	float pos[2];
-	/// count of chunk vertexes which use it.
+	/// count of chunk vertices which use it.
 	unsigned char refcount;
-	/** Tous les cannaux d'UVs.
-	 * Le premier cannal et utilisé pour l'UV du vertice
-	 * et les autres pour la couleur des textures.
+	/** All UVs channels.
+	 * First channel is used for the vertex UV
+	 * and all others for the textures colors.
 	 */
 	MT_Point2 m_uvs[8];
 
@@ -88,11 +88,11 @@ private:
 	TerrainZone *m_zoneInfo;
 	/// The box used to optimize.
 	float m_box[4];
-	/// La hauteur maximale de la fractale.
+	/// Max fractal height.
 	float m_fractalMaxHeight;
 	/// The mesh.
 	DerivedMesh *m_derivedMesh;
-	/// L'image utilisé pour les hauteur (optionelle)
+	/// Height image map (optional)
 	ImBuf *m_buf;
 
 public:
@@ -101,15 +101,15 @@ public:
 					   Mesh *mesh);
 	~KX_TerrainZoneMesh();
 
-	/** Compute an height clamped.
+	/** Compute a clamped height.
 	 * \param orgheight The previous height.
 	 * \param interp The interpolation of the mesh on this point.
 	 * \param x The position on x.
 	 * \param y The position on y.
-	 * \param v1 The first vertex of the triangle hited.
-	 * \param v2 The second vertex of the triangle hited.
-	 * \param v3 The firth vertex of the triangle hited.
-	 * \return The height clamped
+	 * \param v1 The first vertex of the triangle being hit.
+	 * \param v2 The second vertex of the triangle being hit.
+	 * \param v3 The firth vertex of the triangle being hit.
+	 * \return The clamped height
 	 */
 	float GetClampedHeight(const float orgheight, const float x, const float y,
 						   const float *v1, const float *v2, const float *v3) const;
@@ -119,8 +119,8 @@ public:
 	 * \param faceindex The index of the face.
 	 * \param v1 The first vertex of the face.
 	 * \param v2 The second vertex of the face.
-	 * \param v3 The firth vertex of the face.
-	 * \return The interpolation on this position.
+	 * \param v3 The third vertex of the face.
+	 * \return The interpolation of their positions.
 	 */
 	float GetMeshColorInterp(const float x, const float y, const int faceindex, const float *v1, const float *v2, const float *v3) const;
 	float GetNoiseHeight(const float x, const float y) const;
@@ -129,7 +129,7 @@ public:
 	/** Compute all vertex infos : height and color.
 	 * \param x The position on x.
 	 * \param y The position on y.
-	 * \param r_info All vertex infos.
+	 * \param r_info All vertices infos.
 	 */
 	void GetVertexInfo(const float x, const float y, VertexZoneInfo *r_info) const;
 
