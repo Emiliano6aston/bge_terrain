@@ -222,7 +222,7 @@ void KX_ChunkRootCache::Construct()
 	const unsigned short interval = m_size / POLY_COUNT;
 	const unsigned short halfsize = m_size / 2;
 
-	// The tree cache automatically generates the points.
+	// The nodes root cache automatically generates the points.
 	for (unsigned short columnIndex = 0; columnIndex < VERTEX_COUNT; ++columnIndex) {
 		for (unsigned short vertexIndex = 0; vertexIndex < VERTEX_COUNT; ++vertexIndex) {
 			const int x = columnIndex * interval - halfsize;

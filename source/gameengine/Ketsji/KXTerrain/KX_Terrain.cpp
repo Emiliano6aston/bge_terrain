@@ -176,7 +176,7 @@ void KX_Terrain::DrawDebugNode()
 
 unsigned short KX_Terrain::GetSubdivision(float distance, bool iscamera) const
 {
-	// Objects don't need a subdivision as high the the one needed for the camera
+	// Objects don't need a subdivision as high as the one needed for the camera
 	const float maxdistance = iscamera ? m_cameraMaxDistance : m_objectMaxDistance;
 	const float interval = maxdistance / m_maxChunkLevel;
 	for (unsigned short i = 0; i <= m_maxChunkLevel; ++i) {
